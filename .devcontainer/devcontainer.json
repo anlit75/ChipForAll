@@ -1,0 +1,12 @@
+{
+    "name": "ChipForAll",
+    "image": "ghcr.io/anlit75/c4o-core:latest",
+    "remoteUser": "root",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "mshr-h.veriloghdl"
+            ]
+        }
+    }
+}
