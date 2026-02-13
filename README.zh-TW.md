@@ -1,4 +1,4 @@
-# 🚀 ChipForAll (C4O) 用戶模板
+# 🚀 ChipForAll (C4O) 
 
 ChipForAll 是一個 **「零配置 (Zero-Config)」** 的開源晶片設計模板。
 別再為了安裝工具鏈浪費時間，現在就開始設計你的晶片。
@@ -58,7 +58,7 @@ make gds
 .
 ├── config.json        # ⚙️ 專案設定檔 (設計名稱, 時脈, 面積)
 ├── Makefile           # 🎮 指令控制中心
-├── src/               # ✍️ 你的 Verilog 原始碼
+├── src/               # ✍️ 你的 Verilog
 │   └── blinky.v
 ├── test/              # 🧪 你的測試平台 (Testbenches)
 │   └── tb_blinky.v
