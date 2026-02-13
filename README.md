@@ -45,7 +45,7 @@ We provide a unified `Makefile` to handle everything.
 | `make lint` | Checks your Verilog code for syntax errors using Verilator. | Terminal Output |
 | `make sim` | Runs simulation using Icarus Verilog. | `build/sim.vvp` |
 | `make synth` | Synthesizes RTL into Gates using Yosys. | `build/synthesis.json` |
-| `make gds` | Generates the physical layout using OpenLane. | `build/blinky.gds` |
+| `make gds` | Generates the physical layout using OpenLane. | `build/<DESIGN_NAME>.gds` |
 | `make clean` | Removes all generated artifacts. | N/A |
 
 > **💡 Note:** The first time you run `make gds`, it will automatically download and install the Sky130 PDK (approx. 3GB). Please be patient!
