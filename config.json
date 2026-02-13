@@ -7,5 +7,6 @@
   "FP_CORE_UTIL": 40,
   "FP_SIZING": "absolute",
   "CLOCK_PORT": "clk",
-  "CLOCK_PERIOD": 10.0
+  "CLOCK_PERIOD": 10.0,
+  "RUN_LINTER": 0
 }
