@@ -1,75 +1,71 @@
-# 🚀 ChipForAll (C4O) 用戶模板
+# ChipForAll (C4O)
 
-ChipForAll 是一個 **「零配置 (Zero-Config)」** 的開源晶片設計模板。
-別再為了安裝工具鏈浪費時間，現在就開始設計你的晶片。
+![CI Status](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml/badge.svg)
+![License](https://img.shields.io/github/license/anlit75/ChipForAll)
 
-核心由 **c4o-core** 引擎驅動。
+**專為開源晶片設計打造的「零配置」入門套件。** 專注於 Verilog 開發，不再為環境變數煩惱。
 
-## ✨ 特色功能
+## ✨ 特色
 
-*   **🐳 Docker化環境**: 不需要手動安裝 Yosys, Verilator 或 OpenLane。只要有 Docker，你就準備好了。
-*   **⚡ 零配置**: 只要 Clone 專案並執行。環境已經預先針對 Skywater 130nm PDK 設定好了。
-*   **🛠 全流程支援**: 一個指令即可完成從 Verilog RTL 到 GDSII 佈局的全部流程。
-*   **✅ CI/CD 就緒**: 內建 GitHub Actions 流程，每次 Push 自動驗證你的設計。
+* **🐳 Docker 化環境**：無需手動安裝 Yosys、Verilator 或 OpenLane。只要有 Docker，一切就緒。
+* **⚡ 零配置**：只需複製（Clone）此儲存庫即可執行。環境已預先針對 Skywater 130nm PDK 完成配置。
+* **🛠 全流程支援**：只需指令一次，即可完成從 Verilog RTL 到 GDSII 佈局（Layout）的所有步驟。
+* **✅ CI/CD**：包含 GitHub Actions 工作流，在每次 Push 時自動驗證您的設計。
 
----
+## 🚀 快速啟動
 
-## 🏁 快速開始 (Quick Start)
+### 前置作業
+* Docker (Desktop 或 Engine)
+* Make
+* Git
 
-### 環境需求 (Prerequisites)
-*   Docker (Desktop 或 Engine)
-*   Make
-*   Git
-
-### 1. 複製專案 (Clone the Repo)
+### 1. 複製儲存庫
 ```bash
 git clone https://github.com/anlit75/ChipForAll.git
 cd ChipForAll
 ```
 
-### 2. 執行全流程 (Run the Full Flow)
-從 Verilog 程式碼產生最終的 GDSII 佈局檔：
+### 2. 執行完整流程
+
+將 Verilog 程式碼轉換為最終的 GDSII 佈局檔案：
+
 ```bash
 make gds
+
 ```
-*請稍候幾分鐘。系統將會自動下載 PDK，執行合成、佈局繞線，並產生佈局檔。*
 
----
+*請稍等幾分鐘。系統將自動下載 PDK、執行電路合成（Synthesis）、佈局繞線（Place & Route）並產出佈局檔案。*
 
-## 📖 使用指南 (Usage Guide)
+## 📖 使用指南
 
-我們提供了一個統一的 `Makefile` 來處理所有事情。
+我們提供統一的 `Makefile` 來處理所有事務。
 
-| 指令 | 說明 | 輸出位置 |
-|---|---|---|
-| `make lint` | 使用 Verilator 檢查 Verilog 語法錯誤。 | 終端機輸出 |
+| 指令 | 說明 | 輸出路徑 |
+| --- | --- | --- |
+| `make lint` | 使用 Verilator 檢查 Verilog 語法錯誤。 | `終端機輸出` |
 | `make sim` | 使用 Icarus Verilog 執行模擬。 | `build/sim.vvp` |
-| `make synth` | 使用 Yosys 將 RTL 合成為邏輯閘。 | `build/synthesis.json` |
-| `make gds` | 使用 OpenLane 產生實體佈局。 | `build/blinky.gds` |
-| `make clean` | 移除所有產出的檔案。 | N/A |
+| `make synth` | 使用 Yosys 將 RTL 進行電路合成。 | `build/synthesis.json` |
+| `make gds` | 使用 OpenLane 產生實體佈局。 | `build/<DESIGN_NAME>.gds` |
+| `make clean` | 清除所有產出的檔案。 | `N/A` |
 
-> **💡 注意:** 第一次執行 `make gds` 時，系統會自動下載並安裝 Sky130 PDK (約 3GB)。請耐心等待！
+> **💡 注意：** 首次執行 `make gds` 時，系統會自動下載並安裝 Sky130 PDK（約 3GB）。請耐心等候！
 
----
-
-## 📂 專案結構
+## 📂 專案架構
 
 ```text
 .
-├── config.json        # ⚙️ 專案設定檔 (設計名稱, 時脈, 面積)
+├── config.json        # ⚙️ 專案配置 (設計名稱、時序、面積)
 ├── Makefile           # 🎮 指令控制中心
-├── src/               # ✍️ 你的 Verilog 原始碼
+├── src/               # ✍️ 您的 Verilog
 │   └── blinky.v
-├── test/              # 🧪 你的測試平台 (Testbenches)
+├── test/              # 🧪 您的測試平台 (Testbenches)
 │   └── tb_blinky.v
-└── build/             # 📦 所有產出物 (GDS, Logs, Netlists)
+└── build/             # 📦 所有產出的檔案 (GDS, Logs, Netlists)
 ```
 
----
+## 📝 配置設定
 
-## 📝 設定 (Configuration)
-
-修改根目錄下的 `config.json` 來變更你的設計設定：
+修改根目錄下的 `config.json` 來變更您的設計設定：
 
 ```json
 {
@@ -77,6 +73,9 @@ make gds
   "VERILOG_FILES": ["src/my_design.v"],
   "CLOCK_PERIOD": 10.0
 }
+
 ```
 
-Happy Hacking! 🛠️
+---
+
+由 **[c4o-core](https://github.com/anlit75/c4o-core)** 引擎驅動。

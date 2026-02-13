@@ -1,9 +1,9 @@
-# 🚀 ChipForAll (C4O) User Template
+# ChipForAll (C4O)
 
-ChipForAll is a **"Zero-Config"** template for open-source chip design.
-Stop fighting with toolchain installation. Start designing your silicon immediately.
+![CI Status](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml/badge.svg)
+![License](https://img.shields.io/github/license/anlit75/ChipForAll)
 
-Powered by the **c4o-core** engine.
+**A Zero-Config Starter Kit for Open Source Silicon Design.** Focus on Verilog, not the environment variables.
 
 ## ✨ Features
 
@@ -12,9 +12,7 @@ Powered by the **c4o-core** engine.
 *   **🛠 Full Flow Support**: From Verilog RTL to GDSII Layout in a single command.
 *   **✅ CI/CD Ready**: Includes GitHub Actions workflows to verify your design automatically on every push.
 
----
-
-## 🏁 Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 *   Docker (Desktop or Engine)
@@ -34,23 +32,19 @@ make gds
 ```
 *Wait for a few minutes. The system will automatically download the PDK, run synthesis, place & route, and generate the layout.*
 
----
-
 ## 📖 Usage Guide
 
 We provide a unified `Makefile` to handle everything.
 
 | Command | Description | Output Location |
 |---|---|---|
-| `make lint` | Checks your Verilog code for syntax errors using Verilator. | Terminal Output |
+| `make lint` | Checks your Verilog code for syntax errors using Verilator. | `Terminal Output` |
 | `make sim` | Runs simulation using Icarus Verilog. | `build/sim.vvp` |
 | `make synth` | Synthesizes RTL into Gates using Yosys. | `build/synthesis.json` |
-| `make gds` | Generates the physical layout using OpenLane. | `build/blinky.gds` |
-| `make clean` | Removes all generated artifacts. | N/A |
+| `make gds` | Generates the physical layout using OpenLane. | `build/<DESIGN_NAME>.gds` |
+| `make clean` | Removes all generated artifacts. | `N/A` |
 
 > **💡 Note:** The first time you run `make gds`, it will automatically download and install the Sky130 PDK (approx. 3GB). Please be patient!
-
----
 
 ## 📂 Project Structure
 
@@ -65,8 +59,6 @@ We provide a unified `Makefile` to handle everything.
 └── build/             # 📦 All generated artifacts (GDS, Logs, Netlists)
 ```
 
----
-
 ## 📝 Configuration
 
 Modify `config.json` in the root directory to change your design settings:
@@ -79,4 +71,6 @@ Modify `config.json` in the root directory to change your design settings:
 }
 ```
 
-Happy Hacking! 🛠️
+---
+
+Powered by the **[c4o-core](https://github.com/anlit75/c4o-core)** engine.

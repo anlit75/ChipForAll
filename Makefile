@@ -43,7 +43,6 @@ pdk:
 # 1. Ensure PDK is ready.
 # 2. c4o-core validates the config.
 # 3. We run the heavy OpenLane image using the PDKs installed in the previous step.
-# Fix: Removed -save_path. We now capture the default output from runs/ and move it.
 gds: pdk
 	@echo "🟢 Validating config with c4o-core..."
 	$(DOCKER_RUN) $(C4O_IMAGE) gds
