@@ -1,18 +1,20 @@
+`timescale 1ns/1ps
+
 module blinky #(
     parameter WIDTH = 26
 )(
-    input clk,
-    input rst,
-    output led
+    input wire clk,
+    input wire rst,
+    output wire led
 );
 
     reg [WIDTH-1:0] count;
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
-            count <= 0;
+            count <= {WIDTH{1'b0}};
         end else begin
-            count <= count + 1;
+            count <= count + 1'b1;
         end
     end
 
