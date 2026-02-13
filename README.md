@@ -1,7 +1,8 @@
 # ChipForAll (C4O)
 
 ![CI Status](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml/badge.svg)
-![License](https://img.shields.io/github/license/anlit75/ChipForAll)
+![release Version](https://img.shields.io/github/v/release/anlit75/ChipForAll?label=version)
+[![License](https://img.shields.io/github/license/anlit75/ChipForAll)](LICENSE)
 
 **A Zero-Config Starter Kit for Open Source Silicon Design.** Focus on Verilog, not the environment variables.
 
