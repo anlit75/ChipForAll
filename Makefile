@@ -7,8 +7,8 @@ OPENLANE_IMAGE := efabless/openlane:2023.11.03
 PWD := $(shell pwd)
 
 # Common Docker Flags
-# We mount the current directory to /c4o so artifacts persist in build/
-DOCKER_RUN := docker run --rm -v $(PWD):/c4o -w /c4o
+# We mount the current directory to /workspace so artifacts persist in build/
+DOCKER_RUN := docker run --rm -v $(PWD):/workspace -w /workspace
 
 .PHONY: all help lint sim synth gds pdk clean shell
 
