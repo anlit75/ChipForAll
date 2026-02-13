@@ -55,6 +55,8 @@ gds: pdk
 		-u $(shell id -u):$(shell id -g) \
 		$(OPENLANE_IMAGE) \
 		/bin/bash -c "/openlane/flow.tcl -design /workspace -save_path /workspace/build/gds -tag blinky_run"
+	@echo "🟢 Post-processing..."
+	find build/gds -name "*.gds" -exec cp {} build/blinky.gds \;
 
 # --- Utilities ---
 
