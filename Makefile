@@ -42,12 +42,12 @@ pdk:
 # 1. Ensure PDK is ready.
 # 2. c4o-core validates the config.
 # 3. We run the heavy OpenLane image using the PDKs installed in the previous step.
-# Fix: Mount project to /openlane/designs/blinky to align with OpenLane structure.
-# This allows relative paths in config.json to resolve correctly.
+# Fix: Removed -save_path. We now capture the default output from runs/ and move it.
 gds: pdk
 	@echo "🟢 Validating config with c4o-core..."
 	$(DOCKER_RUN) $(C4O_IMAGE) gds
 	@echo "🟢 Running OpenLane..."
+	mkdir -p build
 	docker run --rm \
 		-v $(PWD):/openlane/designs/blinky \
 		-v $(PWD)/pdks:/pdks \
@@ -56,9 +56,12 @@ gds: pdk
 		-w /openlane/designs/blinky \
 		-u $(shell id -u):$(shell id -g) \
 		$(OPENLANE_IMAGE) \
-		/bin/bash -c "/openlane/flow.tcl -design . -save_path build/gds -tag blinky_run"
+		/bin/bash -c "/openlane/flow.tcl -design . -tag blinky_run"
 	@echo "🟢 Post-processing..."
-	find build/gds -name "*.gds" -exec cp {} build/blinky.gds \;
+	# Copy the final GDS to the build folder
+	cp runs/blinky_run/results/final/gds/*.gds build/blinky.gds
+	# Clean up: Move the raw runs folder into build/runs
+	rm -rf build/runs && mv runs build/runs
 
 # --- Utilities ---
 
