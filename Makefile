@@ -8,7 +8,7 @@ PWD := $(shell pwd)
 
 # Common Docker Flags
 # We mount the current directory to /workspace so artifacts persist in build/
-DOCKER_RUN := docker run --rm -v $(PWD):/workspace -w /workspace
+DOCKER_RUN := docker run --rm -v $(PWD):/workspace -w /workspace -u $(shell id -u):$(shell id -g)
 
 .PHONY: all help lint sim synth gds pdk clean shell
 
