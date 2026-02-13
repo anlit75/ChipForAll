@@ -1,96 +1,72 @@
-.PHONY: all clean test lint synth pdk gds
+# ChipForAll Makefile
+# Philosophy: Keep it simple. Delegate logic to c4o-core.
 
-# Configuration
-BUILD_DIR := build
-SRC := src/blinky.v
-TEST_SRC := test/tb_blinky.v
-TOP := blinky
-TEST_TOP := tb_blinky
-
-# Tools
-IVERILOG := iverilog
-VVP := vvp
-VERILATOR := verilator
-YOSYS := yosys
-
-# OpenLane Configuration
+# Image Configuration
+C4O_IMAGE := ghcr.io/anlit75/c4o-core:v1.1.1
 OPENLANE_IMAGE := efabless/openlane:2023.11.03
-PDK_ROOT ?= $(shell pwd)/pdk
+DESIGN_NAME := $(shell grep '"DESIGN_NAME"' config.json | sed 's/.*: *"\([^"]*\)".*/\1/')
+PWD := $(shell pwd)
 
-# Docker Configuration
-DOCKER_IMAGE := ghcr.io/anlit75/c4o-core:latest
-DOCKER_CMD := docker run --rm -v $(shell pwd):/workspace -w /workspace $(DOCKER_IMAGE)
+# Common Docker Flags
+# We mount the current directory to /workspace so artifacts persist in build/
+DOCKER_RUN := docker run --rm -v $(PWD):/workspace -w /workspace -u $(shell id -u):$(shell id -g)
 
-# Helper to check if a command exists in PATH
-# Returns the path if found, empty otherwise
-check_tool = $(shell command -v $(1) 2> /dev/null)
+.PHONY: all help lint sim synth gds pdk clean shell
 
-all: test lint synth
+all: lint sim synth
 
-$(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
+help:
+	@echo "Available targets:"
+	@echo "  make lint   - Run Verilator lint check"
+	@echo "  make sim    - Run Icarus Verilog simulation"
+	@echo "  make synth  - Run Yosys synthesis"
+	@echo "  make pdk    - Install/Enable Sky130 PDK via Volare"
+	@echo "  make gds    - Run OpenLane GDSII flow"
+	@echo "  make shell  - Enter c4o-core interactive shell"
 
-# Test Target
-test: $(BUILD_DIR)
-ifneq ($(call check_tool,$(IVERILOG)),)
-	@echo "Running test locally..."
-	$(IVERILOG) -o $(BUILD_DIR)/$(TEST_TOP).vvp $(SRC) $(TEST_SRC)
-	$(VVP) $(BUILD_DIR)/$(TEST_TOP).vvp
-else
-	@echo "Tool '$(IVERILOG)' not found. Running via Docker..."
-	$(DOCKER_CMD) sh -c "$(IVERILOG) -o $(BUILD_DIR)/$(TEST_TOP).vvp $(SRC) $(TEST_SRC) && $(VVP) $(BUILD_DIR)/$(TEST_TOP).vvp"
-endif
+# --- Logic Delegated to c4o-core ---
 
-# Lint Target
 lint:
-ifneq ($(call check_tool,$(VERILATOR)),)
-	@echo "Running lint locally..."
-	$(VERILATOR) --lint-only $(SRC)
-else
-	@echo "Tool '$(VERILATOR)' not found. Running via Docker..."
-	$(DOCKER_CMD) $(VERILATOR) --lint-only $(SRC)
-endif
+	$(DOCKER_RUN) $(C4O_IMAGE) lint
 
-# Synthesis Target
-synth: $(BUILD_DIR)
-ifneq ($(call check_tool,$(YOSYS)),)
-	@echo "Running synthesis locally..."
-	$(YOSYS) -p "synth -top $(TOP); write_json $(BUILD_DIR)/$(TOP).json" $(SRC)
-else
-	@echo "Tool '$(YOSYS)' not found. Running via Docker..."
-	$(DOCKER_CMD) $(YOSYS) -p "synth -top $(TOP); write_json $(BUILD_DIR)/$(TOP).json" $(SRC)
-endif
+sim:
+	$(DOCKER_RUN) $(C4O_IMAGE) sim
 
-# PDK Setup Target
+synth:
+	$(DOCKER_RUN) $(C4O_IMAGE) synth
+
 pdk:
-	mkdir -p $(PDK_ROOT)
-ifneq ($(call check_tool,volare),)
-	@echo "Running volare locally..."
-	volare enable --pdk sky130 bdc9412b3e468c102d01b7cf6337be06ec6e9c9a --pdk-root $(PDK_ROOT)
-else
-	@echo "Tool 'volare' not found. Running via Docker..."
-	docker run --rm \
-		-v $(PDK_ROOT):/pdk \
-		-e PDK_ROOT=/pdk \
-		-u $(shell id -u):$(shell id -g) \
-		-e HOME=/tmp \
-		$(OPENLANE_IMAGE) sh -c "pip install volare && python3 -m volare enable --pdk sky130 bdc9412b3e468c102d01b7cf6337be06ec6e9c9a"
-endif
+	@echo "📦 Installing PDK (Sky130)..."
+	$(DOCKER_RUN) $(C4O_IMAGE) pdk
 
-# GDS Generation Target
-gds: pdk $(BUILD_DIR)
-	@echo "Running OpenLane flow..."
+# --- Physical Design (Sidecar Pattern) ---
+# 1. Ensure PDK is ready.
+# 2. c4o-core validates the config.
+# 3. We run the heavy OpenLane image using the PDKs installed in the previous step.
+gds: pdk
+	@echo "🟢 Validating config with c4o-core..."
+	$(DOCKER_RUN) $(C4O_IMAGE) gds
+	@echo "🟢 Running OpenLane..."
+	mkdir -p build
 	docker run --rm \
-		-v $(shell pwd):/workspace \
-		-v $(PDK_ROOT):/pdk \
-		-e PDK_ROOT=/pdk \
-		-e PWD=/workspace \
+		-v $(PWD):/openlane/designs/$(DESIGN_NAME) \
+		-v $(PWD)/pdks:/pdks \
+		-e PDK_ROOT=/pdks \
+		-e PWD=/openlane/designs/$(DESIGN_NAME) \
+		-w /openlane/designs/$(DESIGN_NAME) \
 		-u $(shell id -u):$(shell id -g) \
-		-e HOME=/tmp \
 		$(OPENLANE_IMAGE) \
-		flow.tcl -design /workspace/src -tag openlane_run -overwrite
-	@echo "Copying GDS to build directory..."
-	cp src/runs/openlane_run/results/final/gds/$(TOP).gds $(BUILD_DIR)/$(TOP).gds
+		/bin/bash -c "/openlane/flow.tcl -design . -tag $(DESIGN_NAME)_run"
+	@echo "🟢 Post-processing..."
+	# Copy the final GDS to the build folder
+	cp runs/$(DESIGN_NAME)_run/results/final/gds/$(DESIGN_NAME).gds build/$(DESIGN_NAME).gds
+	# Clean up: Move the raw runs folder into build/runs
+	rm -rf build/runs && mv runs build/runs
+
+# --- Utilities ---
+
+shell:
+	$(DOCKER_RUN) -it --entrypoint /bin/bash $(C4O_IMAGE)
 
 clean:
-	rm -rf $(BUILD_DIR) *.vcd *.log src/runs
+	rm -rf build/

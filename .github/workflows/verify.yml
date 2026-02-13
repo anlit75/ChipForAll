@@ -2,7 +2,7 @@ name: Verify Design
 
 on:
   push:
-    branches: [ "main", "dev" ]
+    branches: [ "main" ]
     tags: [ 'v*' ]
     paths-ignore:
       - '**.md'
@@ -17,45 +17,26 @@ on:
   workflow_dispatch:
 
 jobs:
-  verify-design:
+  full-flow:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Run Simulation
-        uses: anlit75/c4o-core@main
-        with:
-          command: test
-          files: test/tb_blinky.v src/blinky.v
+      - name: Pull c4o-core Image
+        run: docker pull ghcr.io/anlit75/c4o-core:v1.1.1
 
-      - name: Run Synthesis
-        uses: anlit75/c4o-core@main
-        with:
-          command: synth
-          files: src/blinky.v
+      - name: 1. Lint Check
+        run: make lint
 
-  verify-gds:
-    needs: verify-design
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: 2. Simulation
+        run: make sim
 
-      - name: Cache PDK
-        uses: actions/cache@v3
-        with:
-          path: pdk
-          key: pdk-sky130A-${{ hashFiles('src/config.json') }}
+      - name: 3. Logic Synthesis
+        run: make synth
 
-      - name: Install and Run Volare
-        run: |
-          # using make pdk via docker to ensure correct version
-          make pdk
-
-      - name: Run GDS Generation
-        run: |
-          make gds
+      - name: 4. Physical Design (GDSII)
+        # This step will automatically trigger 'make pdk' first
+        run: make gds
 
       - name: Verify GDS Output
         run: |

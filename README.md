@@ -1,104 +1,76 @@
-# ⚡ ChipForAll (C4O)
+# ChipForAll (C4O)
 
 ![CI Status](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml/badge.svg)
 ![License](https://img.shields.io/github/license/anlit75/ChipForAll)
-![Docker](https://img.shields.io/badge/docker-ready-blue)
 
-> **A Zero-Configuration Starter Kit for Open Source Silicon Design.**
-> Focus on your Verilog, not your environment variables.
+**A Zero-Config Starter Kit for Open Source Silicon Design.** Focus on Verilog, not the environment variables.
 
----
+## ✨ Features
+
+*   **🐳 Dockerized Environment**: No need to install Yosys, Verilator, or OpenLane manually. If you have Docker, you are ready.
+*   **⚡ Zero Configuration**: Just clone the repo and run. The environment is pre-configured for the Skywater 130nm PDK.
+*   **🛠 Full Flow Support**: From Verilog RTL to GDSII Layout in a single command.
+*   **✅ CI/CD Ready**: Includes GitHub Actions workflows to verify your design automatically on every push.
 
 ## 🚀 Quick Start
 
-**The fastest way to start designing chips:**
+### Prerequisites
+*   Docker (Desktop or Engine)
+*   Make
+*   Git
 
-1.  **Create your repo**: Click the **[Use this template](https://github.com/anlit75/ChipForAll/generate)** button above.
-2.  **Launch environment**: Open your new repo in **GitHub Codespaces** (Green Code button -> Codespaces).
-3.  **Run the demo**:
-    ```bash
-    make test
-    ```
-    *You should see a passing testbench and a generated waveform in `build/`.*
+### 1. Clone the Repo
+```bash
+git clone https://github.com/anlit75/ChipForAll.git
+cd ChipForAll
+```
 
----
+### 2. Run the Full Flow
+To go from Verilog code to a final GDSII layout file:
+```bash
+make gds
+```
+*Wait for a few minutes. The system will automatically download the PDK, run synthesis, place & route, and generate the layout.*
 
-## 🔋 Batteries Included
+## 📖 Usage Guide
 
-This template provides a production-ready EDA (Electronic Design Automation) environment out of the box.
+We provide a unified `Makefile` to handle everything.
 
-* **🐳 Pre-built Docker Environment**: No need to install Yosys, Verilator, or Icarus Verilog manually. We pull `ghcr.io/anlit75/c4o-core` automatically.
-* **🛠️ Unified Makefile**: One interface for all tools. Whether you are on Linux, Mac, or Windows (via WSL/Docker), the commands are the same.
-* **✅ CI/CD Ready**: GitHub Actions are pre-configured to lint, simulate, and synthesize your design on every push.
-* **💻 VS Code Optimized**: Includes extensions for Verilog syntax highlighting and IntelliSense.
+| Command | Description | Output Location |
+|---|---|---|
+| `make lint` | Checks your Verilog code for syntax errors using Verilator. | `Terminal Output` |
+| `make sim` | Runs simulation using Icarus Verilog. | `build/sim.vvp` |
+| `make synth` | Synthesizes RTL into Gates using Yosys. | `build/synthesis.json` |
+| `make gds` | Generates the physical layout using OpenLane. | `build/<DESIGN_NAME>.gds` |
+| `make clean` | Removes all generated artifacts. | `N/A` |
 
----
+> **💡 Note:** The first time you run `make gds`, it will automatically download and install the Sky130 PDK (approx. 3GB). Please be patient!
 
 ## 📂 Project Structure
 
 ```text
 .
-├── src/                # Your RTL Design (Verilog)
-│   └── blinky.v        # Example: A simple LED blinker
-├── test/               # Your Testbenches
-│   └── tb_blinky.v     # Example: Verifies the blinky module
-├── build/              # Generated Artifacts (Waveforms, Netlists)
-├── Makefile            # The magic script that handles Docker/Local execution
-└── .github/            # CI Workflows
+├── config.json        # ⚙️ Project configuration (Design Name, Clock, Area)
+├── Makefile           # 🎮 The command center
+├── src/               # ✍️ Your Verilog Source Code
+│   └── blinky.v
+├── test/              # 🧪 Your Testbenches
+│   └── tb_blinky.v
+└── build/             # 📦 All generated artifacts (GDS, Logs, Netlists)
+```
+
+## 📝 Configuration
+
+Modify `config.json` in the root directory to change your design settings:
+
+```json
+{
+  "DESIGN_NAME": "my_design",
+  "VERILOG_FILES": ["src/my_design.v"],
+  "CLOCK_PERIOD": 10.0
+}
 ```
 
 ---
 
-## 🛠️ Usage
-
-This project uses a smart Makefile. If you have tools installed locally, it uses them. If not, it automatically runs them inside the Docker container.
-
-### 1. Check Syntax (Lint)
-Runs `verilator --lint-only` to catch syntax errors early.
-```bash
-make lint
-```
-
-### 2. Run Simulation (Test)
-Compiles with `iverilog` and runs the simulation. Output waveform (`.vcd`) is saved to `build/`.
-```bash
-make test
-```
-
-### 3. Synthesize (Build)
-Runs `yosys` to convert your Verilog into a gate-level netlist (JSON/BLIF).
-```bash
-make synth
-```
-
-### 4. Clean Up
-Removes the `build/` directory.
-```bash
-make clean
-```
-
-## 🏗️ Physical Design (ASIC Flow)
-
-Turn your Verilog into a manufacturable chip layout using **OpenLane** and the **SkyWater 130nm PDK**.
-
-### 1. Install PDK (First Time Only)
-Downloads the Sky130 PDK (~3GB). This is managed by `volare`.
-```bash
-make pdk
-```
-
-### 2. Generate GDSII
-Runs the full OpenLane flow (Synthesis -> Floorplan -> Placement -> Routing -> Signoff) inside Docker.
-```bash
-make gds
-```
-* Output: `build/blinky.gds`
-* Viewer: Use [KLayout](https://www.klayout.de/) to open the GDS file and see your chip!
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Please see `CONTRIBUTING.md` for details on how to submit pull requests.
-
-Maintained by [anlit75](https://github.com/anlit75).
+Powered by the **[c4o-core](https://github.com/anlit75/c4o-core)** engine.
