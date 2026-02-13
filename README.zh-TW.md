@@ -1,95 +1,82 @@
-# ⚡ ChipForAll (C4O)
+# 🚀 ChipForAll (C4O) 用戶模板
 
-![CI Status](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml/badge.svg)
-![License](https://img.shields.io/github/license/anlit75/ChipForAll)
-![c4o-core:v1.1.1](https://img.shields.io/badge/c4o--core-v1.1.1-blue)
+ChipForAll 是一個 **「零配置 (Zero-Config)」** 的開源晶片設計模板。
+別再為了安裝工具鏈浪費時間，現在就開始設計你的晶片。
 
-## 1. 簡介
-**ChipForAll** 是一個 **即時開源晶片設計模板 (Instant Open Source Chip Design Template)**。它提供了一個可直接生產的數位邏輯設計環境 (Verilog)，免去了安裝複雜 EDA 工具的煩惱。
+核心由 **c4o-core** 引擎驅動。
 
-本專案的核心是 **[c4o-core](https://github.com/anlit75/c4o-core)** 引擎——這是一個整合了 Yosys, Verilator, Icarus Verilog 和 Volare 的 Docker 容器。這意味著你可以專注於你的 RTL 設計，而不必擔心工具鏈的設定問題。
+## ✨ 特色功能
 
----
-
-## 2. 環境需求
-
-唯一的必要條件是 **Docker** (Desktop 或 Engine)。不需要在本機安裝任何 EDA 工具。
-
-*   **推薦配置**: [VS Code](https://code.visualstudio.com/) + [DevContainers 擴充套件](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)，可實現一鍵式環境搭建。
+*   **🐳 Docker化環境**: 不需要手動安裝 Yosys, Verilator 或 OpenLane。只要有 Docker，你就準備好了。
+*   **⚡ 零配置**: 只要 Clone 專案並執行。環境已經預先針對 Skywater 130nm PDK 設定好了。
+*   **🛠 全流程支援**: 一個指令即可完成從 Verilog RTL 到 GDSII 佈局的全部流程。
+*   **✅ CI/CD 就緒**: 內建 GitHub Actions 流程，每次 Push 自動驗證你的設計。
 
 ---
 
-## 3. 快速開始 (Happy Path)
+## 🏁 快速開始 (Quick Start)
 
-1.  **複製專案 (Clone)**:
-    ```bash
-    git clone https://github.com/anlit75/ChipForAll.git
-    cd ChipForAll
-    ```
+### 環境需求 (Prerequisites)
+*   Docker (Desktop 或 Engine)
+*   Make
+*   Git
 
-2.  **設定你的設計**:
-    編輯專案根目錄下的 `config.json` 來指向你的 Verilog 檔案。
-    *(預設已配置為使用 `src/blinky.v`)*
+### 1. 複製專案 (Clone the Repo)
+```bash
+git clone https://github.com/anlit75/ChipForAll.git
+cd ChipForAll
+```
 
-3.  **安裝 PDK (Sky130)**:
-    此步驟會下載並在專案資料夾內安裝 SkyWater 130nm 製程設計套件 (由 `volare` 管理)。
-    ```bash
-    make pdk
-    ```
-
-4.  **建置與驗證**:
-    一次執行語法檢查 (Lint)、模擬 (Sim) 與合成 (Synth)。
-    ```bash
-    make all
-    ```
-
-5.  **實體設計 (GDSII)**:
-    使用 OpenLane 產生最終的晶片佈局。
-    ```bash
-    make gds
-    ```
-    *產出檔案: `build/blinky.gds`*
+### 2. 執行全流程 (Run the Full Flow)
+從 Verilog 程式碼產生最終的 GDSII 佈局檔：
+```bash
+make gds
+```
+*請稍候幾分鐘。系統將會自動下載 PDK，執行合成、佈局繞線，並產生佈局檔。*
 
 ---
 
-## 4. 專案結構
+## 📖 使用指南 (Usage Guide)
+
+我們提供了一個統一的 `Makefile` 來處理所有事情。
+
+| 指令 | 說明 | 輸出位置 |
+|---|---|---|
+| `make lint` | 使用 Verilator 檢查 Verilog 語法錯誤。 | 終端機輸出 |
+| `make sim` | 使用 Icarus Verilog 執行模擬。 | `build/sim.vvp` |
+| `make synth` | 使用 Yosys 將 RTL 合成為邏輯閘。 | `build/synthesis.json` |
+| `make gds` | 使用 OpenLane 產生實體佈局。 | `build/blinky.gds` |
+| `make clean` | 移除所有產出的檔案。 | N/A |
+
+> **💡 注意:** 第一次執行 `make gds` 時，系統會自動下載並安裝 Sky130 PDK (約 3GB)。請耐心等待！
+
+---
+
+## 📂 專案結構
 
 ```text
 .
-├── config.json       # 專案設定檔 (根目錄) - 定義設計名稱、原始碼路徑、PDK 等
-├── Makefile          # 主要入口點 (封裝了 c4o-core 和 OpenLane 的 Docker 指令)
-├── src/              # RTL 原始碼
-│   └── blinky.v      # 範例：一個簡單的 LED 閃爍電路
-├── test/             # Testbenches (測試平台)
-│   └── tb_blinky.v   # 範例：驗證 blinky 模組
-└── build/            #產出物 (模擬波形、GDS、網表)
-    ├── sim.vvp       # 編譯後的模擬檔
-    ├── synthesis.json # 合成後的網表
-    └── blinky.gds    # 最終 GDSII 佈局檔
+├── config.json        # ⚙️ 專案設定檔 (設計名稱, 時脈, 面積)
+├── Makefile           # 🎮 指令控制中心
+├── src/               # ✍️ 你的 Verilog 原始碼
+│   └── blinky.v
+├── test/              # 🧪 你的測試平台 (Testbenches)
+│   └── tb_blinky.v
+└── build/             # 📦 所有產出物 (GDS, Logs, Netlists)
 ```
 
 ---
 
-## 5. 指令參考 (Commands Reference)
+## 📝 設定 (Configuration)
 
-| 目標 (Target) | 說明 | 使用工具 |
-| :--- | :--- | :--- |
-| `make lint` | 檢查 Verilog 語法錯誤 | **Verilator** |
-| `make sim` | 執行行為級模擬 | **Icarus Verilog** |
-| `make synth` | 將 RTL 合成為邏輯閘層級網表 | **Yosys** |
-| `make pdk` | 下載並啟用 Sky130 PDK | **Volare** |
-| `make gds` | 執行完整的 RTL-to-GDSII 流程 | **OpenLane** |
-| `make clean` | 移除所有建置產出物 (`build/`) | `rm` |
-| `make shell` | 進入互動式 c4o-core Shell | **Bash** |
+修改根目錄下的 `config.json` 來變更你的設計設定：
 
----
+```json
+{
+  "DESIGN_NAME": "my_design",
+  "VERILOG_FILES": ["src/my_design.v"],
+  "CLOCK_PERIOD": 10.0
+}
+```
 
-## 6. VS Code DevContainer (推薦使用)
-
-本專案包含 `.devcontainer` 設定。如果你在 VS Code 中開啟此資料夾，系統會提示你「Reopen in Container」。這樣做將會提供一個預先配置好的環境，包含：
-
-*   **波形檢視器**: 使用 **WaveTrace** 擴充套件直接在 VS Code 中查看 `.vcd` 檔案。
-*   **電路圖檢視器**: 使用 **Yosys Viewer** 視覺化你的網表。
-*   **語法高亮**: 內建完整的 Verilog 支援。
-
-Maintained by [anlit75](https://github.com/anlit75).
+Happy Hacking! 🛠️
