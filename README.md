@@ -1,4 +1,4 @@
-# 🚀 ChipForAll (C4O) User Template
+# 🚀 ChipForAll (C4O)
 
 ChipForAll is a **"Zero-Config"** template for open-source chip design.
 Stop fighting with toolchain installation. Start designing your silicon immediately.
