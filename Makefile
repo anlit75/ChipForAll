@@ -4,6 +4,7 @@
 # Image Configuration
 C4O_IMAGE := ghcr.io/anlit75/c4o-core:v1.1.1
 OPENLANE_IMAGE := efabless/openlane:2023.11.03
+DESIGN_NAME := $(shell grep '"DESIGN_NAME"' config.json | sed 's/.*: *"\([^"]*\)".*/\1/')
 PWD := $(shell pwd)
 
 # Common Docker Flags
@@ -49,17 +50,17 @@ gds: pdk
 	@echo "🟢 Running OpenLane..."
 	mkdir -p build
 	docker run --rm \
-		-v $(PWD):/openlane/designs/blinky \
+		-v $(PWD):/openlane/designs/$(DESIGN_NAME) \
 		-v $(PWD)/pdks:/pdks \
 		-e PDK_ROOT=/pdks \
-		-e PWD=/openlane/designs/blinky \
-		-w /openlane/designs/blinky \
+		-e PWD=/openlane/designs/$(DESIGN_NAME) \
+		-w /openlane/designs/$(DESIGN_NAME) \
 		-u $(shell id -u):$(shell id -g) \
 		$(OPENLANE_IMAGE) \
-		/bin/bash -c "/openlane/flow.tcl -design . -tag blinky_run"
+		/bin/bash -c "/openlane/flow.tcl -design . -tag $(DESIGN_NAME)_run"
 	@echo "🟢 Post-processing..."
 	# Copy the final GDS to the build folder
-	cp runs/blinky_run/results/final/gds/*.gds build/blinky.gds
+	cp runs/$(DESIGN_NAME)_run/results/final/gds/$(DESIGN_NAME).gds build/$(DESIGN_NAME).gds
 	# Clean up: Move the raw runs folder into build/runs
 	rm -rf build/runs && mv runs build/runs
 
