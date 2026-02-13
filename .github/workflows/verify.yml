@@ -1,8 +1,8 @@
-name: Verify Design
+name: RTL-to-GDSII Verification
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "dev" ]
     tags: [ 'v*' ]
     paths-ignore:
       - '**.md'
@@ -21,6 +21,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      # --- PERFORMANCE OPTIMIZATION ---
+      # Cache the ~3GB Sky130 PDK to save CI time and bandwidth.
+      # Volare will automatically skip downloading if the target hash exists in this cached directory.
+      - name: Cache Sky130 PDK
+        id: cache-pdk
+        uses: actions/cache@v4
+        with:
+          path: pdks
+          key: sky130-pdk-${{ runner.os }}-v1
+          restore-keys: |
+            sky130-pdk-${{ runner.os }}-
 
       - name: Pull c4o-core Image
         run: docker pull ghcr.io/anlit75/c4o-core:v1.1.1
@@ -46,11 +58,9 @@ jobs:
           fi
           ls -lh build/blinky.gds
 
-      - name: Upload GDS Artifacts
+      - name: Upload Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: blinky-gds
-          path: |
-            build/blinky.gds
-            src/runs
+          name: chipforall-build-artifacts
+          path: build/
