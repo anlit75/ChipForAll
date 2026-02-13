@@ -2,7 +2,7 @@
 # Philosophy: Keep it simple. Delegate logic to c4o-core.
 
 # Image Configuration
-C4O_IMAGE := ghcr.io/anlit75/c4o-core:latest
+C4O_IMAGE := ghcr.io/anlit75/c4o-core:v1.1.1
 OPENLANE_IMAGE := efabless/openlane:2023.11.03
 PWD := $(shell pwd)
 

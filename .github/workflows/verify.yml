@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Pull c4o-core Image
-        run: docker pull ghcr.io/anlit75/c4o-core:latest
+        run: docker pull ghcr.io/anlit75/c4o-core:v1.1.1
 
       - name: 1. Lint Check
         run: make lint
