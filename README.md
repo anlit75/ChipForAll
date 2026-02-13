@@ -1,8 +1,8 @@
-# ⚡ ChipForAll (C4O) - v1.1.1
+# ⚡ ChipForAll (C4O)
 
 ![CI Status](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml/badge.svg)
 ![License](https://img.shields.io/github/license/anlit75/ChipForAll)
-![Docker](https://img.shields.io/badge/docker-ready-blue)
+![c4o-core:v1.1.1](https://img.shields.io/badge/c4o--core-v1.1.1-blue)
 
 ## 1. Introduction
 **ChipForAll** is an **Instant Open Source Chip Design Template**. It provides a production-ready environment for digital logic design (Verilog) without the hassle of installing complex EDA tools.
@@ -80,6 +80,7 @@ The only requirement is **Docker** (Desktop or Engine). No local EDA tools are n
 | `make pdk` | Download & Enable Sky130 PDK | **Volare** |
 | `make gds` | Run full RTL-to-GDSII flow | **OpenLane** |
 | `make clean` | Remove all build artifacts (`build/`) | `rm` |
+| `make shell` | Enter interactive c4o-core shell | **Bash** |
 
 ---
 
@@ -90,11 +91,5 @@ This repository includes a `.devcontainer` configuration. If you open this folde
 *   **Waveform Viewer**: Inspect `.vcd` files directly in VS Code using the **WaveTrace** extension.
 *   **Schematic Viewer**: Visualize your netlist using the **Yosys Viewer**.
 *   **Syntax Highlighting**: Full Verilog support out of the box.
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Please see `CONTRIBUTING.md` for details on how to submit pull requests.
 
 Maintained by [anlit75](https://github.com/anlit75).
