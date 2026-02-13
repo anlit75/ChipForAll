@@ -4,18 +4,9 @@
     "remoteUser": "root",
     "customizations": {
         "vscode": {
-            "settings": {
-                "terminal.integrated.defaultProfile.linux": "bash"
-            },
             "extensions": [
-                "mshr-h.veriloghdl",
-                "wavetrace.wavetrace",
-                "clarkyu.vscode-yosys-viewer",
-                "editorconfig.editorconfig",
-                "usernamehw.errorlens" 
+                "mshr-h.veriloghdl"
             ]
         }
-    },
-    "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
-    "workspaceFolder": "/workspace",
+    }
 }

@@ -1,99 +1,95 @@
-# ⚡ ChipForAll (C4O)
+# ⚡ ChipForAll (C4O) - v1.1.1
 
 ![CI Status](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml/badge.svg)
 ![License](https://img.shields.io/github/license/anlit75/ChipForAll)
 ![Docker](https://img.shields.io/badge/docker-ready-blue)
 
-> **A Zero-Configuration Starter Kit for Open Source Silicon Design.**
-> Focus on your Verilog, not your environment variables.
+## 1. Introduction
+**ChipForAll** is an **Instant Open Source Chip Design Template**. It provides a production-ready environment for digital logic design (Verilog) without the hassle of installing complex EDA tools.
+
+Under the hood, it uses the **[c4o-core](https://github.com/anlit75/c4o-core)** engine—a unified Docker container that packages Yosys, Verilator, Icarus Verilog, and Volare together. This means you can focus on your RTL, not your toolchain.
 
 ---
 
-## 🚀 Quick Start
+## 2. Prerequisites
 
-**The fastest way to start designing chips:**
+The only requirement is **Docker** (Desktop or Engine). No local EDA tools are needed.
 
-1.  **Create your repo**: Click the **[Use this template](https://github.com/anlit75/ChipForAll/generate)** button above.
-2.  **Launch environment**: Open your new repo in **GitHub Codespaces** (Green Code button -> Codespaces).
-3.  **Run the demo**:
+*   **Recommended**: [VS Code](https://code.visualstudio.com/) + [DevContainers Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) for a one-click environment setup.
+
+---
+
+## 3. Quick Start (The "Happy Path")
+
+1.  **Clone the repository**:
     ```bash
-    make test
+    git clone https://github.com/anlit75/ChipForAll.git
+    cd ChipForAll
     ```
-    *You should see a passing testbench and a generated waveform in `build/`.*
+
+2.  **Configure your design**:
+    Edit `config.json` in the project root to point to your Verilog files.
+    *(Default is pre-configured for `src/blinky.v`)*
+
+3.  **Install PDK (Sky130)**:
+    This downloads and installs the SkyWater 130nm Process Design Kit inside the project folder (managed by `volare`).
+    ```bash
+    make pdk
+    ```
+
+4.  **Build & Verify**:
+    Runs Linting, Simulation, and Synthesis in one go.
+    ```bash
+    make all
+    ```
+
+5.  **Physical Design (GDSII)**:
+    Generates the final layout using OpenLane.
+    ```bash
+    make gds
+    ```
+    *Output artifact: `build/blinky.gds`*
 
 ---
 
-## 🔋 Batteries Included
-
-This template provides a production-ready EDA (Electronic Design Automation) environment out of the box.
-
-* **🐳 Pre-built Docker Environment**: No need to install Yosys, Verilator, or Icarus Verilog manually. We pull `ghcr.io/anlit75/c4o-core` automatically.
-* **🛠️ Unified Makefile**: One interface for all tools. Whether you are on Linux, Mac, or Windows (via WSL/Docker), the commands are the same.
-* **✅ CI/CD Ready**: GitHub Actions are pre-configured to lint, simulate, and synthesize your design on every push.
-* **💻 VS Code Optimized**: Includes extensions for Verilog syntax highlighting and IntelliSense.
-
----
-
-## 📂 Project Structure
+## 4. Project Structure
 
 ```text
 .
-├── src/                # Your RTL Design (Verilog)
-│   └── blinky.v        # Example: A simple LED blinker
-├── test/               # Your Testbenches
-│   └── tb_blinky.v     # Example: Verifies the blinky module
-├── build/              # Generated Artifacts (Waveforms, Netlists)
-├── Makefile            # The magic script that handles Docker/Local execution
-└── .github/            # CI Workflows
+├── config.json       # Project Configuration (Root) - Defines design name, source files, PDK, etc.
+├── Makefile          # Main entry point (Wraps Docker commands for c4o-core and OpenLane)
+├── src/              # RTL Source Code
+│   └── blinky.v      # Example: A simple LED blinker
+├── test/             # Testbenches
+│   └── tb_blinky.v   # Example: Verifies the blinky module
+└── build/            # Artifacts (Simulation waves, GDS, netlists)
+    ├── sim.vvp       # Compiled simulation
+    ├── synthesis.json # Synthesized netlist
+    └── blinky.gds    # Final GDSII layout
 ```
 
 ---
 
-## 🛠️ Usage
+## 5. Commands Reference
 
-This project uses a smart Makefile. If you have tools installed locally, it uses them. If not, it automatically runs them inside the Docker container.
+| Target | Description | Tool Used |
+| :--- | :--- | :--- |
+| `make lint` | Check Verilog syntax for errors | **Verilator** |
+| `make sim` | Run behavioral simulation | **Icarus Verilog** |
+| `make synth` | Synthesize RTL to gate-level netlist | **Yosys** |
+| `make pdk` | Download & Enable Sky130 PDK | **Volare** |
+| `make gds` | Run full RTL-to-GDSII flow | **OpenLane** |
+| `make clean` | Remove all build artifacts (`build/`) | `rm` |
 
-### 1. Check Syntax (Lint)
-Runs `verilator --lint-only` to catch syntax errors early.
-```bash
-make lint
-```
+---
 
-### 2. Run Simulation (Test)
-Compiles with `iverilog` and runs the simulation. Output waveform (`.vcd`) is saved to `build/`.
-```bash
-make test
-```
+## 6. VS Code DevContainer (Recommended)
 
-### 3. Synthesize (Build)
-Runs `yosys` to convert your Verilog into a gate-level netlist (JSON/BLIF).
-```bash
-make synth
-```
+This repository includes a `.devcontainer` configuration. If you open this folder in VS Code, you will be prompted to "Reopen in Container". Doing so gives you a pre-configured environment with:
 
-### 4. Clean Up
-Removes the `build/` directory.
-```bash
-make clean
-```
-
-## 🏗️ Physical Design (ASIC Flow)
-
-Turn your Verilog into a manufacturable chip layout using **OpenLane** and the **SkyWater 130nm PDK**.
-
-### 1. Install PDK (First Time Only)
-Downloads the Sky130 PDK (~3GB). This is managed by `volare`.
-```bash
-make pdk
-```
-
-### 2. Generate GDSII
-Runs the full OpenLane flow (Synthesis -> Floorplan -> Placement -> Routing -> Signoff) inside Docker.
-```bash
-make gds
-```
-* Output: `build/blinky.gds`
-* Viewer: Use [KLayout](https://www.klayout.de/) to open the GDS file and see your chip!
+*   **Waveform Viewer**: Inspect `.vcd` files directly in VS Code using the **WaveTrace** extension.
+*   **Schematic Viewer**: Visualize your netlist using the **Yosys Viewer**.
+*   **Syntax Highlighting**: Full Verilog support out of the box.
 
 ---
 
