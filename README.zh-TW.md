@@ -45,7 +45,7 @@ make gds
 | `make lint` | 使用 Verilator 檢查 Verilog 語法錯誤。 | 終端機輸出 |
 | `make sim` | 使用 Icarus Verilog 執行模擬。 | `build/sim.vvp` |
 | `make synth` | 使用 Yosys 將 RTL 合成為邏輯閘。 | `build/synthesis.json` |
-| `make gds` | 使用 OpenLane 產生實體佈局。 | `build/blinky.gds` |
+| `make gds` | 使用 OpenLane 產生實體佈局。 | `build/<DESIGN_NAME>.gds` |
 | `make clean` | 移除所有產出的檔案。 | N/A |
 
 > **💡 注意:** 第一次執行 `make gds` 時，系統會自動下載並安裝 Sky130 PDK (約 3GB)。請耐心等待！
