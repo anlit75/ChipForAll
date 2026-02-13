@@ -42,19 +42,21 @@ pdk:
 # 1. Ensure PDK is ready.
 # 2. c4o-core validates the config.
 # 3. We run the heavy OpenLane image using the PDKs installed in the previous step.
-# Fix: Mount project to /workspace to avoid overwriting /openlane (where flow.tcl lives)
+# Fix: Mount project to /openlane/designs/blinky to align with OpenLane structure.
+# This allows relative paths in config.json to resolve correctly.
 gds: pdk
 	@echo "🟢 Validating config with c4o-core..."
 	$(DOCKER_RUN) $(C4O_IMAGE) gds
 	@echo "🟢 Running OpenLane..."
 	docker run --rm \
-		-v $(PWD):/workspace \
+		-v $(PWD):/openlane/designs/blinky \
 		-v $(PWD)/pdks:/pdks \
 		-e PDK_ROOT=/pdks \
-		-e PWD=/workspace \
+		-e PWD=/openlane/designs/blinky \
+		-w /openlane/designs/blinky \
 		-u $(shell id -u):$(shell id -g) \
 		$(OPENLANE_IMAGE) \
-		/bin/bash -c "/openlane/flow.tcl -design /workspace -save_path /workspace/build/gds -tag blinky_run"
+		/bin/bash -c "/openlane/flow.tcl -design . -save_path build/gds -tag blinky_run"
 	@echo "🟢 Post-processing..."
 	find build/gds -name "*.gds" -exec cp {} build/blinky.gds \;
 
