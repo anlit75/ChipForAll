@@ -11,6 +11,19 @@ PWD := $(shell pwd)
 # We mount the current directory to /workspace so artifacts persist in build/
 DOCKER_RUN := docker run --rm -v $(PWD):/workspace -w /workspace -u $(shell id -u):$(shell id -g)
 
+# Check if the entrypoint script exists locally (means we are inside the container)
+ENTRYPOINT_SCRIPT := /opt/c4o-core/scripts/entrypoint.py
+
+ifneq ($(wildcard $(ENTRYPOINT_SCRIPT)),)
+	# Case A: We are inside the DevContainer
+	IS_IN_CONTAINER := yes
+	C4O_CMD := python3 $(ENTRYPOINT_SCRIPT)
+else
+	# Case B: We are on the Host Machine
+	IS_IN_CONTAINER := no
+	C4O_CMD := $(DOCKER_RUN) $(C4O_IMAGE)
+endif
+
 .PHONY: all help lint sim synth gds pdk clean shell
 
 all: lint sim synth
@@ -27,25 +40,35 @@ help:
 # --- Logic Delegated to c4o-core ---
 
 lint:
-	$(DOCKER_RUN) $(C4O_IMAGE) lint
+	$(C4O_CMD) lint
 
 sim:
-	$(DOCKER_RUN) $(C4O_IMAGE) sim
+	$(C4O_CMD) sim
 
 synth:
-	$(DOCKER_RUN) $(C4O_IMAGE) synth
+	$(C4O_CMD) synth
 
 pdk:
 	@echo "📦 Installing PDK (Sky130)..."
-	$(DOCKER_RUN) $(C4O_IMAGE) pdk
+	$(C4O_CMD) pdk
 
 # --- Physical Design (Sidecar Pattern) ---
 # 1. Ensure PDK is ready.
-# 2. c4o-core validates the config.
-# 3. We run the heavy OpenLane image using the PDKs installed in the previous step.
-gds: pdk
+# 2. Guard Check: Stop if inside DevContainer.
+# 3. c4o-core validates the config.
+# 4. We run the heavy OpenLane image using the PDKs installed in the previous step.
+gds:
+	@# 🛑 Guard Clause: Prevent running Docker-in-Docker
+	@if [ "$(IS_IN_CONTAINER)" = "yes" ]; then \
+		echo "❌ [ERROR] 'make gds' requires Docker access to run OpenLane."; \
+		echo "👉 Please run this command from your HOST terminal, not inside VS Code DevContainer."; \
+		exit 1; \
+	fi
+
+	$(MAKE) pdk
+
 	@echo "🟢 Validating config with c4o-core..."
-	$(DOCKER_RUN) $(C4O_IMAGE) gds
+	$(C4O_CMD) gds
 	@echo "🟢 Running OpenLane..."
 	mkdir -p build
 	docker run --rm \

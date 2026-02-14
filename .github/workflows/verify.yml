@@ -1,4 +1,4 @@
-name: RTL-to-GDSII Verification
+name: RTL to GDSII
 
 on:
   push:
@@ -64,3 +64,4 @@ jobs:
         with:
           name: chipforall-build-artifacts
           path: build/
+          retention-days: 5
