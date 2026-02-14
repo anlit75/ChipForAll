@@ -1,6 +1,6 @@
 {
   "DESIGN_NAME": "blinky",
-  "VERILOG_FILES": ["src/blinky.v"],
+  "VERILOG_FILES": ["src/blinky.v", "test/tb_blinky.v"],
   "PDK": "sky130A",
   "STD_CELL_LIBRARY": "sky130_fd_sc_hd",
   "DIE_AREA": "0 0 100 100",
