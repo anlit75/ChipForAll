@@ -64,3 +64,4 @@ jobs:
         with:
           name: chipforall-build-artifacts
           path: build/
+          retention-days: 5
