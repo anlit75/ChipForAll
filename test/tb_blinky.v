@@ -1,7 +1,5 @@
 `timescale 1ns/1ps
 
-`ifndef VERILATOR
-
 module tb_blinky;
 
     reg clk;
@@ -36,5 +34,3 @@ module tb_blinky;
     always #5 clk = ~clk;
 
 endmodule
-
-`endif
