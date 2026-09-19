@@ -37,7 +37,7 @@ jobs:
             sky130-pdk-${{ runner.os }}-
 
       - name: Pull c4o-core Image
-        run: docker pull ghcr.io/anlit75/c4o-core:1.2.0
+        run: docker pull ghcr.io/anlit75/c4o-core:1.3.0
 
       - name: 1. Lint Check
         run: make lint
