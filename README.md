@@ -44,14 +44,24 @@ We provide a unified `Makefile` to handle everything.
 | `make sim` | Runs simulation using Icarus Verilog. | `build/sim.vvp` |
 | `make synth` | Synthesizes RTL into Gates using Yosys. | `build/synthesis.json` |
 | `make gds` | Generates the physical layout using LibreLane. | `build/<DESIGN_NAME>.gds` |
+| `make shell` | Opens a bash shell inside the c4o-core container. | `N/A` |
 | `make clean` | Removes all generated artifacts. | `N/A` |
 
 > **💡 Note:** The first time you run `make gds`, it will automatically download and install the Sky130 PDK (approx. 3GB). Please be patient!
+
+### Working inside the container
+
+The repo ships a [Dev Container](https://containers.dev/). In VS Code, *Reopen in Container* and you get the same image CI uses, with the Verilog extensions already installed — no Docker commands to type. The `Makefile` notices it is already inside the container and calls the tools directly instead of nesting another one.
+
+`make gds` is the exception: it launches the LibreLane container, which needs a Docker socket the Dev Container does not have. Run that one from your host terminal; the Makefile will say so if you forget.
+
+Prefer to stay in your own editor? `make shell` drops you into the same image from any terminal.
 
 ## 📂 Project Structure
 
 ```text
 .
+├── .devcontainer/     # 🐳 VS Code Dev Container definition
 ├── config.yaml        # ⚙️ Project configuration (Design Name, Clock, Area)
 ├── Makefile           # 🎮 The command center
 ├── src/               # ✍️ Your Verilog Source Code

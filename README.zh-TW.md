@@ -48,14 +48,24 @@ make gds
 | `make sim` | 使用 Icarus Verilog 執行模擬。 | `build/sim.vvp` |
 | `make synth` | 使用 Yosys 將 RTL 進行電路合成。 | `build/synthesis.json` |
 | `make gds` | 使用 LibreLane 產生實體佈局。 | `build/<DESIGN_NAME>.gds` |
+| `make shell` | 進入 c4o-core 容器的互動式 shell。 | `N/A` |
 | `make clean` | 清除所有產出的檔案。 | `N/A` |
 
 > **💡 注意：** 首次執行 `make gds` 時，系統會自動下載並安裝 Sky130 PDK（約 3GB）。請耐心等候！
+
+### 在容器內開發
+
+本專案附有 [Dev Container](https://containers.dev/)。在 VS Code 選擇「在容器中重新開啟」，即可取得與 CI 相同的映像檔，Verilog 相關擴充套件也已裝好——不必手動輸入任何 Docker 指令。`Makefile` 會偵測到自己已在容器內，直接呼叫工具，而不會再疊一層容器。
+
+`make gds` 是唯一的例外：它要啟動 LibreLane 容器，而 Dev Container 內沒有 Docker socket。這一項請在**主機終端機**執行；若忘記，Makefile 會提醒你。
+
+習慣用自己的編輯器？`make shell` 可以從任何終端機進入同一個映像檔。
 
 ## 📂 專案架構
 
 ```text
 .
+├── .devcontainer/     # 🐳 VS Code Dev Container 定義
 ├── config.yaml        # ⚙️ 專案配置 (設計名稱、時序、面積)
 ├── Makefile           # 🎮 指令控制中心
 ├── src/               # ✍️ 您的 Verilog
