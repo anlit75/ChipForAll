@@ -3,12 +3,13 @@
 ![CI Status](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml/badge.svg)
 ![release Version](https://img.shields.io/github/v/release/anlit75/ChipForAll?label=version)
 [![License](https://img.shields.io/github/license/anlit75/ChipForAll)](LICENSE)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/anlit75/ChipForAll)
 
 **A Zero-Config Starter Kit for Open Source Silicon Design.** Focus on Verilog, not the environment variables.
 
 ## ✨ Features
 
-*   **🐳 Dockerized Environment**: No need to install Yosys, Verilator, or OpenLane manually. If you have Docker, you are ready.
+*   **🐳 Dockerized Environment**: No need to install Yosys, Verilator, or LibreLane manually. If you have Docker, you are ready.
 *   **⚡ Zero Configuration**: Just clone the repo and run. The environment is pre-configured for the Skywater 130nm PDK.
 *   **🛠 Full Flow Support**: From Verilog RTL to GDSII Layout in a single command.
 *   **✅ CI/CD Ready**: Includes GitHub Actions workflows to verify your design automatically on every push.
@@ -42,7 +43,7 @@ We provide a unified `Makefile` to handle everything.
 | `make lint` | Checks your Verilog code for syntax errors using Verilator. | `Terminal Output` |
 | `make sim` | Runs simulation using Icarus Verilog. | `build/sim.vvp` |
 | `make synth` | Synthesizes RTL into Gates using Yosys. | `build/synthesis.json` |
-| `make gds` | Generates the physical layout using OpenLane. | `build/<DESIGN_NAME>.gds` |
+| `make gds` | Generates the physical layout using LibreLane. | `build/<DESIGN_NAME>.gds` |
 | `make clean` | Removes all generated artifacts. | `N/A` |
 
 > **💡 Note:** The first time you run `make gds`, it will automatically download and install the Sky130 PDK (approx. 3GB). Please be patient!
@@ -51,7 +52,7 @@ We provide a unified `Makefile` to handle everything.
 
 ```text
 .
-├── config.json        # ⚙️ Project configuration (Design Name, Clock, Area)
+├── config.yaml        # ⚙️ Project configuration (Design Name, Clock, Area)
 ├── Makefile           # 🎮 The command center
 ├── src/               # ✍️ Your Verilog Source Code
 │   └── blinky.v
@@ -62,15 +63,23 @@ We provide a unified `Makefile` to handle everything.
 
 ## 📝 Configuration
 
-Modify `config.json` in the root directory to change your design settings:
+Modify `config.yaml` in the root directory to change your design settings. It is a [LibreLane](https://github.com/librelane/librelane) configuration file — the same file drives simulation and the physical design flow, and the comments in it mark which settings you normally touch:
 
-```json
-{
-  "DESIGN_NAME": "my_design",
-  "VERILOG_FILES": ["src/my_design.v"],
-  "CLOCK_PERIOD": 10.0
-}
+```yaml
+DESIGN_NAME: my_design
+
+VERILOG_FILES:
+  - dir::src/my_design.v
+
+# Simulation only. LibreLane ignores keys starting with '//'.
+"//TEST_FILES":
+  - dir::test/*.v
+
+CLOCK_PORT: clk
+CLOCK_PERIOD: 10.0
 ```
+
+The remaining keys in the file (`PDK`, `DIE_AREA`, `FP_SIZING`, …) configure the physical design flow. Leave them alone until you need them — `make gds` will tell you if one is missing.
 
 ---
 
