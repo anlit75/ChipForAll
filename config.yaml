@@ -30,3 +30,9 @@ STD_CELL_LIBRARY: sky130_fd_sc_hd
 DIE_AREA: [0, 0, 100, 100]
 FP_CORE_UTIL: 40
 FP_SIZING: absolute
+
+# The blackbox stubs LibreLane generates for the PDK cells carry no timescale,
+# so TIMESCALEMOD fires once per cell -- 441 warnings, none of them from our
+# RTL. Same reason UNDRIVEN and UNUSEDSIGNAL are in the default list; they have
+# to be repeated here because this overrides rather than appends.
+LINTER_DISABLE_WARNINGS_BLACKBOX: [UNDRIVEN, UNUSEDSIGNAL, TIMESCALEMOD]
