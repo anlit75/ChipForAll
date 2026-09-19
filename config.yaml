@@ -1,0 +1,32 @@
+# ChipForAll design configuration
+#
+# This is a LibreLane configuration file. The same file drives simulation and
+# linting through c4o-core and the physical design flow through LibreLane, so
+# the variable names are LibreLane's.
+#
+# 'dir::' marks a path as relative to this directory.
+
+# ============ what you normally change ============
+
+DESIGN_NAME: blinky
+
+VERILOG_FILES:
+  - dir::src/blinky.v
+
+# Simulation only. LibreLane has no testbench variable -- simulation sits
+# outside an RTL-to-GDSII flow -- and it ignores any key starting with '//',
+# which is what keeps this file valid for both tools.
+"//TEST_FILES":
+  - dir::test/*.v
+
+CLOCK_PORT: clk
+CLOCK_PERIOD: 10.0
+
+# ============ keep these unless you know what you are doing ============
+
+PDK: sky130A
+STD_CELL_LIBRARY: sky130_fd_sc_hd
+
+DIE_AREA: [0, 0, 100, 100]
+FP_CORE_UTIL: 40
+FP_SIZING: absolute

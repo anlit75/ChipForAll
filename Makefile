@@ -2,9 +2,9 @@
 # Philosophy: Keep it simple. Delegate logic to c4o-core.
 
 # Image Configuration
-C4O_IMAGE := ghcr.io/anlit75/c4o-core:1.3.0
-OPENLANE_IMAGE := efabless/openlane:2023.11.03
-DESIGN_NAME := $(shell grep '"DESIGN_NAME"' config.json | sed 's/.*: *"\([^"]*\)".*/\1/')
+C4O_IMAGE := ghcr.io/anlit75/c4o-core:2.0.0
+LIBRELANE_IMAGE := ghcr.io/librelane/librelane:3.0.14
+DESIGN_NAME := $(shell grep -E '^DESIGN_NAME:' config.yaml | sed -e 's/^DESIGN_NAME:[[:space:]]*//' -e 's/["'"'"']//g')
 PWD := $(shell pwd)
 
 # Common Docker Flags
@@ -33,8 +33,8 @@ help:
 	@echo "  make lint   - Run Verilator lint check"
 	@echo "  make sim    - Run Icarus Verilog simulation"
 	@echo "  make synth  - Run Yosys synthesis"
-	@echo "  make pdk    - Install/Enable Sky130 PDK via Volare"
-	@echo "  make gds    - Run OpenLane GDSII flow"
+	@echo "  make pdk    - Install/Enable Sky130 PDK via Ciel"
+	@echo "  make gds    - Run LibreLane GDSII flow"
 	@echo "  make shell  - Enter c4o-core interactive shell"
 
 # --- Logic Delegated to c4o-core ---
@@ -56,11 +56,16 @@ pdk:
 # 1. Ensure PDK is ready.
 # 2. Guard Check: Stop if inside DevContainer.
 # 3. c4o-core validates the config.
-# 4. We run the heavy OpenLane image using the PDKs installed in the previous step.
+# 4. We run the heavy LibreLane image using the PDKs installed in the previous step.
+#
+# The container command mirrors what `librelane --dockerized` runs itself:
+# `python3 -m librelane` with the flags, and --user to keep artifacts owned by
+# the host user. --manual-pdk stops Ciel from re-resolving the PDK, since the
+# `pdk` target above already pinned and enabled it.
 gds:
 	@# 🛑 Guard Clause: Prevent running Docker-in-Docker
 	@if [ "$(IS_IN_CONTAINER)" = "yes" ]; then \
-		echo "❌ [ERROR] 'make gds' requires Docker access to run OpenLane."; \
+		echo "❌ [ERROR] 'make gds' requires Docker access to run LibreLane."; \
 		echo "👉 Please run this command from your HOST terminal, not inside VS Code DevContainer."; \
 		exit 1; \
 	fi
@@ -69,20 +74,20 @@ gds:
 
 	@echo "🟢 Validating config with c4o-core..."
 	$(C4O_CMD) gds
-	@echo "🟢 Running OpenLane..."
+	@echo "🟢 Running LibreLane..."
 	mkdir -p build
 	docker run --rm \
-		-v $(PWD):/openlane/designs/$(DESIGN_NAME) \
+		-v $(PWD):/workspace -w /workspace \
 		-v $(PWD)/pdks:/pdks \
 		-e PDK_ROOT=/pdks \
-		-e PWD=/openlane/designs/$(DESIGN_NAME) \
-		-w /openlane/designs/$(DESIGN_NAME) \
+		-e HOME=/tmp \
 		-u $(shell id -u):$(shell id -g) \
-		$(OPENLANE_IMAGE) \
-		/bin/bash -c "/openlane/flow.tcl -design . -tag $(DESIGN_NAME)_run"
+		$(LIBRELANE_IMAGE) \
+		python3 -m librelane --manual-pdk --pdk-root /pdks \
+			--run-tag $(DESIGN_NAME)_run config.yaml
 	@echo "🟢 Post-processing..."
 	# Copy the final GDS to the build folder
-	cp runs/$(DESIGN_NAME)_run/results/final/gds/$(DESIGN_NAME).gds build/$(DESIGN_NAME).gds
+	cp runs/$(DESIGN_NAME)_run/final/gds/$(DESIGN_NAME).gds build/$(DESIGN_NAME).gds
 	# Clean up: Move the raw runs folder into build/runs
 	rm -rf build/runs && mv runs build/runs
 
