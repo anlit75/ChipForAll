@@ -1,6 +1,6 @@
 {
     "name": "ChipForAll",
-    "image": "ghcr.io/anlit75/c4o-core:v1.1.1",
+    "image": "ghcr.io/anlit75/c4o-core:1.2.0",
     "remoteUser": "root",
     "customizations": {
         "vscode": {

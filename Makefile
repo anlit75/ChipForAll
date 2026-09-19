@@ -2,7 +2,7 @@
 # Philosophy: Keep it simple. Delegate logic to c4o-core.
 
 # Image Configuration
-C4O_IMAGE := ghcr.io/anlit75/c4o-core:v1.1.1
+C4O_IMAGE := ghcr.io/anlit75/c4o-core:1.2.0
 OPENLANE_IMAGE := efabless/openlane:2023.11.03
 DESIGN_NAME := $(shell grep '"DESIGN_NAME"' config.json | sed 's/.*: *"\([^"]*\)".*/\1/')
 PWD := $(shell pwd)
