@@ -3,6 +3,7 @@
 ![CI Status](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml/badge.svg)
 ![release Version](https://img.shields.io/github/v/release/anlit75/ChipForAll?label=version)
 [![License](https://img.shields.io/github/license/anlit75/ChipForAll)](LICENSE)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/anlit75/ChipForAll)
 
 **A Zero-Config Starter Kit for Open Source Silicon Design.** Focus on Verilog, not the environment variables.
 

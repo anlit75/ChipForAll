@@ -3,6 +3,7 @@
 ![CI Status](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml/badge.svg)
 ![release Version](https://img.shields.io/github/v/release/anlit75/ChipForAll?label=version)
 [![License](https://img.shields.io/github/license/anlit75/ChipForAll)](LICENSE)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/anlit75/ChipForAll)
 
 **專為開源晶片設計打造的「零配置」入門套件。** 專注於 Verilog 開發，不再為環境變數煩惱。
 
