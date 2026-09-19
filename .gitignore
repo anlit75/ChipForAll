@@ -1,4 +1,5 @@
 build/
+runs/
 pdks
 *.vcd
 *.log
