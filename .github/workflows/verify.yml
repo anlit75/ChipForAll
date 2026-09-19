@@ -39,6 +39,17 @@ jobs:
       - name: Pull c4o-core Image
         run: docker pull ghcr.io/anlit75/c4o-core:2.0.0
 
+      # The devcontainer runs as a named user so that files it creates on a
+      # Linux host stay owned by the host user. That user comes from the base
+      # image rather than from our Dockerfile, so assert it is really there --
+      # otherwise a future c4o-core rebuild breaks the devcontainer silently,
+      # in a way no other step here would catch.
+      - name: Verify the devcontainer user exists in its image
+        run: |
+          image=$(jq -er .image .devcontainer/devcontainer.json)
+          user=$(jq -er .remoteUser .devcontainer/devcontainer.json)
+          docker run --rm --entrypoint id "$image" -u "$user"
+
       - name: 1. Lint Check
         run: make lint
 
