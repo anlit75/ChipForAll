@@ -142,12 +142,28 @@ jobs:
         timeout-minutes: 15
         run: make gatesim
 
+      # The layout image on its own, because the bundle below is ~10MB and
+      # this is the one file in it anyone wants to look at. `report` prints
+      # its path; this makes it one click from the run summary instead.
+      - name: Upload the layout render
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: layout
+          path: runs/*/final/render/*.png
+          if-no-files-found: warn
+          retention-days: 5
+
+      # runs/ is no longer inside build/, so name both or the run itself --
+      # every log, netlist and report the flow produced -- stops being kept.
       - name: Upload Artifacts
         if: always()
         uses: actions/upload-artifact@v6
         with:
           name: chipforall-build-artifacts
-          path: build/
+          path: |
+            build/
+            runs/
           retention-days: 5
 
       # A v* tag publishes the GDS that the steps above just verified.

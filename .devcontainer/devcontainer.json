@@ -38,7 +38,13 @@
             "extensions": [
                 "mshr-h.veriloghdl",
                 "wavetrace.wavetrace",
-                "clarkyu.vscode-yosys-viewer",
+                // clarkyu.vscode-yosys-viewer used to be here, to open the
+                // Yosys netlist `make synth` writes. It has been pulled from
+                // the marketplace, and a listed extension that no longer
+                // exists does not fail the build -- it just never installs.
+                // Nothing here can catch that either: extensions are the VS
+                // Code server's job, and `devcontainer up`, which the CI job
+                // runs, does not touch them.
                 "editorconfig.editorconfig",
                 "usernamehw.errorlens" 
             ]

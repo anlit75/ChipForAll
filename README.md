@@ -95,7 +95,7 @@ looking for it:
   power            0.292 mW
   signoff          clean  (Magic DRC, KLayout DRC, LVS, antenna, XOR)
   lint warnings    0
-  layout           build/runs/blinky_run/final/render/blinky.png
+  layout           runs/blinky_run/final/render/blinky.png
 ```
 
 **`signoff`** is the row that says the thing nobody else says: your layout
@@ -109,6 +109,21 @@ run and then leaves it in the run directory; open it.
 
 Positive slack means the design meets the clock in `config.yaml`. Run
 `make report` on its own to see it again without repeating the flow.
+
+### Iterating without re-running the whole flow
+
+The first `make gds` is about three minutes. Most of what you change after it
+— `DIE_AREA`, `CLOCK_PERIOD`, the floorplan — does not need synthesis redone,
+so hand LibreLane the flags that resume the last run:
+
+```bash
+make gds LIBRELANE_ARGS="--last-run --from floorplan"
+```
+
+`runs/` stays where LibreLane puts it, which is what makes that work. It used
+to be moved into `build/` after each run, which looked tidier and silently
+broke `--last-run`: LibreLane looks for a previous run in `runs/`, and there
+was never one there. `make clean` removes both.
 
 ### When a test fails: look at the waveform
 
@@ -165,7 +180,7 @@ first, or it would see the previous cycle's value.
 tools produced from it — latch inference, reset handling and how a synthesiser
 reads an ambiguous `always` block all sit between the two, and none of them are
 visible from the RTL. `make gatesim` closes that gap: it simulates
-`build/runs/<tag>/final/nl/`, the gate-level netlist `make gds` left behind,
+`runs/<tag>/final/nl/`, the gate-level netlist `make gds` left behind,
 against the Sky130 cells' own Verilog models.
 
 ```bash
