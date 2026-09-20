@@ -121,6 +121,22 @@ jobs:
           done
           ls -lh "${gds[@]}"
 
+      # The render is what `report`'s layout row points at and what the
+      # artifact step below uploads. Both degrade to silence when it is
+      # missing: if-no-files-found stays on 'warn' so that a failed `make gds`
+      # does not produce a second, misleading red step -- which also means an
+      # upload of nothing would look green. So assert it here instead, where
+      # `make gds` has just succeeded and a missing render is a real problem.
+      - name: Verify the layout render exists
+        run: |
+          shopt -s nullglob
+          png=(runs/*/final/render/*.png)
+          if [ ${#png[@]} -eq 0 ]; then
+            echo "Error: the flow drew no layout render under runs/*/final/render/"
+            exit 1
+          fi
+          ls -lh "${png[@]}"
+
       # Gate-level simulation of the netlist the step above just produced.
       #
       # Push-only, and a step rather than a job: it needs that netlist, so it
