@@ -123,10 +123,6 @@ run and then leaves it in the run directory; open it.
 Positive slack means the design meets the clock in `config.yaml`. Run
 `make report` on its own to see it again without repeating the flow.
 
-**The die grows with your design.** `config.yaml` ships `FP_SIZING: relative`, which is LibreLane's own default: the die is computed from how much area your cells need, at `FP_CORE_UTIL` occupancy. Put a bigger design in and you get a bigger die.
-
-The alternative, `FP_SIZING: absolute`, pins it to `DIE_AREA` — and a design that does not fit fails partway through the flow with a placement error. Nothing can warn you beforehand, because knowing whether it fits needs synthesis to count the cells. Switch to it when you need an exact size, not before.
-
 ### Iterating without re-running the whole flow
 
 The first `make gds` is about three minutes. Most of what you change after it
