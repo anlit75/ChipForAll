@@ -5,14 +5,21 @@
 [![License](https://img.shields.io/github/license/anlit75/ChipForAll)](LICENSE)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/anlit75/ChipForAll)
 
-**專為開源晶片設計打造的「零配置」入門套件。** 專注於 Verilog 開發，不再為環境變數煩惱。
+**開源晶片的驗證與 CI 起手式。** 模擬你的 RTL、用 Python 驅動它、模擬它合成出來的閘級電路、讀懂 signoff 數字——實體流程交給 LibreLane。每件事一個 `make` 指令，什麼都不用裝。
 
 ## ✨ 特色
 
-* **🐳 Docker 化環境**：無需手動安裝 Yosys、Verilator 或 LibreLane。只要有 Docker，一切就緒。
-* **⚡ 零配置**：只需複製（Clone）此儲存庫即可執行。環境已預先針對 Skywater 130nm PDK 完成配置。
-* **🛠 全流程支援**：只需指令一次，即可完成從 Verilog RTL 到 GDSII 佈局（Layout）的所有步驟。
-* **✅ CI/CD**：包含 GitHub Actions 工作流，在每次 Push 時自動驗證您的設計。
+* **🧪 真的會失敗的測試平台**：`make sim` 寫 Verilog，`make cocotb` 寫 Python。在壞掉的設計上還會通過的測試，比沒有測試更糟，所以兩者該紅的時候都會回傳非零——這沒有聽起來那麼理所當然，本專案大部分的修正都花在這件事上。
+* **🔬 閘級模擬**：`make gatesim` 拿你的測試去跑合成真正產出的 netlist。latch 推導、reset 處理都卡在 RTL 和那些閘之間，從 RTL 完全看不出來。
+* **📊 看得懂的 signoff**：`make report` 從沒人會打開的 300 個 key 的 `metrics.json` 裡，挑出真正要看的幾個數字——面積、時序、功耗、DRC/LVS/antenna。
+* **✅ CI 全部都跑**：一份 GitHub Actions 工作流，每次 push 都 lint、模擬、合成、產 GDS、再重跑閘級模擬。
+* **🐳 什麼都不用裝**：Docker，或 Dev Container / Codespace。`make gds` 三種都能跑。
+
+### 這個專案不是什麼
+
+實體流程——RTL 到 GDSII——是 [LibreLane](https://github.com/librelane/librelane) 的，`make gds` 只是薄薄一層包裝。如果你只想要一份 layout，LibreLane 用 `--dockerized` 就能單獨跑，你不需要這個專案。
+
+LibreLane 沒有涵蓋的是**模擬與驗證**。那才是這個起手式加上去的東西，外加跑它們的 CI 和 Dev Container。
 
 ## 🚀 快速啟動
 
@@ -21,11 +28,18 @@
 * Make
 * Git
 
-### 1. 複製儲存庫
+*……或者以上都不需要：用 GitHub Codespace 打開，一切都已經就緒。*
+
+### 1. 做一份自己的副本
+
+這個儲存庫是 **GitHub 範本（template）**。按 **Use this template → Create a new repository**，然後 clone 你自己的副本：
+
 ```bash
-git clone https://github.com/anlit75/ChipForAll.git
-cd ChipForAll
+git clone https://github.com/<你>/<你的儲存庫>.git
+cd <你的儲存庫>
 ```
+
+直接 clone 本儲存庫也能跑，但你會帶著它的 git 歷史，而且沒有地方可以 push。
 
 ### 2. 執行完整流程
 
@@ -33,10 +47,22 @@ cd ChipForAll
 
 ```bash
 make gds
-
 ```
 
 *請稍等幾分鐘。系統將自動下載 PDK、執行電路合成（Synthesis）、佈局繞線（Place & Route）並產出佈局檔案。*
+
+### 3. 換成你自己的設計
+
+範例是一個 blinky——時脈除頻器。要換成你自己的設計，有四個地方必須互相對上，其他都不用動：
+
+| 要改的 | 在哪裡 |
+|---|---|
+| 你的 RTL | `src/`，列在 `config.yaml` 的 `VERILOG_FILES` |
+| `DESIGN_NAME` | `config.yaml`——必須和你的頂層模組同名 |
+| 你的測試平台 | `test/`，列在 `"//TEST_FILES"` 和 `"//COCOTB_TESTS"` |
+| 閘級測試平台 | `test/gate/`，列在 `"//GATE_TESTS"`——為什麼要分開見下文 |
+
+沒有別的地方寫死設計名稱。`Makefile` 和 CI 工作流都從 `config.yaml` 讀 `DESIGN_NAME`，改那裡就夠了。
 
 ## 📖 使用指南
 
@@ -50,7 +76,7 @@ make gds
 | `make synth` | 使用 Yosys 將 RTL 進行電路合成。 | `build/synthesis.json` |
 | `make gatesim` | 對合成後的 netlist 重跑一次模擬，需先執行 `make gds`。 | `終端機輸出` |
 | `make gds` | 使用 LibreLane 產生實體佈局。 | `build/<DESIGN_NAME>.gds` |
-| `make report` | 顯示上次 `make gds` 的面積、時序與功耗。 | `終端機輸出` |
+| `make report` | 顯示上次 `make gds` 的面積、時序、功耗與 DRC/LVS/antenna signoff。 | `終端機輸出` |
 | `make shell` | 進入 c4o-core 容器的互動式 shell。 | `N/A` |
 | `make clean` | 清除所有產出的檔案。 | `N/A` |
 
@@ -69,11 +95,39 @@ make gds
   setup slack      +4.69 ns  (0 violations)
   hold slack       +0.11 ns  (0 violations)
   power            0.292 mW
-  lint warnings    441
+  signoff          clean  (Magic DRC, KLayout DRC, LVS, antenna, XOR)
+  lint warnings    0
+  layout           build/runs/blinky_run/final/render/blinky.png
 ```
+
+**`signoff`** 是那一列沒人會說的話：你的版圖通過了可製造性檢查。LibreLane 預設
+對每一項都會直接讓流程失敗，所以能跑到這一行就代表都過了——`clean` 只是把它
+講出來，並列出它實際看到哪幾項。有問題的時候它會改成指名道姓：`2 Magic DRC, 1 LVS`。
+
+**`layout`** 是流程幫你的晶片畫的 PNG。每次執行都會畫一張然後留在 run 目錄裡；
+打開來看看。
 
 slack 為正值代表設計滿足 `config.yaml` 裡設定的時脈。想再看一次而不重跑整個
 流程，單獨執行 `make report` 即可。
+
+### 測試失敗的時候：去看波形
+
+`make sim` 會寫出 `build/wave.vcd`——每一條訊號、每一個週期。用 GTKWave 打開，
+或用 Dev Container 已經裝好的 **WaveTrace** 擴充套件（直接點那個 `.vcd` 檔）。
+失敗的斷言告訴你設計*錯了*，波形才告訴你*為什麼*。
+
+它來自測試平台而不是工具本身，所以你自己寫的測試平台需要這兩行才會產生波形：
+
+```verilog
+initial begin
+    $dumpfile("build/wave.vcd");
+    $dumpvars(0, tb_your_design);
+end
+```
+
+`test/tb_blinky.v` 已經有了。`*.vcd` 在 `.gitignore` 裡，而 CI 會把每次執行的副本
+留在 `chipforall-build-artifacts` 上傳中保存五天——所以只在 CI 上失敗的測試，
+一樣可以回頭檢查。
 
 ### 用 Python 寫測試平台
 

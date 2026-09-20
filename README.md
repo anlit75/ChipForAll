@@ -5,14 +5,21 @@
 [![License](https://img.shields.io/github/license/anlit75/ChipForAll)](LICENSE)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/anlit75/ChipForAll)
 
-**A Zero-Config Starter Kit for Open Source Silicon Design.** Focus on Verilog, not the environment variables.
+**A verification and CI starter kit for open-source silicon.** Simulate your RTL, drive it from Python, simulate the gates it synthesises into, and read the signoff numbers — then hand the physical flow to LibreLane. One `make` command each, nothing to install.
 
 ## ✨ Features
 
-*   **🐳 Dockerized Environment**: No need to install Yosys, Verilator, or LibreLane manually. If you have Docker, you are ready.
-*   **⚡ Zero Configuration**: Just clone the repo and run. The environment is pre-configured for the Skywater 130nm PDK.
-*   **🛠 Full Flow Support**: From Verilog RTL to GDSII Layout in a single command.
-*   **✅ CI/CD Ready**: Includes GitHub Actions workflows to verify your design automatically on every push.
+*   **🧪 Testbenches that can actually fail**: `make sim` for Verilog, `make cocotb` for Python. A test that passes on a broken design is worse than no test, so both exit non-zero when they should — which is less obvious than it sounds, and is where most of this repo's bug fixes have gone.
+*   **🔬 Gate-level simulation**: `make gatesim` re-runs your tests against the netlist synthesis actually produced. Latch inference and reset handling sit between your RTL and those gates, and none of it is visible from the RTL.
+*   **📊 Signoff you can read**: `make report` pulls the handful of numbers that matter — area, timing, power, DRC/LVS/antenna — out of a 300-key `metrics.json` nobody opens.
+*   **✅ CI that runs all of it**: a GitHub Actions workflow that lints, simulates, synthesises, builds the GDS and re-simulates the gates, on every push.
+*   **🐳 Nothing to install**: Docker, or a Dev Container / Codespace. `make gds` works in all three.
+
+### What this is not
+
+The physical flow — RTL to GDSII — is [LibreLane](https://github.com/librelane/librelane)'s, and `make gds` is a thin wrapper around it. If all you want is a layout, LibreLane runs standalone with `--dockerized` and you do not need this repo.
+
+What LibreLane does not cover is simulation and verification. That is what this starter kit adds, plus the CI and the Dev Container to run it in.
 
 ## 🚀 Quick Start
 
@@ -21,11 +28,18 @@
 *   Make
 *   Git
 
-### 1. Clone the Repo
+*… or none of the above: open it in a GitHub Codespace and everything is already there.*
+
+### 1. Make your own copy
+
+This repository is a **GitHub template**. Press **Use this template → Create a new repository**, then clone your copy:
+
 ```bash
-git clone https://github.com/anlit75/ChipForAll.git
-cd ChipForAll
+git clone https://github.com/<you>/<your-repo>.git
+cd <your-repo>
 ```
+
+Cloning this repository directly also works, but you get its git history and no place to push.
 
 ### 2. Run the Full Flow
 To go from Verilog code to a final GDSII layout file:
@@ -33,6 +47,19 @@ To go from Verilog code to a final GDSII layout file:
 make gds
 ```
 *Wait for a few minutes. The system will automatically download the PDK, run synthesis, place & route, and generate the layout.*
+
+### 3. Make it your design
+
+The example is a blinky — a clock divider. To replace it with your own, four things have to agree, and nothing else does:
+
+| Change | Where |
+|---|---|
+| Your RTL | `src/`, listed under `VERILOG_FILES` in `config.yaml` |
+| `DESIGN_NAME` | `config.yaml` — must match your top module's name |
+| Your testbenches | `test/`, under `"//TEST_FILES"` and `"//COCOTB_TESTS"` |
+| The gate-level one | `test/gate/`, under `"//GATE_TESTS"` — see below for why it is separate |
+
+Nothing else names the design. The `Makefile` and the CI workflow both read `DESIGN_NAME` from `config.yaml`, so renaming it is enough.
 
 ## 📖 Usage Guide
 
@@ -46,7 +73,7 @@ We provide a unified `Makefile` to handle everything.
 | `make synth` | Synthesizes RTL into Gates using Yosys. | `build/synthesis.json` |
 | `make gatesim` | Re-runs simulation on the synthesised netlist. Needs `make gds` first. | `Terminal Output` |
 | `make gds` | Generates the physical layout using LibreLane. | `build/<DESIGN_NAME>.gds` |
-| `make report` | Shows area, timing and power from the last `make gds`. | `Terminal Output` |
+| `make report` | Shows area, timing, power and the DRC/LVS/antenna signoff from the last `make gds`. | `Terminal Output` |
 | `make shell` | Opens a bash shell inside the c4o-core container. | `N/A` |
 | `make clean` | Removes all generated artifacts. | `N/A` |
 
@@ -66,11 +93,43 @@ looking for it:
   setup slack      +4.69 ns  (0 violations)
   hold slack       +0.11 ns  (0 violations)
   power            0.292 mW
-  lint warnings    441
+  signoff          clean  (Magic DRC, KLayout DRC, LVS, antenna, XOR)
+  lint warnings    0
+  layout           build/runs/blinky_run/final/render/blinky.png
 ```
+
+**`signoff`** is the row that says the thing nobody else says: your layout
+passes the manufacturability checks. LibreLane errors on every one of them by
+default, so a run that reached this line has already passed them — `clean`
+just states it, and names which checks it saw. When something is wrong it
+names that instead: `2 Magic DRC, 1 LVS`.
+
+**`layout`** is the PNG the flow drew of your chip. It renders one on every
+run and then leaves it in the run directory; open it.
 
 Positive slack means the design meets the clock in `config.yaml`. Run
 `make report` on its own to see it again without repeating the flow.
+
+### When a test fails: look at the waveform
+
+`make sim` writes `build/wave.vcd` — every signal, every cycle. Open it with
+GTKWave, or with the **WaveTrace** extension the Dev Container already
+installs (click the `.vcd` file). A failing assertion tells you *that* the
+design is wrong; the waveform is how you find out *why*.
+
+It comes from the testbench, not from the tool, so your own testbenches need
+these two lines to produce one:
+
+```verilog
+initial begin
+    $dumpfile("build/wave.vcd");
+    $dumpvars(0, tb_your_design);
+end
+```
+
+`test/tb_blinky.v` has them already. `*.vcd` is in `.gitignore`, and CI keeps
+each run's copy in the `chipforall-build-artifacts` upload for five days — so
+a test that only fails on CI can still be inspected.
 
 ### Writing testbenches in Python
 
