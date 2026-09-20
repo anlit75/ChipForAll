@@ -63,6 +63,11 @@ jobs:
       - name: 2. Simulation
         run: make sim
 
+      # Cheap -- the tests run in well under a second -- so unlike the
+      # gate-level step below, this one runs on pull requests too.
+      - name: 2b. cocotb Tests
+        run: make cocotb
+
       - name: 3. Logic Synthesis
         run: make synth
 

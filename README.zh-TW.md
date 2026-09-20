@@ -46,6 +46,7 @@ make gds
 | --- | --- | --- |
 | `make lint` | 使用 Verilator 檢查 Verilog 語法錯誤。 | `終端機輸出` |
 | `make sim` | 使用 Icarus Verilog 執行模擬。 | `build/sim.vvp` |
+| `make cocotb` | 執行 Python (cocotb) 測試平台。 | `build/cocotb-results.xml` |
 | `make synth` | 使用 Yosys 將 RTL 進行電路合成。 | `build/synthesis.json` |
 | `make gatesim` | 對合成後的 netlist 重跑一次模擬，需先執行 `make gds`。 | `終端機輸出` |
 | `make gds` | 使用 LibreLane 產生實體佈局。 | `build/<DESIGN_NAME>.gds` |
@@ -73,6 +74,33 @@ make gds
 
 slack 為正值代表設計滿足 `config.yaml` 裡設定的時脈。想再看一次而不重跑整個
 流程，單獨執行 `make report` 即可。
+
+### 用 Python 寫測試平台
+
+`make cocotb` 執行 [cocotb](https://www.cocotb.org/) 測試：用 Python coroutine
+驅動同一份 RTL，底層是同一個模擬器。它是 `test/tb_blinky.v` 的另一種選擇，不是
+取代——哪種語言適合這個測試就用哪種。
+
+```bash
+make cocotb
+```
+
+`test/test_blinky_cocotb.py` 這個範例展示的是 Python 在這裡明顯佔優的一件事：
+直接寫入設計**內部**的訊號。
+
+```python
+dut.count.value = (1 << (WIDTH - 1)) - 1   # 停在翻轉前一拍
+await tick(dut)
+assert dut.led.value == 1
+```
+
+用這個方式驗證「led 就是計數器最高位元」只需要四個 cycle。Verilog testbench 要
+做到同一件事，只能覆寫 `WIDTH`（閘級 testbench 做不到），或是老實跑完 2^25 個
+cycle——也就是下面 `make gatesim` 花四分鐘在做的事。
+
+範例裡還記下一個容易踩的坑：`RisingEdge` 是在時脈邊緣**當下**恢復執行，此時
+non-blocking assignment 還沒生效。所以檔案裡每次讀值前都再等一個 `Timer`，否則
+讀到的是上一個 cycle 的值。
 
 ### 模擬閘級電路，而不只是 RTL
 
@@ -115,8 +143,9 @@ make gatesim   # 模擬它
 ├── src/               # ✍️ 您的 Verilog
 │   └── blinky.v
 ├── test/              # 🧪 您的測試平台 (Testbenches)
-│   ├── tb_blinky.v    #    RTL 模擬 (make sim)
-│   └── gate/          #    閘級模擬 (make gatesim)
+│   ├── tb_blinky.v              # RTL 模擬 (make sim)
+│   ├── test_blinky_cocotb.py    # Python 測試平台 (make cocotb)
+│   └── gate/                    # 閘級模擬 (make gatesim)
 │       └── tb_blinky_gl.v
 └── build/             # 📦 所有產出的檔案 (GDS, Logs, Netlists)
 ```
