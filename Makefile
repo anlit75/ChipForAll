@@ -24,7 +24,7 @@ else
 	C4O_CMD := $(DOCKER_RUN) $(C4O_IMAGE)
 endif
 
-.PHONY: all help lint sim gatesim synth gds pdk report clean shell
+.PHONY: all help lint sim cocotb gatesim synth gds pdk report clean shell
 
 all: lint sim synth
 
@@ -32,6 +32,7 @@ help:
 	@echo "Available targets:"
 	@echo "  make lint    - Run Verilator lint check"
 	@echo "  make sim     - Run Icarus Verilog simulation"
+	@echo "  make cocotb  - Run the Python (cocotb) testbenches"
 	@echo "  make gatesim - Re-simulate the synthesised netlist (~5 min, after make gds)"
 	@echo "  make synth   - Run Yosys synthesis"
 	@echo "  make pdk     - Install/Enable Sky130 PDK via Ciel"
@@ -46,6 +47,12 @@ lint:
 
 sim:
 	$(C4O_CMD) sim
+
+# The same RTL, driven from Python instead of Verilog. Not a replacement for
+# `make sim`: it is a second way to write a testbench, and the example shows the
+# thing Python is better at -- writing to a signal inside the design.
+cocotb:
+	$(C4O_CMD) cocotb
 
 # Simulates build/runs/<tag>/final/nl/, which `make gds` leaves behind, against
 # the PDK's own cell models. `make sim` says the RTL behaves; this says the gates

@@ -42,6 +42,7 @@ We provide a unified `Makefile` to handle everything.
 |---|---|---|
 | `make lint` | Checks your Verilog code for syntax errors using Verilator. | `Terminal Output` |
 | `make sim` | Runs simulation using Icarus Verilog. | `build/sim.vvp` |
+| `make cocotb` | Runs the Python (cocotb) testbenches. | `build/cocotb-results.xml` |
 | `make synth` | Synthesizes RTL into Gates using Yosys. | `build/synthesis.json` |
 | `make gatesim` | Re-runs simulation on the synthesised netlist. Needs `make gds` first. | `Terminal Output` |
 | `make gds` | Generates the physical layout using LibreLane. | `build/<DESIGN_NAME>.gds` |
@@ -70,6 +71,34 @@ looking for it:
 
 Positive slack means the design meets the clock in `config.yaml`. Run
 `make report` on its own to see it again without repeating the flow.
+
+### Writing testbenches in Python
+
+`make cocotb` runs [cocotb](https://www.cocotb.org/) tests: Python coroutines
+driving the same RTL, through the same simulator. It is an alternative to
+`test/tb_blinky.v`, not a replacement — pick whichever language suits the test.
+
+```bash
+make cocotb
+```
+
+The example in `test/test_blinky_cocotb.py` leans on the one thing Python is
+plainly better at here: writing to a signal *inside* the design.
+
+```python
+dut.count.value = (1 << (WIDTH - 1)) - 1   # one tick below the rollover
+await tick(dut)
+assert dut.led.value == 1
+```
+
+Checking that `led` is the counter's top bit costs four cycles that way. A
+Verilog testbench gets there only by overriding `WIDTH` — which the gate-level
+testbench cannot do — or by running 2^25 cycles, which is what `make gatesim`
+spends four minutes on below.
+
+One gotcha the example encodes: `RisingEdge` resumes *at* the edge, before the
+non-blocking assignment lands. Every read in that file waits a further `Timer`
+first, or it would see the previous cycle's value.
 
 ### Simulating the gates, not just the RTL
 
@@ -114,8 +143,9 @@ Prefer to stay in your own editor? `make shell` drops you into the same image fr
 ├── src/               # ✍️ Your Verilog Source Code
 │   └── blinky.v
 ├── test/              # 🧪 Your Testbenches
-│   ├── tb_blinky.v    #    RTL simulation (make sim)
-│   └── gate/          #    Gate-level simulation (make gatesim)
+│   ├── tb_blinky.v              # RTL simulation (make sim)
+│   ├── test_blinky_cocotb.py    # Python testbenches (make cocotb)
+│   └── gate/                    # Gate-level simulation (make gatesim)
 │       └── tb_blinky_gl.v
 └── build/             # 📦 All generated artifacts (GDS, Logs, Netlists)
 ```
