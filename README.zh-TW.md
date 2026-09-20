@@ -123,6 +123,20 @@ make gds
 slack 為正值代表設計滿足 `config.yaml` 裡設定的時脈。想再看一次而不重跑整個
 流程，單獨執行 `make report` 即可。
 
+**負值代表沒滿足**，而答案只有兩種。給設計更多時間——把 `config.yaml` 裡的
+`CLOCK_PERIOD` 調大，重跑 `make gds`——或者把慢的那條路徑縮短，插 pipeline 或把
+邏輯搬出去。哪一種才對，取決於那個時脈速度是需求還是隨手填的；第一個設計通常是
+隨手填的。
+
+想知道*哪裡*慢，讀流程已經寫好的時序報告：
+
+```bash
+cat runs/*/final/*.rpt          # 或到 runs/<tag>/ 底下找 STA 那幾步
+```
+
+最差路徑會連同上面經過的每一個閘一起列出來，時間就花在那裡。流程不會因為負 slack
+停下來，所以一次成功結束的執行，仍然可能正在告訴你它沒達標。
+
 ### 不重跑整條流程的迭代方式
 
 第一次 `make gds` 大約三分鐘。之後你會改的東西——`DIE_AREA`、`CLOCK_PERIOD`、
@@ -149,6 +163,57 @@ make schematic
 那張圖看懂自己的設計。`make schematic` 停得更早，停在電路還看得出原始碼樣子的地方。
 
 不到一秒，所以每改一次都可以跑——和 `make gds` 不一樣。
+
+### 幫你自己的設計寫測試平台
+
+`test/tb_blinky.v` 是一份完整的範例，讀起來也像範例。下面是它底下的骨架——
+能夠真的失敗的最小測試平台：
+
+```verilog
+`timescale 1ns/1ps
+
+module tb_my_design;
+
+    reg clk = 0;
+    reg rst = 1;
+    wire result;
+
+    my_design uut (.clk(clk), .rst(rst), .result(result));
+
+    always #5 clk = ~clk;          // 100 MHz 時脈
+
+    initial begin
+        $dumpfile("build/wave.vcd");
+        $dumpvars(0, tb_my_design);
+
+        repeat (2) @(posedge clk);
+        rst = 0;
+
+        @(posedge clk);
+        #1;                        // 等 non-blocking assignment 生效
+        if (result !== 1'b1)
+            $fatal(1, "result should be high after reset, got %b", result);
+
+        $display("tb_my_design: PASS");
+        $finish;
+    end
+
+endmodule
+```
+
+真正在做事的是三個地方：
+
+*   **`$fatal` 才是讓壞掉的設計變成紅色 CI 的東西。** `$display` 印完就繼續跑，
+    而模擬器兩種情況都回傳 0——一個回報了失敗卻沒有失敗的測試只是裝飾。`$fatal`
+    會回傳非零，那才是 `make sim` 和工作流在讀的東西。
+*   **邊緣之後的 `#1`。** `@(posedge clk)` 是*在*邊緣當下恢復，此時 non-blocking
+    assignment 還沒生效，所以在那裡讀到的是上一拍的值。相對檢查照樣會過，這正是
+    它難以察覺的原因。
+*   **`$dumpfile`/`$dumpvars` 來自你**，不是來自工具。沒有它們，上面那個斷言炸掉
+    的時候你沒有波形可以看。
+
+試試看：把 `src/blinky.v` 改壞，執行 `make sim`，看著它變紅。一個你從沒看它失敗過的
+測試平台，是一個你不知道它有沒有用的測試平台。
 
 ### 測試失敗的時候：去看波形
 
@@ -228,6 +293,11 @@ make gatesim   # 模擬它
 這裡用的是 docker-**in**-docker 而不是 docker-outside-of-docker，兩者的差別不是偏好問題。`make gds` 會把工作目錄 bind-mount 進去，而在容器內那是 `/workspace`。外部 daemon 會把這個路徑解析到你的主機上，那裡並沒有 `/workspace`，於是 Docker 會建立一個空目錄，LibreLane 就對著空氣跑——不會報錯，只會在流程深處出現一個令人困惑的失敗。內部 daemon 則解析到這個容器的檔案系統，那裡就是你的專案。
 
 代價是第一次執行要在容器內拉一次 LibreLane 映像檔，而且 Dev Container 需要重建一次才會裝上這個 feature。如果 `make gds` 說它找不到 Docker daemon，它要的就是一次重建。
+
+**在 Codespace 裡要注意磁碟。** 那個內部 daemon 有自己的映像檔儲存區，所以 LibreLane
+映像檔是重拉一份而不是跟主機共用，再加上 Sky130 PDK 的 3GB。在最小規格的 Codespace
+上那已經吃掉大半個磁碟。選大一點的規格，或者 Codespace 空間不夠時改從自己的主機跑
+`make gds`。
 
 習慣用自己的編輯器？`make shell` 可以從任何終端機進入同一個映像檔。
 
