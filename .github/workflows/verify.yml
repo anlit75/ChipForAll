@@ -8,12 +8,13 @@ on:
       - '**.md'
       - 'LICENSE'
       - '.gitignore'
+  # No paths-ignore here, deliberately. A required status check that never runs
+  # is not "skipped", it is "Expected -- waiting for status to be reported", and
+  # the pull request can never be merged. A docs-only change costs one full run;
+  # a permanently unmergeable pull request costs more. The push trigger above
+  # keeps its filter, so merging docs to main still skips the flow.
   pull_request:
     branches: [ "main" ]
-    paths-ignore:
-      - '**.md'
-      - 'LICENSE'
-      - '.gitignore'
   workflow_dispatch:
 
 jobs:
