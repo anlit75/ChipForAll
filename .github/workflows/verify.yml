@@ -67,7 +67,7 @@ jobs:
             sky130-pdk-${{ runner.os }}-
 
       - name: Pull c4o-core Image
-        run: docker pull ghcr.io/anlit75/c4o-core:2.4.0
+        run: docker pull ghcr.io/anlit75/c4o-core:2.5.0
 
       # The devcontainer runs as a named user so that files it creates on a
       # Linux host stay owned by the host user. That user comes from the base
@@ -104,13 +104,22 @@ jobs:
         # This step will automatically trigger 'make pdk' first
         run: make gds
 
+      # Matched rather than named. `make gds` names its output after DESIGN_NAME
+      # in config.yaml, so hardcoding "blinky" meant the first thing anyone does
+      # with this template -- put their own design in it -- broke CI, on a line
+      # nothing points them at.
       - name: Verify GDS Output
         run: |
-          if [ ! -s build/blinky.gds ]; then
-            echo "Error: GDS file missing or empty!"
+          shopt -s nullglob
+          gds=(build/*.gds)
+          if [ ${#gds[@]} -eq 0 ]; then
+            echo "Error: make gds produced no .gds in build/"
             exit 1
           fi
-          ls -lh build/blinky.gds
+          for f in "${gds[@]}"; do
+            [ -s "$f" ] || { echo "Error: $f is empty"; exit 1; }
+          done
+          ls -lh "${gds[@]}"
 
       # Gate-level simulation of the netlist the step above just produced.
       #
@@ -146,5 +155,6 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v3
         with:
-          files: build/blinky.gds
+          # A glob, for the same reason the verify step above uses one.
+          files: build/*.gds
           generate_release_notes: true
