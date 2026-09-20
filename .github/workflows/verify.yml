@@ -94,8 +94,20 @@ jobs:
 
       # Cheap -- the tests run in well under a second -- so unlike the
       # gate-level step below, this one runs on pull requests too.
+      #
+      # Skipped when config.yaml does not ask for Python testbenches. This is
+      # a template: somebody putting their own design in it may only want
+      # Verilog tests, and a starter kit whose CI goes red for a test kind you
+      # never opted into is a starter kit you abandon. The key's presence is
+      # the opt-in; if it IS there and matches no files, `make cocotb` fails,
+      # which is correct -- you asked for something that is not there.
       - name: 2b. cocotb Tests
-        run: make cocotb
+        run: |
+          if ! grep -q '^"//COCOTB_TESTS":' config.yaml; then
+            echo "config.yaml has no //COCOTB_TESTS -- no Python testbenches to run."
+            exit 0
+          fi
+          make cocotb
 
       - name: 3. Logic Synthesis
         run: make synth
@@ -161,10 +173,22 @@ jobs:
       # workflow_dispatch runs it too -- that is the way to exercise a branch's
       # gate-level simulation before merging it, without paying for it on every
       # review round trip.
+      #
+      # Skipped when config.yaml does not ask for it, for the reason the
+      # cocotb step gives -- and more so here: a gate-level testbench cannot
+      # reuse the RTL one's trick of shrinking the design through a parameter,
+      # so it is the hardest file in this repo to write. Requiring it of
+      # everyone who pushes their own design would mean red CI on their first
+      # push, for a test they were never told was mandatory.
       - name: 5. Gate-Level Simulation
         if: github.event_name != 'pull_request'
         timeout-minutes: 15
-        run: make gatesim
+        run: |
+          if ! grep -q '^"//GATE_TESTS":' config.yaml; then
+            echo "config.yaml has no //GATE_TESTS -- no gate-level testbench to run."
+            exit 0
+          fi
+          make gatesim
 
       # The layout image on its own, because the bundle below is ~10MB and
       # this is the one file in it anyone wants to look at. `report` prints

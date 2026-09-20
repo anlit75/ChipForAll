@@ -61,6 +61,11 @@ The example is a blinky — a clock divider. To replace it with your own, four t
 
 Nothing else names the design. The `Makefile` and the CI workflow both read `DESIGN_NAME` from `config.yaml`, so renaming it is enough.
 
+**The last two rows are optional.** Delete `"//COCOTB_TESTS"` or `"//GATE_TESTS"` from `config.yaml` and CI skips that kind of test instead of failing. A Verilog testbench is the one thing worth insisting on; a Python one is a second way to write the same test, and a gate-level one is the hardest file here to write — it cannot shrink the design through a parameter the way `test/tb_blinky.v` does, so it has to drive the real ports at their real width.
+
+Keep the key and point it at nothing, though, and CI fails — correctly. You asked for tests that are not there.
+
+
 Get the first row wrong and you hear about it immediately, not three minutes into `make gds`:
 
 ```console

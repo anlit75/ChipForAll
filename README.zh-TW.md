@@ -64,6 +64,11 @@ make gds
 
 沒有別的地方寫死設計名稱。`Makefile` 和 CI 工作流都從 `config.yaml` 讀 `DESIGN_NAME`，改那裡就夠了。
 
+**最後兩列是選用的。** 把 `"//COCOTB_TESTS"` 或 `"//GATE_TESTS"` 從 `config.yaml` 刪掉，CI 就會跳過那一類測試而不是失敗。值得堅持的只有 Verilog testbench；Python 的是同一件事的另一種寫法，而閘級的是這裡最難寫的檔案——它沒辦法像 `test/tb_blinky.v` 那樣用參數把設計縮小，只能用真實位寬驅動真實的 port。
+
+但如果把 key 留著卻指向不存在的檔案，CI 還是會失敗——這是對的，你要求了不存在的測試。
+
+
 第一列弄錯的話，你會立刻知道，而不是等到 `make gds` 跑了三分鐘之後：
 
 ```console
