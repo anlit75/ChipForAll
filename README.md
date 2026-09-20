@@ -43,6 +43,7 @@ We provide a unified `Makefile` to handle everything.
 | `make lint` | Checks your Verilog code for syntax errors using Verilator. | `Terminal Output` |
 | `make sim` | Runs simulation using Icarus Verilog. | `build/sim.vvp` |
 | `make synth` | Synthesizes RTL into Gates using Yosys. | `build/synthesis.json` |
+| `make gatesim` | Re-runs simulation on the synthesised netlist. Needs `make gds` first. | `Terminal Output` |
 | `make gds` | Generates the physical layout using LibreLane. | `build/<DESIGN_NAME>.gds` |
 | `make report` | Shows area, timing and power from the last `make gds`. | `Terminal Output` |
 | `make shell` | Opens a bash shell inside the c4o-core container. | `N/A` |
@@ -70,6 +71,29 @@ looking for it:
 Positive slack means the design meets the clock in `config.yaml`. Run
 `make report` on its own to see it again without repeating the flow.
 
+### Simulating the gates, not just the RTL
+
+`make sim` says your Verilog behaves. It says nothing about the netlist the
+tools produced from it — latch inference, reset handling and how a synthesiser
+reads an ambiguous `always` block all sit between the two, and none of them are
+visible from the RTL. `make gatesim` closes that gap: it simulates
+`build/runs/<tag>/final/nl/`, the gate-level netlist `make gds` left behind,
+against the Sky130 cells' own Verilog models.
+
+```bash
+make gds       # produces the netlist
+make gatesim   # simulates it
+```
+
+It needs its own testbench, in `test/gate/`, because synthesis resolves
+parameters: `test/tb_blinky.v` shrinks the design by setting `WIDTH` to 4, and
+a netlist has no `WIDTH` left to set. `test/gate/tb_blinky_gl.v` therefore
+drives the real pins and watches `led` over a full divider period — all 2^26
+cycles of it, which takes about four minutes (3:36 on a CI runner).
+
+That cost is why CI runs `make gatesim` on pushes to `main` and on `v*` tags,
+but not on every pull request.
+
 ### Working inside the container
 
 The repo ships a [Dev Container](https://containers.dev/). Open it in GitHub Codespaces, or in VS Code with *Reopen in Container*, and you get the same image CI uses, with the Verilog extensions already installed — no Docker commands to type. The `Makefile` notices it is already inside the container and calls the tools directly instead of nesting another one.
@@ -90,7 +114,9 @@ Prefer to stay in your own editor? `make shell` drops you into the same image fr
 ├── src/               # ✍️ Your Verilog Source Code
 │   └── blinky.v
 ├── test/              # 🧪 Your Testbenches
-│   └── tb_blinky.v
+│   ├── tb_blinky.v    #    RTL simulation (make sim)
+│   └── gate/          #    Gate-level simulation (make gatesim)
+│       └── tb_blinky_gl.v
 └── build/             # 📦 All generated artifacts (GDS, Logs, Netlists)
 ```
 

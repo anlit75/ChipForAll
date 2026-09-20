@@ -19,6 +19,14 @@ VERILOG_FILES:
 "//TEST_FILES":
   - dir::test/*.v
 
+# Gate-level simulation, run by `make gatesim` against the netlist the GDS flow
+# produced. It lives in its own directory because the glob above is what `make
+# sim` runs, and the two testbenches are not interchangeable: synthesis resolves
+# parameters, so the gate-level one cannot shrink the design the way the RTL one
+# does. See test/gate/tb_blinky_gl.v.
+"//GATE_TESTS":
+  - dir::test/gate/*.v
+
 CLOCK_PORT: clk
 CLOCK_PERIOD: 10.0
 

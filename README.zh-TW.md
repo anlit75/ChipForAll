@@ -47,6 +47,7 @@ make gds
 | `make lint` | 使用 Verilator 檢查 Verilog 語法錯誤。 | `終端機輸出` |
 | `make sim` | 使用 Icarus Verilog 執行模擬。 | `build/sim.vvp` |
 | `make synth` | 使用 Yosys 將 RTL 進行電路合成。 | `build/synthesis.json` |
+| `make gatesim` | 對合成後的 netlist 重跑一次模擬，需先執行 `make gds`。 | `終端機輸出` |
 | `make gds` | 使用 LibreLane 產生實體佈局。 | `build/<DESIGN_NAME>.gds` |
 | `make report` | 顯示上次 `make gds` 的面積、時序與功耗。 | `終端機輸出` |
 | `make shell` | 進入 c4o-core 容器的互動式 shell。 | `N/A` |
@@ -73,6 +74,27 @@ make gds
 slack 為正值代表設計滿足 `config.yaml` 裡設定的時脈。想再看一次而不重跑整個
 流程，單獨執行 `make report` 即可。
 
+### 模擬閘級電路，而不只是 RTL
+
+`make sim` 驗證的是你寫的 Verilog，它並不能證明工具從中產生的 netlist 也對。
+latch 被誤推斷、reset 處理方式、合成器如何解讀有歧義的 `always` 區塊——這些都
+夾在兩者之間，而且從 RTL 看不出來。`make gatesim` 補上這一段：它拿 `make gds`
+留下的閘級 netlist（`build/runs/<tag>/final/nl/`），對著 Sky130 元件自己的
+Verilog model 跑模擬。
+
+```bash
+make gds       # 產生 netlist
+make gatesim   # 模擬它
+```
+
+它需要自己的 testbench，放在 `test/gate/`，因為合成會把參數固定下來：
+`test/tb_blinky.v` 靠把 `WIDTH` 設成 4 來縮小設計，而 netlist 裡已經沒有
+`WIDTH` 可以設。因此 `test/gate/tb_blinky_gl.v` 只驅動真正的接腳，並觀察 `led`
+走完一個完整的除頻週期——整整 2^26 個 cycle，大約需要四分鐘（CI runner 上實測 3 分 36 秒）。
+
+這個代價就是為什麼 CI 只在推送到 `main` 與 `v*` tag 時跑 `make gatesim`，而不
+是每個 pull request 都跑。
+
 ### 在容器內開發
 
 本專案附有 [Dev Container](https://containers.dev/)。用 GitHub Codespaces 開啟，或在 VS Code 選擇「在容器中重新開啟」，即可取得與 CI 相同的映像檔，Verilog 相關擴充套件也已裝好——不必手動輸入任何 Docker 指令。`Makefile` 會偵測到自己已在容器內，直接呼叫工具，而不會再疊一層容器。
@@ -93,7 +115,9 @@ slack 為正值代表設計滿足 `config.yaml` 裡設定的時脈。想再看�
 ├── src/               # ✍️ 您的 Verilog
 │   └── blinky.v
 ├── test/              # 🧪 您的測試平台 (Testbenches)
-│   └── tb_blinky.v
+│   ├── tb_blinky.v    #    RTL 模擬 (make sim)
+│   └── gate/          #    閘級模擬 (make gatesim)
+│       └── tb_blinky_gl.v
 └── build/             # 📦 所有產出的檔案 (GDS, Logs, Netlists)
 ```
 
