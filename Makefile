@@ -2,7 +2,7 @@
 # Philosophy: Keep it simple. Delegate logic to c4o-core.
 
 # Image Configuration
-C4O_IMAGE := ghcr.io/anlit75/c4o-core:2.2.0
+C4O_IMAGE := ghcr.io/anlit75/c4o-core:2.4.0
 LIBRELANE_IMAGE := ghcr.io/librelane/librelane:3.0.14
 DESIGN_NAME := $(shell grep -E '^DESIGN_NAME:' config.yaml | sed -e 's/^DESIGN_NAME:[[:space:]]*//' -e 's/["'"'"']//g')
 PWD := $(shell pwd)
@@ -24,19 +24,20 @@ else
 	C4O_CMD := $(DOCKER_RUN) $(C4O_IMAGE)
 endif
 
-.PHONY: all help lint sim synth gds pdk report clean shell
+.PHONY: all help lint sim gatesim synth gds pdk report clean shell
 
 all: lint sim synth
 
 help:
 	@echo "Available targets:"
-	@echo "  make lint   - Run Verilator lint check"
-	@echo "  make sim    - Run Icarus Verilog simulation"
-	@echo "  make synth  - Run Yosys synthesis"
-	@echo "  make pdk    - Install/Enable Sky130 PDK via Ciel"
-	@echo "  make gds    - Run LibreLane GDSII flow"
-	@echo "  make report - Show area, timing and power from the last GDS run"
-	@echo "  make shell  - Enter c4o-core interactive shell"
+	@echo "  make lint    - Run Verilator lint check"
+	@echo "  make sim     - Run Icarus Verilog simulation"
+	@echo "  make gatesim - Re-simulate the synthesised netlist (~5 min, after make gds)"
+	@echo "  make synth   - Run Yosys synthesis"
+	@echo "  make pdk     - Install/Enable Sky130 PDK via Ciel"
+	@echo "  make gds     - Run LibreLane GDSII flow"
+	@echo "  make report  - Show area, timing and power from the last GDS run"
+	@echo "  make shell   - Enter c4o-core interactive shell"
 
 # --- Logic Delegated to c4o-core ---
 
@@ -45,6 +46,15 @@ lint:
 
 sim:
 	$(C4O_CMD) sim
+
+# Simulates build/runs/<tag>/final/nl/, which `make gds` leaves behind, against
+# the PDK's own cell models. `make sim` says the RTL behaves; this says the gates
+# synthesis produced still behave, which is a different claim.
+#
+# Budget about five minutes: the netlist has no WIDTH left to shrink, so
+# test/gate/tb_blinky_gl.v has to run the divider's full 2**26 cycles.
+gatesim:
+	$(C4O_CMD) gatesim
 
 synth:
 	$(C4O_CMD) synth
