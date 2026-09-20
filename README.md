@@ -93,8 +93,19 @@ looking for it:
   setup slack      +4.69 ns  (0 violations)
   hold slack       +0.11 ns  (0 violations)
   power            0.292 mW
-  lint warnings    441
+  signoff          clean  (Magic DRC, KLayout DRC, LVS, antenna, XOR)
+  lint warnings    0
+  layout           build/runs/blinky_run/final/render/blinky.png
 ```
+
+**`signoff`** is the row that says the thing nobody else says: your layout
+passes the manufacturability checks. LibreLane errors on every one of them by
+default, so a run that reached this line has already passed them — `clean`
+just states it, and names which checks it saw. When something is wrong it
+names that instead: `2 Magic DRC, 1 LVS`.
+
+**`layout`** is the PNG the flow drew of your chip. It renders one on every
+run and then leaves it in the run directory; open it.
 
 Positive slack means the design meets the clock in `config.yaml`. Run
 `make report` on its own to see it again without repeating the flow.

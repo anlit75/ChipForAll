@@ -95,8 +95,17 @@ make gds
   setup slack      +4.69 ns  (0 violations)
   hold slack       +0.11 ns  (0 violations)
   power            0.292 mW
-  lint warnings    441
+  signoff          clean  (Magic DRC, KLayout DRC, LVS, antenna, XOR)
+  lint warnings    0
+  layout           build/runs/blinky_run/final/render/blinky.png
 ```
+
+**`signoff`** 是那一列沒人會說的話：你的版圖通過了可製造性檢查。LibreLane 預設
+對每一項都會直接讓流程失敗，所以能跑到這一行就代表都過了——`clean` 只是把它
+講出來，並列出它實際看到哪幾項。有問題的時候它會改成指名道姓：`2 Magic DRC, 1 LVS`。
+
+**`layout`** 是流程幫你的晶片畫的 PNG。每次執行都會畫一張然後留在 run 目錄裡；
+打開來看看。
 
 slack 為正值代表設計滿足 `config.yaml` 裡設定的時脈。想再看一次而不重跑整個
 流程，單獨執行 `make report` 即可。
