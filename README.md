@@ -123,6 +123,22 @@ run and then leaves it in the run directory; open it.
 Positive slack means the design meets the clock in `config.yaml`. Run
 `make report` on its own to see it again without repeating the flow.
 
+**Negative slack means it does not**, and there are only two answers. Give the
+design more time — raise `CLOCK_PERIOD` in `config.yaml` and run `make gds`
+again — or make the slow path shorter, by pipelining it or cutting logic out
+of it. Which one is right depends on whether the clock speed is a requirement
+or a guess; in a first design it is usually a guess.
+
+To see *what* is slow, read the timing report the flow already wrote:
+
+```bash
+cat runs/*/final/*.rpt          # or look under runs/<tag>/ for the STA steps
+```
+
+The worst path is listed with every gate along it, which is where the time
+actually went. The flow does not stop for negative slack, so a run can finish
+and still be telling you it missed.
+
 ### Iterating without re-running the whole flow
 
 The first `make gds` is about three minutes. Most of what you change after it
@@ -155,6 +171,60 @@ circuit still looks like the code it came from.
 
 Under a second, so it costs nothing to run after every change — unlike
 `make gds`.
+
+### Writing a testbench for your own design
+
+`test/tb_blinky.v` is a worked example and reads like one. This is the shape
+underneath it — the smallest testbench that can actually fail:
+
+```verilog
+`timescale 1ns/1ps
+
+module tb_my_design;
+
+    reg clk = 0;
+    reg rst = 1;
+    wire result;
+
+    my_design uut (.clk(clk), .rst(rst), .result(result));
+
+    always #5 clk = ~clk;          // a 100 MHz clock
+
+    initial begin
+        $dumpfile("build/wave.vcd");
+        $dumpvars(0, tb_my_design);
+
+        repeat (2) @(posedge clk);
+        rst = 0;
+
+        @(posedge clk);
+        #1;                        // let the non-blocking assignment land
+        if (result !== 1'b1)
+            $fatal(1, "result should be high after reset, got %b", result);
+
+        $display("tb_my_design: PASS");
+        $finish;
+    end
+
+endmodule
+```
+
+Three things are doing the work:
+
+*   **`$fatal` is what makes a broken design a red CI run.** `$display` prints
+    and carries on, and the simulator exits 0 either way — a test that reports
+    a failure without failing is decoration. `$fatal` exits non-zero, which is
+    what `make sim` and the workflow are reading.
+*   **`#1` after the edge.** `@(posedge clk)` resumes *at* the edge, before
+    non-blocking assignments land, so a read there sees the previous cycle's
+    value. Relative checks still pass that way, which is what makes it easy to
+    miss.
+*   **`$dumpfile`/`$dumpvars` come from you**, not from the tool. Without them
+    there is no waveform to look at when the assertion above fires.
+
+Try it: change `src/blinky.v` so the design is wrong, run `make sim`, and
+watch it go red. A testbench you have never seen fail is a testbench you do
+not know works.
 
 ### When a test fails: look at the waveform
 
@@ -239,6 +309,8 @@ It runs as `root`. On a Linux host that means files it writes into `build/` end 
 That is docker-*in*-docker rather than docker-outside-of-docker, and the difference is not a preference. `make gds` bind-mounts the working directory, which is `/workspace` in here. An outside daemon would resolve that path on your host, where `/workspace` does not exist, so Docker would create an empty directory and LibreLane would run against nothing — no error, just a confusing failure deep in the flow. An inside daemon resolves it against this filesystem, where it is the repo.
 
 The cost is a first run that pulls the LibreLane image inside the container, and a Dev Container that has to be rebuilt once for the feature to install. If `make gds` says it cannot find a Docker daemon, a rebuild is what it is asking for.
+
+**Watch the disk in a Codespace.** That inner daemon has its own image store, so the LibreLane image is pulled again rather than shared with the host, and the Sky130 PDK is another 3GB on top. On the smallest Codespace machine that is most of the disk. Pick a larger one, or run `make gds` from your own host if the Codespace runs out.
 
 Prefer to stay in your own editor? `make shell` drops you into the same image from any terminal.
 

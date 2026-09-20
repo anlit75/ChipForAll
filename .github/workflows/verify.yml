@@ -190,6 +190,19 @@ jobs:
           fi
           make gatesim
 
+      # The schematic on its own, for the same reason the layout render gets
+      # one below: it is a small file people actually want to open, and it is
+      # otherwise only inside the ~10MB bundle. Its existence is already
+      # asserted in step 3b, so 'warn' here cannot hide a missing file.
+      - name: Upload the schematic
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: schematic
+          path: build/schematic.svg
+          if-no-files-found: warn
+          retention-days: 5
+
       # The layout image on its own, because the bundle below is ~10MB and
       # this is the one file in it anyone wants to look at. `report` prints
       # its path; this makes it one click from the run summary instead.

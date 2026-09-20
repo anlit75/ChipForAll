@@ -31,7 +31,7 @@ else
 	C4O_CMD := $(DOCKER_RUN) $(C4O_IMAGE)
 endif
 
-.PHONY: all help lint sim cocotb gatesim synth schematic gds pdk report clean shell
+.PHONY: all help lint sim cocotb gatesim synth schematic gds pdk report clean distclean shell
 
 all: lint sim cocotb synth
 
@@ -47,6 +47,8 @@ help:
 	@echo "  make gds     - Run LibreLane GDSII flow"
 	@echo "  make report  - Show area, timing and power from the last GDS run"
 	@echo "  make shell   - Enter c4o-core interactive shell"
+	@echo "  make clean     - Remove build/ (keeps runs/, which report and gatesim read)"
+	@echo "  make distclean - Remove build/ and runs/"
 	@echo ""
 	@echo "  Re-run part of the flow after the first full one:"
 	@echo "    make gds LIBRELANE_ARGS=\"--last-run --from floorplan\""
@@ -147,5 +149,12 @@ report:
 shell:
 	$(DOCKER_RUN) -it --entrypoint /bin/bash $(C4O_IMAGE)
 
+# runs/ is deliberately not in here. `make report` and `make gatesim` both
+# read the last flow out of it, so wiping it on every clean costs you the
+# ability to look at a finished run again -- which is most of what you want
+# after a three-minute flow. `distclean` is there for when you do mean it.
 clean:
-	rm -rf build/ runs/
+	rm -rf build/
+
+distclean: clean
+	rm -rf runs/
