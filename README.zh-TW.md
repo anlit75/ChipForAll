@@ -48,10 +48,30 @@ make gds
 | `make sim` | 使用 Icarus Verilog 執行模擬。 | `build/sim.vvp` |
 | `make synth` | 使用 Yosys 將 RTL 進行電路合成。 | `build/synthesis.json` |
 | `make gds` | 使用 LibreLane 產生實體佈局。 | `build/<DESIGN_NAME>.gds` |
+| `make report` | 顯示上次 `make gds` 的面積、時序與功耗。 | `終端機輸出` |
 | `make shell` | 進入 c4o-core 容器的互動式 shell。 | `N/A` |
 | `make clean` | 清除所有產出的檔案。 | `N/A` |
 
 > **💡 注意：** 首次執行 `make gds` 時，系統會自動下載並安裝 Sky130 PDK（約 3GB）。請耐心等候！
+
+### 看懂執行結果
+
+`make gds` 結束時會直接印出這次流程量到的數字，不必自己去翻檔案：
+
+```
+  blinky
+
+  die              100 x 100 um  (10000 um^2)
+  utilization      29.2%
+  standard cells   243
+  setup slack      +4.69 ns  (0 violations)
+  hold slack       +0.11 ns  (0 violations)
+  power            0.292 mW
+  lint warnings    441
+```
+
+slack 為正值代表設計滿足 `config.yaml` 裡設定的時脈。想再看一次而不重跑整個
+流程，單獨執行 `make report` 即可。
 
 ### 在容器內開發
 

@@ -44,10 +44,31 @@ We provide a unified `Makefile` to handle everything.
 | `make sim` | Runs simulation using Icarus Verilog. | `build/sim.vvp` |
 | `make synth` | Synthesizes RTL into Gates using Yosys. | `build/synthesis.json` |
 | `make gds` | Generates the physical layout using LibreLane. | `build/<DESIGN_NAME>.gds` |
+| `make report` | Shows area, timing and power from the last `make gds`. | `Terminal Output` |
 | `make shell` | Opens a bash shell inside the c4o-core container. | `N/A` |
 | `make clean` | Removes all generated artifacts. | `N/A` |
 
 > **💡 Note:** The first time you run `make gds`, it will automatically download and install the Sky130 PDK (approx. 3GB). Please be patient!
+
+### Reading the result
+
+`make gds` ends by printing what the flow measured, so you do not have to go
+looking for it:
+
+```
+  blinky
+
+  die              100 x 100 um  (10000 um^2)
+  utilization      29.2%
+  standard cells   243
+  setup slack      +4.69 ns  (0 violations)
+  hold slack       +0.11 ns  (0 violations)
+  power            0.292 mW
+  lint warnings    441
+```
+
+Positive slack means the design meets the clock in `config.yaml`. Run
+`make report` on its own to see it again without repeating the flow.
 
 ### Working inside the container
 
