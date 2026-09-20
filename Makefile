@@ -2,7 +2,7 @@
 # Philosophy: Keep it simple. Delegate logic to c4o-core.
 
 # Image Configuration
-C4O_IMAGE := ghcr.io/anlit75/c4o-core:2.5.0
+C4O_IMAGE := ghcr.io/anlit75/c4o-core:2.6.0
 LIBRELANE_IMAGE := ghcr.io/librelane/librelane:3.0.14
 
 # Extra flags for the LibreLane run. The reason this exists is iteration: a
@@ -31,7 +31,7 @@ else
 	C4O_CMD := $(DOCKER_RUN) $(C4O_IMAGE)
 endif
 
-.PHONY: all help lint sim cocotb gatesim synth gds pdk report clean shell
+.PHONY: all help lint sim cocotb gatesim synth schematic gds pdk report clean shell
 
 all: lint sim cocotb synth
 
@@ -42,6 +42,7 @@ help:
 	@echo "  make cocotb  - Run the Python (cocotb) testbenches"
 	@echo "  make gatesim - Re-simulate the synthesised netlist (~5 min, after make gds)"
 	@echo "  make synth   - Run Yosys synthesis"
+	@echo "  make schematic - Draw the circuit as build/schematic.svg"
 	@echo "  make pdk     - Install/Enable Sky130 PDK via Ciel"
 	@echo "  make gds     - Run LibreLane GDSII flow"
 	@echo "  make report  - Show area, timing and power from the last GDS run"
@@ -75,6 +76,12 @@ gatesim:
 
 synth:
 	$(C4O_CMD) synth
+
+# A picture of the RTL, not of the netlist. `make synth` runs a full synthesis
+# and leaves a wall of technology cells; this stops after `proc; opt`, where
+# the design still looks like the code you wrote.
+schematic:
+	$(C4O_CMD) schematic
 
 pdk:
 	@echo "📦 Installing PDK (Sky130)..."

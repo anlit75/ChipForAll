@@ -64,6 +64,13 @@ make gds
 
 沒有別的地方寫死設計名稱。`Makefile` 和 CI 工作流都從 `config.yaml` 讀 `DESIGN_NAME`，改那裡就夠了。
 
+第一列弄錯的話，你會立刻知道，而不是等到 `make gds` 跑了三分鐘之後：
+
+```console
+[ERROR] DESIGN_NAME is 'my_cpu', but no module by that name is declared in
+        VERILOG_FILES. Declared there: blinky.
+```
+
 ## 📖 使用指南
 
 我們提供統一的 `Makefile` 來處理所有事務。
@@ -74,6 +81,7 @@ make gds
 | `make sim` | 使用 Icarus Verilog 執行模擬。 | `build/sim.vvp` |
 | `make cocotb` | 執行 Python (cocotb) 測試平台。 | `build/cocotb-results.xml` |
 | `make synth` | 使用 Yosys 將 RTL 進行電路合成。 | `build/synthesis.json` |
+| `make schematic` | 把電路畫成到處都開得了的 SVG。 | `build/schematic.svg` |
 | `make gatesim` | 對合成後的 netlist 重跑一次模擬，需先執行 `make gds`。 | `終端機輸出` |
 | `make gds` | 使用 LibreLane 產生實體佈局。 | `build/<DESIGN_NAME>.gds` |
 | `make report` | 顯示上次 `make gds` 的面積、時序、功耗與 DRC/LVS/antenna signoff。 | `終端機輸出` |
@@ -122,6 +130,20 @@ make gds LIBRELANE_ARGS="--last-run --from floorplan"
 `runs/` 留在 LibreLane 放它的地方，這一點才是讓上面能動的關鍵。它以前每次跑完
 會被搬進 `build/`，看起來比較整齊，卻悄悄讓 `--last-run` 失效——LibreLane 會去
 `runs/` 找上一次的執行結果，而那裡從來沒有。`make clean` 兩個都會清掉。
+
+### 看看電路長什麼樣
+
+```bash
+make schematic
+```
+
+畫出 `build/schematic.svg`——你的設計以 flop、加法器、多工器呈現，帶著你取的名字。
+用瀏覽器開，或在 VS Code 裡點一下都行；它是 SVG，不需要任何特別的東西才能看。
+
+這不是 netlist 的圖。`make synth` 會跑完整合成，留下幾百個技術元件，沒有人能從
+那張圖看懂自己的設計。`make schematic` 停得更早，停在電路還看得出原始碼樣子的地方。
+
+不到一秒，所以每改一次都可以跑——和 `make gds` 不一樣。
 
 ### 測試失敗的時候：去看波形
 

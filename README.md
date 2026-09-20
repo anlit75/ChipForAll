@@ -61,6 +61,13 @@ The example is a blinky — a clock divider. To replace it with your own, four t
 
 Nothing else names the design. The `Makefile` and the CI workflow both read `DESIGN_NAME` from `config.yaml`, so renaming it is enough.
 
+Get the first row wrong and you hear about it immediately, not three minutes into `make gds`:
+
+```console
+[ERROR] DESIGN_NAME is 'my_cpu', but no module by that name is declared in
+        VERILOG_FILES. Declared there: blinky.
+```
+
 ## 📖 Usage Guide
 
 We provide a unified `Makefile` to handle everything.
@@ -71,6 +78,7 @@ We provide a unified `Makefile` to handle everything.
 | `make sim` | Runs simulation using Icarus Verilog. | `build/sim.vvp` |
 | `make cocotb` | Runs the Python (cocotb) testbenches. | `build/cocotb-results.xml` |
 | `make synth` | Synthesizes RTL into Gates using Yosys. | `build/synthesis.json` |
+| `make schematic` | Draws the circuit as an SVG you can open anywhere. | `build/schematic.svg` |
 | `make gatesim` | Re-runs simulation on the synthesised netlist. Needs `make gds` first. | `Terminal Output` |
 | `make gds` | Generates the physical layout using LibreLane. | `build/<DESIGN_NAME>.gds` |
 | `make report` | Shows area, timing, power and the DRC/LVS/antenna signoff from the last `make gds`. | `Terminal Output` |
@@ -124,6 +132,24 @@ make gds LIBRELANE_ARGS="--last-run --from floorplan"
 to be moved into `build/` after each run, which looked tidier and silently
 broke `--last-run`: LibreLane looks for a previous run in `runs/`, and there
 was never one there. `make clean` removes both.
+
+### Seeing the circuit
+
+```bash
+make schematic
+```
+
+Draws `build/schematic.svg` — your design as flops, adders and muxes, carrying
+the names you gave them. Open it in the browser, or click it in VS Code; it is
+an SVG, so nothing special is needed to read it.
+
+It is not a picture of the netlist. `make synth` runs a full synthesis and
+leaves hundreds of technology cells, from which nobody has ever learned
+anything about their own design. `make schematic` stops earlier, where the
+circuit still looks like the code it came from.
+
+Under a second, so it costs nothing to run after every change — unlike
+`make gds`.
 
 ### When a test fails: look at the waveform
 
