@@ -121,6 +121,22 @@ jobs:
           done
           ls -lh "${gds[@]}"
 
+      # The render is what `report`'s layout row points at and what the
+      # artifact step below uploads. Both degrade to silence when it is
+      # missing: if-no-files-found stays on 'warn' so that a failed `make gds`
+      # does not produce a second, misleading red step -- which also means an
+      # upload of nothing would look green. So assert it here instead, where
+      # `make gds` has just succeeded and a missing render is a real problem.
+      - name: Verify the layout render exists
+        run: |
+          shopt -s nullglob
+          png=(runs/*/final/render/*.png)
+          if [ ${#png[@]} -eq 0 ]; then
+            echo "Error: the flow drew no layout render under runs/*/final/render/"
+            exit 1
+          fi
+          ls -lh "${png[@]}"
+
       # Gate-level simulation of the netlist the step above just produced.
       #
       # Push-only, and a step rather than a job: it needs that netlist, so it
@@ -142,12 +158,28 @@ jobs:
         timeout-minutes: 15
         run: make gatesim
 
+      # The layout image on its own, because the bundle below is ~10MB and
+      # this is the one file in it anyone wants to look at. `report` prints
+      # its path; this makes it one click from the run summary instead.
+      - name: Upload the layout render
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: layout
+          path: runs/*/final/render/*.png
+          if-no-files-found: warn
+          retention-days: 5
+
+      # runs/ is no longer inside build/, so name both or the run itself --
+      # every log, netlist and report the flow produced -- stops being kept.
       - name: Upload Artifacts
         if: always()
         uses: actions/upload-artifact@v6
         with:
           name: chipforall-build-artifacts
-          path: build/
+          path: |
+            build/
+            runs/
           retention-days: 5
 
       # A v* tag publishes the GDS that the steps above just verified.

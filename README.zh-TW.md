@@ -97,7 +97,7 @@ make gds
   power            0.292 mW
   signoff          clean  (Magic DRC, KLayout DRC, LVS, antenna, XOR)
   lint warnings    0
-  layout           build/runs/blinky_run/final/render/blinky.png
+  layout           runs/blinky_run/final/render/blinky.png
 ```
 
 **`signoff`** 是那一列沒人會說的話：你的版圖通過了可製造性檢查。LibreLane 預設
@@ -109,6 +109,19 @@ make gds
 
 slack 為正值代表設計滿足 `config.yaml` 裡設定的時脈。想再看一次而不重跑整個
 流程，單獨執行 `make report` 即可。
+
+### 不重跑整條流程的迭代方式
+
+第一次 `make gds` 大約三分鐘。之後你會改的東西——`DIE_AREA`、`CLOCK_PERIOD`、
+floorplan——多半不需要重做合成，所以把恢復上次執行的旗標傳給 LibreLane：
+
+```bash
+make gds LIBRELANE_ARGS="--last-run --from floorplan"
+```
+
+`runs/` 留在 LibreLane 放它的地方，這一點才是讓上面能動的關鍵。它以前每次跑完
+會被搬進 `build/`，看起來比較整齊，卻悄悄讓 `--last-run` 失效——LibreLane 會去
+`runs/` 找上一次的執行結果，而那裡從來沒有。`make clean` 兩個都會清掉。
 
 ### 測試失敗的時候：去看波形
 
@@ -161,7 +174,7 @@ non-blocking assignment 還沒生效。所以檔案裡每次讀值前都再等�
 `make sim` 驗證的是你寫的 Verilog，它並不能證明工具從中產生的 netlist 也對。
 latch 被誤推斷、reset 處理方式、合成器如何解讀有歧義的 `always` 區塊——這些都
 夾在兩者之間，而且從 RTL 看不出來。`make gatesim` 補上這一段：它拿 `make gds`
-留下的閘級 netlist（`build/runs/<tag>/final/nl/`），對著 Sky130 元件自己的
+留下的閘級 netlist（`runs/<tag>/final/nl/`），對著 Sky130 元件自己的
 Verilog model 跑模擬。
 
 ```bash

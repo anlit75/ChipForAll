@@ -4,6 +4,15 @@
 # Image Configuration
 C4O_IMAGE := ghcr.io/anlit75/c4o-core:2.5.0
 LIBRELANE_IMAGE := ghcr.io/librelane/librelane:3.0.14
+
+# Extra flags for the LibreLane run. The reason this exists is iteration: a
+# full flow is three minutes, and most of what you change after the first one
+# -- DIE_AREA, CLOCK_PERIOD, the floorplan -- does not need synthesis redone.
+#
+#   make gds LIBRELANE_ARGS="--last-run --from floorplan"
+#
+# --last-run is why runs/ is left where LibreLane put it; see the gds target.
+LIBRELANE_ARGS ?=
 DESIGN_NAME := $(shell grep -E '^DESIGN_NAME:' config.yaml | sed -e 's/^DESIGN_NAME:[[:space:]]*//' -e 's/["'"'"']//g')
 PWD := $(shell pwd)
 
@@ -24,7 +33,7 @@ endif
 
 .PHONY: all help lint sim cocotb gatesim synth gds pdk report clean shell
 
-all: lint sim synth
+all: lint sim cocotb synth
 
 help:
 	@echo "Available targets:"
@@ -37,6 +46,9 @@ help:
 	@echo "  make gds     - Run LibreLane GDSII flow"
 	@echo "  make report  - Show area, timing and power from the last GDS run"
 	@echo "  make shell   - Enter c4o-core interactive shell"
+	@echo ""
+	@echo "  Re-run part of the flow after the first full one:"
+	@echo "    make gds LIBRELANE_ARGS=\"--last-run --from floorplan\""
 
 # --- Logic Delegated to c4o-core ---
 
@@ -52,7 +64,7 @@ sim:
 cocotb:
 	$(C4O_CMD) cocotb
 
-# Simulates build/runs/<tag>/final/nl/, which `make gds` leaves behind, against
+# Simulates runs/<tag>/final/nl/, which `make gds` leaves behind, against
 # the PDK's own cell models. `make sim` says the RTL behaves; this says the gates
 # synthesis produced still behave, which is a different claim.
 #
@@ -105,18 +117,21 @@ gds:
 		-u $(shell id -u):$(shell id -g) \
 		$(LIBRELANE_IMAGE) \
 		python3 -m librelane --manual-pdk --pdk-root /pdks \
+			$(LIBRELANE_ARGS) \
 			--run-tag $(DESIGN_NAME)_run config.yaml
 	@echo "🟢 Post-processing..."
 	# Copy the final GDS to the build folder
 	cp runs/$(DESIGN_NAME)_run/final/gds/$(DESIGN_NAME).gds build/$(DESIGN_NAME).gds
-	# Clean up: Move the raw runs folder into build/runs
-	rm -rf build/runs && mv runs build/runs
+	# runs/ stays where LibreLane put it. Moving it into build/ used to look
+	# tidier, and it silently broke --last-run: LibreLane looks for a previous
+	# run in runs/, and there was never one there. c4o-core's report and
+	# gatesim already search both locations, so nothing else cared.
 
 	@# The flow just measured area, timing and power. Show them rather than
-	@# leaving them in a 300-key metrics.json under build/runs.
+	@# leaving them in a 300-key metrics.json under runs/.
 	@$(MAKE) --no-print-directory report
 
-# Reads build/runs/<tag>/final/metrics.json, which `make gds` leaves behind.
+# Reads runs/<tag>/final/metrics.json, which `make gds` leaves behind.
 report:
 	$(C4O_CMD) report
 
@@ -126,4 +141,4 @@ shell:
 	$(DOCKER_RUN) -it --entrypoint /bin/bash $(C4O_IMAGE)
 
 clean:
-	rm -rf build/
+	rm -rf build/ runs/
