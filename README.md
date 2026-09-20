@@ -72,7 +72,9 @@ Positive slack means the design meets the clock in `config.yaml`. Run
 
 ### Working inside the container
 
-The repo ships a [Dev Container](https://containers.dev/). In VS Code, *Reopen in Container* and you get the same image CI uses, with the Verilog extensions already installed — no Docker commands to type. The `Makefile` notices it is already inside the container and calls the tools directly instead of nesting another one.
+The repo ships a [Dev Container](https://containers.dev/). Open it in GitHub Codespaces, or in VS Code with *Reopen in Container*, and you get the same image CI uses, with the Verilog extensions already installed — no Docker commands to type. The `Makefile` notices it is already inside the container and calls the tools directly instead of nesting another one.
+
+It runs as `root`. On a Linux host that means files it writes into `build/` end up owned by `root`, so `make clean` from your host may need `sudo`. Running as a normal user instead breaks Codespaces, so this is the side we err on.
 
 `make gds` is the exception: it launches the LibreLane container, which needs a Docker socket the Dev Container does not have. Run that one from your host terminal; the Makefile will say so if you forget.
 
