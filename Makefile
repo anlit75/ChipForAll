@@ -2,7 +2,7 @@
 # Philosophy: Keep it simple. Delegate logic to c4o-core.
 
 # Image Configuration
-C4O_IMAGE := ghcr.io/anlit75/c4o-core:2.1.0
+C4O_IMAGE := ghcr.io/anlit75/c4o-core:2.2.0
 LIBRELANE_IMAGE := ghcr.io/librelane/librelane:3.0.14
 DESIGN_NAME := $(shell grep -E '^DESIGN_NAME:' config.yaml | sed -e 's/^DESIGN_NAME:[[:space:]]*//' -e 's/["'"'"']//g')
 PWD := $(shell pwd)
@@ -24,7 +24,7 @@ else
 	C4O_CMD := $(DOCKER_RUN) $(C4O_IMAGE)
 endif
 
-.PHONY: all help lint sim synth gds pdk clean shell
+.PHONY: all help lint sim synth gds pdk report clean shell
 
 all: lint sim synth
 
@@ -35,6 +35,7 @@ help:
 	@echo "  make synth  - Run Yosys synthesis"
 	@echo "  make pdk    - Install/Enable Sky130 PDK via Ciel"
 	@echo "  make gds    - Run LibreLane GDSII flow"
+	@echo "  make report - Show area, timing and power from the last GDS run"
 	@echo "  make shell  - Enter c4o-core interactive shell"
 
 # --- Logic Delegated to c4o-core ---
@@ -73,7 +74,7 @@ gds:
 	$(MAKE) pdk
 
 	@echo "🟢 Validating config with c4o-core..."
-	$(C4O_CMD) gds
+	$(C4O_CMD) check
 	@echo "🟢 Running LibreLane..."
 	mkdir -p build
 	docker run --rm \
@@ -90,6 +91,14 @@ gds:
 	cp runs/$(DESIGN_NAME)_run/final/gds/$(DESIGN_NAME).gds build/$(DESIGN_NAME).gds
 	# Clean up: Move the raw runs folder into build/runs
 	rm -rf build/runs && mv runs build/runs
+
+	@# The flow just measured area, timing and power. Show them rather than
+	@# leaving them in a 300-key metrics.json under build/runs.
+	@$(MAKE) --no-print-directory report
+
+# Reads build/runs/<tag>/final/metrics.json, which `make gds` leaves behind.
+report:
+	$(C4O_CMD) report
 
 # --- Utilities ---
 
