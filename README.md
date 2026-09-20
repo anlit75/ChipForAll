@@ -129,7 +129,11 @@ The repo ships a [Dev Container](https://containers.dev/). Open it in GitHub Cod
 
 It runs as `root`. On a Linux host that means files it writes into `build/` end up owned by `root`, so `make clean` from your host may need `sudo`. Running as a normal user instead breaks Codespaces, so this is the side we err on.
 
-`make gds` is the exception: it launches the LibreLane container, which needs a Docker socket the Dev Container does not have. Run that one from your host terminal; the Makefile will say so if you forget.
+`make gds` works in here too. It launches the LibreLane container as a sidecar, so the Dev Container ships a Docker daemon of its own for it to talk to — you no longer have to leave for your host terminal, which in Codespaces meant you could not run the headline command at all.
+
+That is docker-*in*-docker rather than docker-outside-of-docker, and the difference is not a preference. `make gds` bind-mounts the working directory, which is `/workspace` in here. An outside daemon would resolve that path on your host, where `/workspace` does not exist, so Docker would create an empty directory and LibreLane would run against nothing — no error, just a confusing failure deep in the flow. An inside daemon resolves it against this filesystem, where it is the repo.
+
+The cost is a first run that pulls the LibreLane image inside the container, and a Dev Container that has to be rebuilt once for the feature to install. If `make gds` says it cannot find a Docker daemon, a rebuild is what it is asking for.
 
 Prefer to stay in your own editor? `make shell` drops you into the same image from any terminal.
 

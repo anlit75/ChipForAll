@@ -18,6 +18,35 @@ on:
   workflow_dispatch:
 
 jobs:
+  # The Dev Container is the "zero install" promise, and nothing else here
+  # exercises it -- the job below runs on the host, against the plain image.
+  # So a devcontainer.json change could only be caught by opening a Codespace
+  # by hand, which is how `remoteUser` broke once already.
+  #
+  # Builds it for real and checks the two things `make gds` needs from it: a
+  # Docker daemon that answers (the guard's exact condition), and the
+  # in-container delegation path the Makefile takes when it finds the
+  # entrypoint script locally. It does not run `make gds` itself -- that wants
+  # a 3GB PDK and twenty minutes -- and it cannot speak for Codespaces, whose
+  # remote server is a different thing again.
+  devcontainer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build the Dev Container and use it
+        uses: devcontainers/ci@v0.3
+        with:
+          configFile: .devcontainer/devcontainer.json
+          push: never
+          runCmd: |
+            set -e
+            echo "--- the daemon 'make gds' guards on ---"
+            docker info > /dev/null
+            docker version --format '{{.Server.Version}}'
+            echo "--- the in-container delegation path ---"
+            make lint
+
   full-flow:
     runs-on: ubuntu-latest
     permissions:
