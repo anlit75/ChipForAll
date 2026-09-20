@@ -85,8 +85,8 @@ jobs:
       # the whole build/ directory through the artifact store to get at it.
       #
       # Not on pull requests. blinky's led toggles once every 2**25 cycles and
-      # the netlist has no WIDTH left to shrink, so this costs ~5 minutes --
-      # measured, not guessed. Paying that on every review round trip buys
+      # the netlist has no WIDTH left to shrink, so this costs ~4 minutes --
+      # measured here, not guessed. Paying that on every review round trip buys
       # little: the netlist only changes when the RTL or the flow does, and
       # merging to main catches that before any tag is cut.
       #

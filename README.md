@@ -89,7 +89,7 @@ It needs its own testbench, in `test/gate/`, because synthesis resolves
 parameters: `test/tb_blinky.v` shrinks the design by setting `WIDTH` to 4, and
 a netlist has no `WIDTH` left to set. `test/gate/tb_blinky_gl.v` therefore
 drives the real pins and watches `led` over a full divider period — all 2^26
-cycles of it, which takes about five minutes.
+cycles of it, which takes about four minutes (3:36 on a CI runner).
 
 That cost is why CI runs `make gatesim` on pushes to `main` and on `v*` tags,
 but not on every pull request.

@@ -8,9 +8,9 @@
 // together; its port list is (clk, led, rst) and nothing else. So the only way
 // to watch led toggle is to actually run the divider, all 2**25 cycles of it.
 //
-// That costs about five minutes of wall clock, which is why `make gatesim` is
-// a separate target and CI runs it on pushes to main rather than on every
-// pull request.
+// That costs about four minutes of wall clock -- 3:36 on a CI runner, 4:41 on
+// an earlier probe -- which is why `make gatesim` is a separate target and CI
+// runs it on pushes to main rather than on every pull request.
 //
 // The two constants below were measured on a real LibreLane netlist before
 // they were written down. Writing `2**25` from first principles and letting a

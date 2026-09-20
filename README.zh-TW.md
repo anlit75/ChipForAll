@@ -90,7 +90,7 @@ make gatesim   # 模擬它
 它需要自己的 testbench，放在 `test/gate/`，因為合成會把參數固定下來：
 `test/tb_blinky.v` 靠把 `WIDTH` 設成 4 來縮小設計，而 netlist 裡已經沒有
 `WIDTH` 可以設。因此 `test/gate/tb_blinky_gl.v` 只驅動真正的接腳，並觀察 `led`
-走完一個完整的除頻週期——整整 2^26 個 cycle，大約需要五分鐘。
+走完一個完整的除頻週期——整整 2^26 個 cycle，大約需要四分鐘（CI runner 上實測 3 分 36 秒）。
 
 這個代價就是為什麼 CI 只在推送到 `main` 與 `v*` tag 時跑 `make gatesim`，而不
 是每個 pull request 都跑。

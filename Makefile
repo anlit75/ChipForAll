@@ -51,7 +51,7 @@ sim:
 # the PDK's own cell models. `make sim` says the RTL behaves; this says the gates
 # synthesis produced still behave, which is a different claim.
 #
-# Budget about five minutes: the netlist has no WIDTH left to shrink, so
+# Budget four to five minutes: the netlist has no WIDTH left to shrink, so
 # test/gate/tb_blinky_gl.v has to run the divider's full 2**26 cycles.
 gatesim:
 	$(C4O_CMD) gatesim
