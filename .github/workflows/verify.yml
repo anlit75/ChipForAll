@@ -89,8 +89,13 @@ jobs:
       # measured, not guessed. Paying that on every review round trip buys
       # little: the netlist only changes when the RTL or the flow does, and
       # merging to main catches that before any tag is cut.
+      #
+      # Phrased as "not a pull request" rather than "is a push" so that
+      # workflow_dispatch runs it too -- that is the way to exercise a branch's
+      # gate-level simulation before merging it, without paying for it on every
+      # review round trip.
       - name: 5. Gate-Level Simulation
-        if: github.event_name == 'push'
+        if: github.event_name != 'pull_request'
         timeout-minutes: 15
         run: make gatesim
 
