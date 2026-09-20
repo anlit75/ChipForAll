@@ -10,10 +10,13 @@
 
 DESIGN_NAME: blinky
 
-# A glob, so a second source file needs no edit here. '**' matches
-# recursively and also matches files directly in src/.
+# One line per source file. A glob does not work here: LibreLane validates
+# each entry as a literal path and never expands '**', so `dir::src/**/*.v`
+# lints, simulates and synthesises fine -- c4o-core does expand it -- and then
+# `make gds` stops with "'/workspace/src/**/*.v' does not exist". Measured in
+# CI, not guessed.
 VERILOG_FILES:
-  - dir::src/**/*.v
+  - dir::src/blinky.v
 
 # Simulation only. LibreLane has no testbench variable -- simulation sits
 # outside an RTL-to-GDSII flow -- and it ignores any key starting with '//',
