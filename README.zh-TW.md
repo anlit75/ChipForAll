@@ -64,6 +64,11 @@ make gds
 
 沒有別的地方寫死設計名稱。`Makefile` 和 CI 工作流都從 `config.yaml` 讀 `DESIGN_NAME`，改那裡就夠了。
 
+**最後兩列是選用的。** 把 `"//COCOTB_TESTS"` 或 `"//GATE_TESTS"` 從 `config.yaml` 刪掉，CI 就會跳過那一類測試而不是失敗。值得堅持的只有 Verilog testbench；Python 的是同一件事的另一種寫法，而閘級的是這裡最難寫的檔案——它沒辦法像 `test/tb_blinky.v` 那樣用參數把設計縮小，只能用真實位寬驅動真實的 port。
+
+但如果把 key 留著卻指向不存在的檔案，CI 還是會失敗——這是對的，你要求了不存在的測試。
+
+
 第一列弄錯的話，你會立刻知道，而不是等到 `make gds` 跑了三分鐘之後：
 
 ```console
@@ -117,6 +122,10 @@ make gds
 
 slack 為正值代表設計滿足 `config.yaml` 裡設定的時脈。想再看一次而不重跑整個
 流程，單獨執行 `make report` 即可。
+
+**die 會跟著你的設計長大。** `config.yaml` 預設 `FP_SIZING: relative`，這也是 LibreLane 自己的預設：die 的大小由你的 cell 實際需要多少面積、以 `FP_CORE_UTIL` 的佔用率算出來。設計變大，die 就跟著變大。
+
+另一個選項 `FP_SIZING: absolute` 會把 die 釘在 `DIE_AREA`——塞不下的設計會在流程中途以佈局錯誤倒掉。沒有東西能事先警告你，因為要知道塞不塞得下得先合成、數 cell。需要精確尺寸時再切過去，不用提早。
 
 ### 不重跑整條流程的迭代方式
 

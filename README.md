@@ -61,6 +61,11 @@ The example is a blinky — a clock divider. To replace it with your own, four t
 
 Nothing else names the design. The `Makefile` and the CI workflow both read `DESIGN_NAME` from `config.yaml`, so renaming it is enough.
 
+**The last two rows are optional.** Delete `"//COCOTB_TESTS"` or `"//GATE_TESTS"` from `config.yaml` and CI skips that kind of test instead of failing. A Verilog testbench is the one thing worth insisting on; a Python one is a second way to write the same test, and a gate-level one is the hardest file here to write — it cannot shrink the design through a parameter the way `test/tb_blinky.v` does, so it has to drive the real ports at their real width.
+
+Keep the key and point it at nothing, though, and CI fails — correctly. You asked for tests that are not there.
+
+
 Get the first row wrong and you hear about it immediately, not three minutes into `make gds`:
 
 ```console
@@ -117,6 +122,10 @@ run and then leaves it in the run directory; open it.
 
 Positive slack means the design meets the clock in `config.yaml`. Run
 `make report` on its own to see it again without repeating the flow.
+
+**The die grows with your design.** `config.yaml` ships `FP_SIZING: relative`, which is LibreLane's own default: the die is computed from how much area your cells need, at `FP_CORE_UTIL` occupancy. Put a bigger design in and you get a bigger die.
+
+The alternative, `FP_SIZING: absolute`, pins it to `DIE_AREA` — and a design that does not fit fails partway through the flow with a placement error. Nothing can warn you beforehand, because knowing whether it fits needs synthesis to count the cells. Switch to it when you need an exact size, not before.
 
 ### Iterating without re-running the whole flow
 

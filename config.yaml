@@ -41,9 +41,20 @@ CLOCK_PERIOD: 10.0
 PDK: sky130A
 STD_CELL_LIBRARY: sky130_fd_sc_hd
 
-DIE_AREA: [0, 0, 100, 100]
+# 'relative' is LibreLane's own default, and it is the right one for a
+# template: the die is computed from how much area your cells actually need,
+# at FP_CORE_UTIL occupancy, so a bigger design gets a bigger die. 'absolute'
+# pins the die to DIE_AREA below, and a design that does not fit in it fails
+# partway through the flow with a placement error -- which `make gds` cannot
+# warn about beforehand, because knowing whether it fits needs synthesis.
+#
+# Swap these two lines if you need an exact die size.
 FP_CORE_UTIL: 40
-FP_SIZING: absolute
+FP_SIZING: relative
+
+# Only read when FP_SIZING is 'absolute'. It stays here because the pre-flight
+# check requires it either way.
+DIE_AREA: [0, 0, 100, 100]
 
 # The blackbox stubs LibreLane generates for the PDK cells carry no timescale,
 # so TIMESCALEMOD fires once per cell -- 441 warnings, none of them from our
