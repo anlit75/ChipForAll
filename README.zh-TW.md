@@ -129,7 +129,11 @@ make gatesim   # 模擬它
 
 容器內以 `root` 執行。在 Linux 主機上，這代表它寫進 `build/` 的檔案擁有者會是 `root`，從主機執行 `make clean` 可能需要 `sudo`。改用一般使用者會讓 Codespaces 無法連線，所以我們選擇承受這個代價。
 
-`make gds` 是唯一的例外：它要啟動 LibreLane 容器，而 Dev Container 內沒有 Docker socket。這一項請在**主機終端機**執行；若忘記，Makefile 會提醒你。
+`make gds` 在這裡面也能跑。它以 sidecar 的方式啟動 LibreLane 容器，因此 Dev Container 內建了一個自己的 Docker daemon 供它使用——不必再退回主機終端機，而在 Codespaces 上，那原本代表你根本無法執行這個招牌指令。
+
+這裡用的是 docker-**in**-docker 而不是 docker-outside-of-docker，兩者的差別不是偏好問題。`make gds` 會把工作目錄 bind-mount 進去，而在容器內那是 `/workspace`。外部 daemon 會把這個路徑解析到你的主機上，那裡並沒有 `/workspace`，於是 Docker 會建立一個空目錄，LibreLane 就對著空氣跑——不會報錯，只會在流程深處出現一個令人困惑的失敗。內部 daemon 則解析到這個容器的檔案系統，那裡就是你的專案。
+
+代價是第一次執行要在容器內拉一次 LibreLane 映像檔，而且 Dev Container 需要重建一次才會裝上這個 feature。如果 `make gds` 說它找不到 Docker daemon，它要的就是一次重建。
 
 習慣用自己的編輯器？`make shell` 可以從任何終端機進入同一個映像檔。
 
