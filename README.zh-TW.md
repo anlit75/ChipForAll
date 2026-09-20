@@ -75,7 +75,9 @@ slack 為正值代表設計滿足 `config.yaml` 裡設定的時脈。想再看�
 
 ### 在容器內開發
 
-本專案附有 [Dev Container](https://containers.dev/)。在 VS Code 選擇「在容器中重新開啟」，即可取得與 CI 相同的映像檔，Verilog 相關擴充套件也已裝好——不必手動輸入任何 Docker 指令。`Makefile` 會偵測到自己已在容器內，直接呼叫工具，而不會再疊一層容器。
+本專案附有 [Dev Container](https://containers.dev/)。用 GitHub Codespaces 開啟，或在 VS Code 選擇「在容器中重新開啟」，即可取得與 CI 相同的映像檔，Verilog 相關擴充套件也已裝好——不必手動輸入任何 Docker 指令。`Makefile` 會偵測到自己已在容器內，直接呼叫工具，而不會再疊一層容器。
+
+容器內以 `root` 執行。在 Linux 主機上，這代表它寫進 `build/` 的檔案擁有者會是 `root`，從主機執行 `make clean` 可能需要 `sudo`。改用一般使用者會讓 Codespaces 無法連線，所以我們選擇承受這個代價。
 
 `make gds` 是唯一的例外：它要啟動 LibreLane 容器，而 Dev Container 內沒有 Docker socket。這一項請在**主機終端機**執行；若忘記，Makefile 會提醒你。
 

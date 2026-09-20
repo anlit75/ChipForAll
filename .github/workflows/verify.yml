@@ -47,9 +47,15 @@ jobs:
       # in a way no other step here would catch.
       - name: Verify the devcontainer user exists in its image
         run: |
-          image=$(jq -er .image .devcontainer/devcontainer.json)
-          user=$(jq -er .remoteUser .devcontainer/devcontainer.json)
-          docker run --rm --entrypoint id "$image" -u "$user"
+          # devcontainer.json is JSONC, so strip line comments before parsing.
+          set -- $(python3 -c "
+          import json, re
+          src = open('.devcontainer/devcontainer.json').read()
+          d = json.loads(re.sub(r'^\s*//.*$', '', src, flags=re.M))
+          print(d['image'], d['remoteUser'])
+          ")
+          echo "image=$1 remoteUser=$2"
+          docker run --rm --entrypoint id "$1" -u "$2"
 
       - name: 1. Lint Check
         run: make lint

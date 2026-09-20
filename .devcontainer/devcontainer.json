@@ -1,7 +1,16 @@
 {
     "name": "ChipForAll",
     "image": "ghcr.io/anlit75/c4o-core:2.2.0",
-    "remoteUser": "ubuntu",
+    // Do not change this to a non-root user without testing a Codespace.
+    // "ubuntu" (the user ubuntu:24.04 ships at uid 1000) looked like the right
+    // answer -- it keeps files created here owned by the host user on Linux --
+    // and it broke Codespaces outright: "14 UNAVAILABLE: No connection
+    // established". The remote server could not start as that user. The image
+    // carries no sudo, and workspaceMount below puts the repo at /workspace,
+    // which Codespaces creates root-owned. Root sidesteps both.
+    // The cost is real and accepted: on a Linux host, files this container
+    // writes into build/ and .git are owned by root.
+    "remoteUser": "root",
     "customizations": {
         "vscode": {
             "settings": {
