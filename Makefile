@@ -23,12 +23,26 @@ DOCKER_RUN := docker run --rm -v $(PWD):/workspace -w /workspace -u $(shell id -
 # Check if the entrypoint script exists locally (means we are inside the container)
 ENTRYPOINT_SCRIPT := /opt/c4o-core/scripts/entrypoint.py
 
+# C4O_COCOTB is the same command with a seed threaded through. A random test
+# is only worth running if its failures repeat: cocotb seeds Python's random
+# module from the seed below and logs the value it used, so
+#
+#   make cocotb SEED=1789965785
+#
+# replays a failed run exactly. It needs its own variable because the value
+# has to cross into the container, which an exported shell variable does not.
+#
+# SEED here, RANDOM_SEED inside: that is cocotb 1.9's name for it, and cocotb
+# 2 renames it again (COCOTB_RANDOM_SEED). Translating at this line is what
+# keeps `make cocotb SEED=...` the same command across that change.
 ifneq ($(wildcard $(ENTRYPOINT_SCRIPT)),)
 	# Case A: We are inside the DevContainer
 	C4O_CMD := python3 $(ENTRYPOINT_SCRIPT)
+	C4O_COCOTB = $(if $(SEED),env RANDOM_SEED=$(SEED)) $(C4O_CMD)
 else
 	# Case B: We are on the Host Machine
 	C4O_CMD := $(DOCKER_RUN) $(C4O_IMAGE)
+	C4O_COCOTB = $(DOCKER_RUN) $(if $(SEED),-e RANDOM_SEED=$(SEED)) $(C4O_IMAGE)
 endif
 
 .PHONY: all help lint sim cocotb gatesim synth schematic gds pdk report clean distclean shell
@@ -40,6 +54,7 @@ help:
 	@echo "  make lint    - Run Verilator lint check"
 	@echo "  make sim     - Run Icarus Verilog simulation"
 	@echo "  make cocotb  - Run the Python (cocotb) testbenches"
+	@echo "                 (repeat a random failure: make cocotb SEED=<n>)"
 	@echo "  make gatesim - Re-simulate the synthesised netlist (~5 min, after make gds)"
 	@echo "  make synth   - Run Yosys synthesis"
 	@echo "  make schematic - Draw the circuit as build/schematic.svg"
@@ -65,7 +80,7 @@ sim:
 # `make sim`: it is a second way to write a testbench, and the example shows the
 # thing Python is better at -- writing to a signal inside the design.
 cocotb:
-	$(C4O_CMD) cocotb
+	$(C4O_COCOTB) cocotb
 
 # Simulates runs/<tag>/final/nl/, which `make gds` leaves behind, against
 # the PDK's own cell models. `make sim` says the RTL behaves; this says the gates

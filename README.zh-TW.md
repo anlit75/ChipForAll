@@ -122,7 +122,7 @@ make gds
 
 * [幫你自己的設計寫測試平台](docs/guide.zh-TW.md#幫你自己的設計寫測試平台)——能真的失敗的最小骨架
 * 測試變紅的時候[去看波形](docs/guide.zh-TW.md#測試失敗的時候去看波形)
-* 用 [Python 寫測試平台](docs/guide.zh-TW.md#用-python-寫測試平台)，以及[閘級模擬](docs/guide.zh-TW.md#模擬閘級電路而不只是-rtl)
+* 用 [Python 寫測試平台](docs/guide.zh-TW.md#用-python-寫測試平台)、[隨機刺激對參考模型](docs/guide.zh-TW.md#隨機刺激與參考模型)，以及[閘級模擬](docs/guide.zh-TW.md#模擬閘級電路而不只是-rtl)
 * [不重跑整條流程的迭代方式](docs/guide.zh-TW.md#不重跑整條流程的迭代方式)，以及[看看電路長什麼樣](docs/guide.zh-TW.md#看看電路長什麼樣)
 * [在容器內開發](docs/guide.zh-TW.md#在容器內開發)，以及[完整的設定參考](docs/guide.zh-TW.md#設定參考)
 
@@ -139,6 +139,7 @@ make gds
 ├── test/              # 🧪 您的測試平台 (Testbenches)
 │   ├── tb_blinky.v              # RTL 模擬 (make sim)
 │   ├── test_blinky_cocotb.py    # Python 測試平台 (make cocotb)
+│   ├── test_blinky_random.py    # 隨機刺激對參考模型
 │   └── gate/                    # 閘級模擬 (make gatesim)
 │       └── tb_blinky_gl.v
 └── build/             # 📦 所有產出的檔案 (GDS, Logs, Netlists)

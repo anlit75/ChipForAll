@@ -122,7 +122,7 @@ The [guide](docs/guide.md) covers what comes after the first run:
 
 *   [Writing a testbench for your own design](docs/guide.md#writing-a-testbench-for-your-own-design) — the smallest one that can actually fail
 *   [Looking at the waveform](docs/guide.md#when-a-test-fails-look-at-the-waveform) when a test goes red
-*   [Python testbenches](docs/guide.md#writing-testbenches-in-python) with cocotb, and [gate-level simulation](docs/guide.md#simulating-the-gates-not-just-the-rtl)
+*   [Python testbenches](docs/guide.md#writing-testbenches-in-python) with cocotb, [random stimulus against a reference model](docs/guide.md#random-stimulus-and-a-reference-model), and [gate-level simulation](docs/guide.md#simulating-the-gates-not-just-the-rtl)
 *   [Iterating](docs/guide.md#iterating-without-re-running-the-whole-flow) without re-running the whole flow, and [seeing the circuit](docs/guide.md#seeing-the-circuit)
 *   [Working inside the container](docs/guide.md#working-inside-the-container), and the [full configuration reference](docs/guide.md#configuration-reference)
 
@@ -139,6 +139,7 @@ The [guide](docs/guide.md) covers what comes after the first run:
 ├── test/              # 🧪 Your testbenches
 │   ├── tb_blinky.v              # RTL simulation (make sim)
 │   ├── test_blinky_cocotb.py    # Python testbenches (make cocotb)
+│   ├── test_blinky_random.py    # Random stimulus vs a reference model
 │   └── gate/                    # Gate-level simulation (make gatesim)
 │       └── tb_blinky_gl.v
 └── build/             # 📦 Generated artifacts (GDS, logs, netlists)
