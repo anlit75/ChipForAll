@@ -97,8 +97,8 @@ Verilog 那個邊緣的坑在這裡一樣成立：`RisingEdge` 是在時脈邊�
 * **scoreboard**——每個時脈之後把 `led` 和模型比對，失敗時印出第幾個 cycle、兩邊的值，以及那個視窗的起始計數。
 
 ```bash
-make cocotb                          # 每次換一個 seed
-make cocotb RANDOM_SEED=1789965785   # 完全重現某一次
+make cocotb                   # 每次換一個 seed
+make cocotb SEED=1789965785   # 完全重現某一次
 ```
 
 cocotb 自己會 seed Python 的 `random` 並把用的 seed 印出來，所以 CI 上的失敗可以照著那一行在你機器上重現。

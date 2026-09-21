@@ -10,7 +10,7 @@ Repeating a failure. cocotb seeds Python's random module itself and logs
 the seed it used ("Seeding Python random module with 1789965785"), so a
 run that failed can be run again exactly:
 
-    make cocotb RANDOM_SEED=1789965785
+    make cocotb SEED=1789965785
 
 What this does not check: reset *timing*. The stimulus moves rst only
 just after a clock edge, so an asynchronous reset and a synchronous one

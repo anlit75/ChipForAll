@@ -97,8 +97,8 @@ Three pieces, each about ten lines:
 *   **The scoreboard** — `led` compared against the model after every clock, failing with the cycle, both values and the starting count.
 
 ```bash
-make cocotb                          # a new seed each run
-make cocotb RANDOM_SEED=1789965785   # replay one exactly
+make cocotb                   # a new seed each run
+make cocotb SEED=1789965785   # replay one exactly
 ```
 
 cocotb seeds Python's `random` itself and logs the seed it used, so a failure on CI is reproducible on your machine from the log line.
