@@ -139,7 +139,7 @@ cat runs/*/final/*.rpt          # 或到 runs/<tag>/ 底下找 STA 那幾步
 
 ### 不重跑整條流程的迭代方式
 
-第一次 `make gds` 大約三分鐘。之後你會改的東西——`DIE_AREA`、`CLOCK_PERIOD`、
+第一次 `make gds` 大約三分鐘。之後你會改的東西——`FP_CORE_UTIL`、`CLOCK_PERIOD`、
 floorplan——多半不需要重做合成，所以把恢復上次執行的旗標傳給 LibreLane：
 
 ```bash
@@ -336,7 +336,9 @@ CLOCK_PORT: clk
 CLOCK_PERIOD: 10.0
 ```
 
-檔案中其餘的 key（`PDK`、`DIE_AREA`、`FP_SIZING`…）用於設定實體設計流程。在需要之前請保持原樣——若缺少任何一項，`make gds` 會告訴您。
+檔案中其餘的 key（`PDK`、`FP_SIZING`、`FP_CORE_UTIL`…）用於設定實體設計流程。在需要之前請保持原樣——若缺少任何一項，`make gds` 會告訴您。
+
+晶片尺寸不需要你自己決定。`FP_SIZING: relative` 會依 `FP_CORE_UTIL`（core 要放多滿，這裡是 40%）自動算出 die，所以較大的設計會得到較大的 die，而不是「放不下」。繞線太擠就把它調低，想要更小的晶片就調高。仍然可以固定尺寸：把 `FP_SIZING` 改成 `absolute`，並加上 `DIE_AREA: [0, 0, 寬, 高]`。
 
 ---
 

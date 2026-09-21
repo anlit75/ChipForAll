@@ -2,12 +2,12 @@
 # Philosophy: Keep it simple. Delegate logic to c4o-core.
 
 # Image Configuration
-C4O_IMAGE := ghcr.io/anlit75/c4o-core:2.6.0
+C4O_IMAGE := ghcr.io/anlit75/c4o-core:2.7.0
 LIBRELANE_IMAGE := ghcr.io/librelane/librelane:3.0.14
 
 # Extra flags for the LibreLane run. The reason this exists is iteration: a
 # full flow is three minutes, and most of what you change after the first one
-# -- DIE_AREA, CLOCK_PERIOD, the floorplan -- does not need synthesis redone.
+# -- FP_CORE_UTIL, CLOCK_PERIOD, the floorplan -- does not need synthesis redone.
 #
 #   make gds LIBRELANE_ARGS="--last-run --from floorplan"
 #

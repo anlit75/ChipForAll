@@ -142,7 +142,7 @@ and still be telling you it missed.
 ### Iterating without re-running the whole flow
 
 The first `make gds` is about three minutes. Most of what you change after it
-— `DIE_AREA`, `CLOCK_PERIOD`, the floorplan — does not need synthesis redone,
+— `FP_CORE_UTIL`, `CLOCK_PERIOD`, the floorplan — does not need synthesis redone,
 so hand LibreLane the flags that resume the last run:
 
 ```bash
@@ -349,7 +349,9 @@ CLOCK_PORT: clk
 CLOCK_PERIOD: 10.0
 ```
 
-The remaining keys in the file (`PDK`, `DIE_AREA`, `FP_SIZING`, …) configure the physical design flow. Leave them alone until you need them — `make gds` will tell you if one is missing.
+The remaining keys in the file (`PDK`, `FP_SIZING`, `FP_CORE_UTIL`, …) configure the physical design flow. Leave them alone until you need them — `make gds` will tell you if one is missing.
+
+The die is not one of the things you have to size. `FP_SIZING: relative` floorplans from `FP_CORE_UTIL` — how full the core should be, 40% here — so a bigger design gets a bigger die instead of "does not fit". Lower it if routing is tight, raise it for a smaller chip. A fixed die is still available: set `FP_SIZING: absolute` and add `DIE_AREA: [0, 0, w, h]`.
 
 ---
 
