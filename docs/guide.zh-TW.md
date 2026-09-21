@@ -86,6 +86,27 @@ assert dut.led.value == 1
 
 Verilog 那個邊緣的坑在這裡一樣成立：`RisingEdge` 是在時脈邊緣**當下**恢復執行，此時 non-blocking assignment 還沒生效，所以檔案裡每次讀值前都再等一個 `Timer`。
 
+## 隨機刺激與參考模型
+
+`test/test_blinky_random.py` 是驗證的另一半。directed test 針對某人挑的幾個時刻做斷言；這一支則建立一個「設計應該怎麼動」的模型，在沒有人手寫的刺激下，每個 cycle 都拿來對一次。
+
+三個部分，每個大約十行：
+
+* **模型**——`BlinkyModel`，用 Python 把 blinky 的行為再寫一次。刻意不是 RTL 的逐行翻譯：一個會重複設計錯誤的模型，不可能跟設計意見不合。
+* **刺激**——隨機的起始計數與隨機的 reset 脈衝，五個視窗裡有兩個固定放在 `led` 會變的位置，這樣一次執行不會整場盯著一條不動的訊號。
+* **scoreboard**——每個時脈之後把 `led` 和模型比對，失敗時印出第幾個 cycle、兩邊的值，以及那個視窗的起始計數。
+
+```bash
+make cocotb                          # 每次換一個 seed
+make cocotb RANDOM_SEED=1789965785   # 完全重現某一次
+```
+
+cocotb 自己會 seed Python 的 `random` 並把用的 seed 印出來，所以 CI 上的失敗可以照著那一行在你機器上重現。
+
+`led` 從頭到尾沒動過的話，這個測試也會失敗——200 個綠色 cycle 盯著一條常數訊號，什麼都沒證明，而一個會為此回報 PASS 的測試套件，正是這個專案花最多力氣在避免的東西。
+
+它不檢查 reset 的*時序*：刺激只在時脈邊緣之後才動 `rst`，所以非同步 reset 和同步 reset 在這裡看起來一樣。那是靜態時序的問題，`make gds` 已經在報告了。
+
 ## 模擬閘級電路，而不只是 RTL
 
 `make sim` 驗證的是你寫的 Verilog，它並不能證明工具從中產生的 netlist 也對。latch 被誤推斷、reset 處理方式、合成器如何解讀有歧義的 `always` 區塊——這些都夾在兩者之間，而且從 RTL 看不出來。`make gatesim` 補上這一段：它拿 `make gds` 留下的閘級 netlist（`runs/<tag>/final/nl/`），對著 Sky130 元件自己的 Verilog model 跑模擬。

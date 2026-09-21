@@ -86,6 +86,27 @@ Checking that `led` is the counter's top bit costs four cycles that way. A Veril
 
 The same edge gotcha as in Verilog applies: `RisingEdge` resumes *at* the edge, before the non-blocking assignment lands, so every read in that file waits a further `Timer` first.
 
+## Random stimulus and a reference model
+
+`test/test_blinky_random.py` is the other half of verification. A directed test asserts on moments somebody chose; this one builds a model of what the design should do and compares against it on every cycle, under stimulus nobody wrote out.
+
+Three pieces, each about ten lines:
+
+*   **The model** — `BlinkyModel`, blinky's behaviour written a second way in Python. Deliberately not a transcription of the RTL: a model that repeats the design's mistakes cannot disagree with it.
+*   **The stimulus** — random starting counts and random reset pulses, with two of the five windows placed where `led` changes so a run cannot watch a signal that never moves.
+*   **The scoreboard** — `led` compared against the model after every clock, failing with the cycle, both values and the starting count.
+
+```bash
+make cocotb                          # a new seed each run
+make cocotb RANDOM_SEED=1789965785   # replay one exactly
+```
+
+cocotb seeds Python's `random` itself and logs the seed it used, so a failure on CI is reproducible on your machine from the log line.
+
+The test also fails when `led` never moved at all — 200 green cycles that watched a constant signal proved nothing, and a suite that reports PASS for that is the thing this repo spends most of its effort avoiding.
+
+It does not check reset *timing*: the stimulus moves `rst` just after a clock edge, so an asynchronous reset and a synchronous one look the same here. That question belongs to static timing, which `make gds` already reports.
+
 ## Simulating the gates, not just the RTL
 
 `make sim` says your Verilog behaves. It says nothing about the netlist the tools produced from it — latch inference, reset handling and how a synthesiser reads an ambiguous `always` block all sit between the two, and none of them are visible from the RTL. `make gatesim` closes that gap: it simulates `runs/<tag>/final/nl/`, the gate-level netlist `make gds` left behind, against the Sky130 cells' own Verilog models.
