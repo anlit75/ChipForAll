@@ -66,6 +66,42 @@ jobs:
           restore-keys: |
             sky130-pdk-${{ runner.os }}-
 
+      # c4o-core's version tag is repeated three times because nothing here
+      # reads it from a single source: the Makefile drives `make gds`, this
+      # workflow pulls the image before the Makefile ever runs, and
+      # devcontainer.json is read by an external tool that never touches the
+      # Makefile at all. A tag bumped in one place and missed in another does
+      # not fail loudly -- it just means whoever builds locally, opens the
+      # Codespace, or runs this workflow silently gets a different c4o-core
+      # than everyone else. Runs before the pull below so a mismatch is
+      # caught as a config error, not paid for as a wasted image pull.
+      - name: Verify c4o-core image version is pinned consistently
+        run: |
+          python3 -c "
+          import json, re, sys
+
+          makefile = open('Makefile').read()
+          m = re.search(r'^C4O_IMAGE\s*:=\s*(\S+)', makefile, re.M)
+
+          workflow = open('.github/workflows/verify.yml').read()
+          w = re.search(r'docker pull (ghcr\.io/anlit75/c4o-core:\S+)', workflow)
+
+          devcontainer_src = open('.devcontainer/devcontainer.json').read()
+          devcontainer = json.loads(re.sub(r'^\s*//.*$', '', devcontainer_src, flags=re.M))
+
+          values = {
+              'Makefile': m.group(1),
+              '.github/workflows/verify.yml': w.group(1),
+              '.devcontainer/devcontainer.json': devcontainer['image'],
+          }
+          if len(set(values.values())) > 1:
+              print('c4o-core image reference is inconsistent:')
+              for path in values:
+                  print('  ' + path + ': ' + values[path])
+              sys.exit(1)
+          print('c4o-core image reference is consistent: ' + values['Makefile'])
+          "
+
       - name: Pull c4o-core Image
         run: docker pull ghcr.io/anlit75/c4o-core:2.7.0
 
