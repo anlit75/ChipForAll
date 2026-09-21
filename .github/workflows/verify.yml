@@ -66,6 +66,64 @@ jobs:
           restore-keys: |
             sky130-pdk-${{ runner.os }}-
 
+      # c4o-core's version tag is repeated three times because nothing here
+      # reads it from a single source: the Makefile drives `make gds`, this
+      # workflow pulls the image before the Makefile ever runs, and
+      # devcontainer.json is read by an external tool that never touches the
+      # Makefile at all. A tag bumped in one place and missed in another does
+      # not fail loudly -- it just means whoever builds locally, opens the
+      # Codespace, or runs this workflow silently gets a different c4o-core
+      # than everyone else. Runs before the pull below so a mismatch is
+      # caught as a config error, not paid for as a wasted image pull.
+      - name: Verify c4o-core image version is pinned consistently
+        run: |
+          python3 -c "
+          import json, os, re, sys
+
+          def read(path):
+              # A file that is not here is a file somebody removed on purpose --
+              # dropping .devcontainer/ is a reasonable thing to do with a
+              # template. Only the pins that are still here have to agree.
+              return open(path).read() if os.path.exists(path) else None
+
+          def matched(pattern, text):
+              m = re.search(pattern, text, re.M)
+              return m.group(1) if m else None
+
+          values = {}
+
+          makefile = read('Makefile')
+          if makefile is not None:
+              values['Makefile'] = matched(r'^C4O_IMAGE\s*:=\s*(\S+)', makefile)
+
+          workflow = read('.github/workflows/verify.yml')
+          if workflow is not None:
+              values['.github/workflows/verify.yml'] = matched(
+                  r'docker pull (ghcr\.io/\S+/c4o-core:\S+)', workflow)
+
+          devcontainer = read('.devcontainer/devcontainer.json')
+          if devcontainer is not None:
+              # devcontainer.json is JSONC; strip the line comments first.
+              stripped = re.sub(r'^\s*//.*\$', '', devcontainer, flags=re.M)
+              values['.devcontainer/devcontainer.json'] = json.loads(stripped).get('image')
+
+          # Present but unreadable means this step went stale, not that the pins
+          # disagree. Name the file rather than leaving a traceback nothing
+          # points anyone at.
+          for path, value in values.items():
+              if value is None:
+                  print(path + ': found no c4o-core image reference.')
+                  print('If you renamed or moved it, this step has to be updated too.')
+                  sys.exit(1)
+
+          if len(set(values.values())) > 1:
+              print('c4o-core image reference is inconsistent:')
+              for path in values:
+                  print('  ' + path + ': ' + values[path])
+              sys.exit(1)
+          print('c4o-core image reference is consistent: ' + next(iter(values.values())))
+          "
+
       - name: Pull c4o-core Image
         run: docker pull ghcr.io/anlit75/c4o-core:2.7.0
 
