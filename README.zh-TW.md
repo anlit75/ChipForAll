@@ -25,6 +25,8 @@
 
 LibreLane 沒有涵蓋的是**模擬與驗證**。那才是這個起手式加上去的東西，外加跑它們的 CI 和 Dev Container。
 
+**這裡做出來的東西你可以公開。** 製程是 [Sky130](https://github.com/google/skywater-pdk)，SkyWater 用 Apache 2.0 開放出來的 PDK，沒有 NDA——所以 layout、面積、時序數字、GDS 全都能放進 GitHub、作品集或文章裡。如果你平常用的是 foundry 在保密條款下給的 PDK，那些結果不能公開；這條路存在的理由之一就是這個。
+
 ## 🚀 快速啟動
 
 ### 前置作業
@@ -116,7 +118,7 @@ make gds
 
 那是範例設計的數字，出自某一版 PDK。你的會不一樣；要看的是那些欄位。
 
-**`signoff`** 是那一列沒人會說的話：你的版圖通過了可製造性檢查。LibreLane 預設對每一項都會直接讓流程失敗，所以能跑到這一行就代表都過了——`clean` 只是把它講出來，並列出它實際看到哪幾項。有問題的時候它會改成指名道姓：`2 Magic DRC, 1 LVS`。
+**`signoff`** 是那一列沒人會說的話：你的版圖通過了可製造性檢查。這裡釘的 LibreLane 3.0.14 預設讓每一項都直接中止流程（`ERROR_ON_MAGIC_DRC` 那一族預設都是 `True`），而 `config.yaml` 沒有覆寫任何一個，所以能跑到這一行就代表都過了。這是那一版的預設行為，不是這個 repo 掛保證的事——升版之後要自己確認一次。`clean` 只是把它講出來，並列出它實際看到哪幾項。有問題的時候它會改成指名道姓：`2 Magic DRC, 1 LVS`。
 
 **`layout`** 是流程幫你的晶片畫的 PNG。打開來看看。
 
@@ -125,8 +127,8 @@ make gds
 **slack 為正值**代表設計滿足 `config.yaml` 裡設定的時脈；負值代表沒滿足，而流程不會因此停下來——所以一次成功結束的執行，仍然可能正在告訴你它沒達標。[該怎麼辦](docs/guide.zh-TW.md#slack-為負值的時候)寫在指南裡。
 
 **這九行是摘要，不是簽核報告。** 它從 300 個 key 的 `metrics.json` 裡挑出來，所以它沒
-告訴你的比告訴你的多：跑了哪幾個 PVT corner、clock uncertainty 和 derate 設多少、clock
-tree 的 skew 是多少。這些全是 LibreLane 的預設值——`config.yaml` 一個都沒設——而且全都
+告訴你的比告訴你的多：clock uncertainty 和 derate 設多少、clock tree 的 skew 是多少、九
+個 corner（`ss`/`tt`/`ff` 各配 `min`/`nom`/`max` 連線）裡是哪一個給出這個 slack。這些全是 LibreLane 的預設值——`config.yaml` 一個都沒設——而且全都
 在 `runs/` 底下，一個 step 一個目錄。差別是實務上的：一個 `+0.11 ns` 的 hold slack，在
 自己填 OCV derate 的簽核流程裡不會被當成「過了」。要對這些數字有商用流程等級的信心，
 就去讀那些 per-corner 報告，別只讀這九行。

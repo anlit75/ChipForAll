@@ -14,13 +14,19 @@ To see *what* is slow, read the timing report the flow already wrote:
 cat runs/*/*-openroad-stapostpnr/*ss_*/checks.rpt
 ```
 
-One file per timing corner. `ss` is the slow one, which is where setup fails
-first — but hold is the opposite problem and fails in the fast corner, so for a
-negative *hold* slack, list the sibling directories and read that one instead:
+One file per timing corner, and hold is the opposite problem: setup fails in the
+slow corner, hold in the fast one.
 
 ```bash
-ls -d runs/*/*-openroad-stapostpnr/*/
+cat runs/*/*-openroad-stapostpnr/*ff_*/checks.rpt    # hold
+ls -d runs/*/*-openroad-stapostpnr/*/                # everything that ran
 ```
+
+Note that each of those globs matches more than one file. A run of this design
+produced nine corner directories — three PVT points (`ss`, `tt`, `ff`) against
+three interconnect corners (`min`, `nom`, `max`) — so `cat` concatenates three
+reports and does not say which of them is the worst. Pick the worst yourself, the
+way you would off a summary.
 
 Either way the worst path is listed with every gate along it and how long each took,
 which is where the time actually went.
@@ -143,13 +149,20 @@ That cost is why CI runs `make gatesim` on pushes to `main` and on `v*` tags, bu
 
 ## Iterating without re-running the whole flow
 
-Most of what you change after the first `make gds` — `FP_CORE_UTIL`, `CLOCK_PERIOD`, the floorplan — does not need synthesis redone, so hand LibreLane the flags that resume the last run:
+Floorplan parameters — `FP_CORE_UTIL`, the die, the placement — do not need synthesis redone, so hand LibreLane the flags that resume the last run:
 
 ```bash
 make gds LIBRELANE_ARGS="--last-run --from floorplan"
 ```
 
 That reads the previous run out of `runs/`, which is why `make clean` leaves that directory alone and `make distclean` is the one that removes it.
+
+**`CLOCK_PERIOD` is not one of them.** The clock is an input to synthesis, which
+sizes cells and inserts buffers against it, so resuming from floorplan measures
+the gates the *old* period produced under the new one. Timing may well close that
+way and tell you nothing about the design you would actually get. Changing the
+clock means a clean `make gds` — which is what [when slack is
+negative](#when-slack-is-negative) says to run, and why.
 
 ## Seeing the circuit
 

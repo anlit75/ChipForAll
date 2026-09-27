@@ -25,6 +25,8 @@ The physical flow — RTL to GDSII — is [LibreLane](https://github.com/librela
 
 What LibreLane does not cover is simulation and verification. That is what this starter kit adds, plus the CI and the Dev Container to run it in.
 
+**What you make here is yours to publish.** The process is [Sky130](https://github.com/google/skywater-pdk), the PDK SkyWater released under Apache 2.0, with no NDA attached — so the layout, the area, the timing numbers and the GDS can all go into a repository, a portfolio or a write-up. If the PDK you normally use came from a foundry under a confidentiality agreement, none of that is true of its output, and that is one of the reasons this path exists.
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -117,7 +119,7 @@ Get the first row wrong and you hear about it immediately, not three minutes int
 Those are the example design's numbers, from one PDK version. Yours will differ;
 the lines are what to read.
 
-**`signoff`** says the thing nothing else says: your layout passes the manufacturability checks. LibreLane errors on every one of them by default, so a run that reached this line has already passed them — `clean` states it, and names which checks it saw. When something is wrong it names that instead: `2 Magic DRC, 1 LVS`.
+**`signoff`** says the thing nothing else says: your layout passes the manufacturability checks. The LibreLane pinned here, 3.0.14, errors on every one of them by default (`ERROR_ON_MAGIC_DRC` and its siblings are all `True`) and `config.yaml` overrides none of them, so a run that reached this line has already passed them. That is that version's default, not a guarantee this repository makes — check it again after an upgrade. `clean` states it, and names which checks it saw. When something is wrong it names that instead: `2 Magic DRC, 1 LVS`.
 
 **`layout`** is the PNG the flow drew of your chip. Open it.
 
@@ -126,8 +128,9 @@ the lines are what to read.
 **Positive slack** means the design meets the clock in `config.yaml`. Negative means it does not, and the flow does not stop for it — so a run can finish and still be telling you it missed. [What to do about that](docs/guide.md#when-slack-is-negative) is in the guide.
 
 **Those nine lines are a summary, not a signoff report.** They are pulled out of a
-300-key `metrics.json`, so what they leave out matters: which PVT corners ran, what
-clock uncertainty and derating were applied, what the clock tree's skew came to.
+300-key `metrics.json`, so what they leave out matters: what clock uncertainty and
+derating were applied, what the clock tree's skew came to, and which of the nine
+corners (`ss`/`tt`/`ff` against `min`/`nom`/`max` interconnect) that slack came from.
 All of that is LibreLane's defaults — `config.yaml` sets none of it — and all of it
 is under `runs/`, one directory per step. The difference is practical: a `+0.11 ns`
 hold slack is not what a flow where you filled in the OCV derates yourself would

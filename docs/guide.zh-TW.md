@@ -14,13 +14,16 @@
 cat runs/*/*-openroad-stapostpnr/*ss_*/checks.rpt
 ```
 
-每個時序 corner 一個檔。`ss` 是慢的那個，setup 先在這裡掛掉——但 hold 是相反的問
-題，它掛在快的 corner，所以**hold** slack 為負的時候，要把旁邊的目錄列出來、讀那一
-個：
+每個時序 corner 一個檔，而 hold 是相反的問題：setup 掛在慢的 corner，hold 掛在快的。
 
 ```bash
-ls -d runs/*/*-openroad-stapostpnr/*/
+cat runs/*/*-openroad-stapostpnr/*ff_*/checks.rpt    # hold
+ls -d runs/*/*-openroad-stapostpnr/*/                # 這次到底跑了哪些
 ```
+
+注意上面每個 glob 都會命中不只一個檔。這個設計跑一次會產生九個 corner 目錄——三個 PVT
+點（`ss`、`tt`、`ff`）對三個連線 corner（`min`、`nom`、`max`）——所以 `cat` 是把三份報告
+接在一起印出來，不會告訴你哪一份最差。最差的要自己挑，跟你平常從 summary 挑一樣。
 
 兩種情況下，最差路徑都會連同上面經過的每一個閘、以及每一個閘花了多久一起列出來，時間
 就花在那裡。
@@ -141,13 +144,19 @@ make gatesim   # 模擬它
 
 ## 不重跑整條流程的迭代方式
 
-第一次 `make gds` 之後你會改的東西——`FP_CORE_UTIL`、`CLOCK_PERIOD`、floorplan——多半不需要重做合成，所以把恢復上次執行的旗標傳給 LibreLane：
+floorplan 相關的參數——`FP_CORE_UTIL`、die 的大小、擺放——不需要重做合成，所以把恢復上次執行的旗標傳給 LibreLane：
 
 ```bash
 make gds LIBRELANE_ARGS="--last-run --from floorplan"
 ```
 
 它讀的是 `runs/` 裡上一次的執行結果，這也是為什麼 `make clean` 不會動那個目錄，要清掉它得用 `make distclean`。
+
+**`CLOCK_PERIOD` 不在裡面。** 時脈是合成的輸入，合成會依它挑元件尺寸、插 buffer，所以
+從 floorplan 恢復的話，你量到的是「**舊**週期合成出來的閘，在新週期下的 timing」。這樣
+很可能真的收了，但它對「你實際會拿到的那個設計」什麼都沒說。改時脈就要乾淨重跑
+`make gds`——這也正是[slack 為負值的時候](#slack-為負值的時候)那節叫你做的事，以及它為什
+麼那樣講。
 
 ## 看看電路長什麼樣
 
