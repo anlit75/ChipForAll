@@ -6,7 +6,9 @@ Everything after the first run. Start with the [README](../README.md) if you hav
 
 ## When slack is negative
 
-Negative slack means the design does not meet the clock in `config.yaml`, and there are only two answers. Give the design more time — raise `CLOCK_PERIOD` and run `make gds` again — or make the slow path shorter, by pipelining it or cutting logic out of it. Which one is right depends on whether the clock speed is a requirement or a guess; in a first design it is usually a guess.
+Negative slack means the design does not meet the clock in `config.yaml`. Two answers are yours to reach for from here: give the design more time — raise `CLOCK_PERIOD` and run `make gds` again — or make the slow path shorter, by pipelining it or cutting logic out of it. Which one is right depends on whether the clock speed is a requirement or a guess; in a first design it is usually a guess.
+
+Both of those change the design or its constraints. The physical answers — placement density, clock tree targets, resizer margins, routing effort — are LibreLane's, they are real, and this guide does not cover them: `config.yaml` sets none of those keys and the [configuration reference](#configuration-reference) stops where LibreLane's own variables begin. If you came here to practise timing closure by hand, that is the part you will be reading LibreLane's documentation for.
 
 To see *what* is slow, read the timing report the flow already wrote:
 
@@ -210,3 +212,10 @@ Prefer to stay in your own editor? `make shell` drops you into the same image fr
 A fixed die is still available: set `FP_SIZING: absolute` and add `DIE_AREA: [0, 0, w, h]`. Do not leave `DIE_AREA` in the file under relative sizing — the flow no longer reads it, but the GDS stream-out still draws the chip boundary from it, and signoff then fails on a boundary nothing else used.
 
 Everything else in the file belongs to LibreLane; see [its documentation](https://librelane.readthedocs.io/) for the full list, and the [c4o-core README](https://github.com/anlit75/c4o-core) for what this engine reads.
+
+**Keys this reference does not list still work.** Nothing filters `config.yaml`:
+c4o-core checks that the handful of keys it needs are present and sensible, and
+`make gds` hands the whole file to LibreLane as it is. So `PL_TARGET_DENSITY`,
+`CTS_*`, `GRT_*` and the rest of LibreLane's variables can go straight in, and
+they take effect. This reference covers the ones this repository has a reason to
+set — not the ones you are allowed to.

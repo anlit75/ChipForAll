@@ -6,7 +6,9 @@
 
 ## slack 為負值的時候
 
-負 slack 代表設計沒有滿足 `config.yaml` 裡的時脈，而答案只有兩種。給設計更多時間——把 `CLOCK_PERIOD` 調大，重跑 `make gds`——或者把慢的那條路徑縮短，插 pipeline 或把邏輯搬出去。哪一種才對，取決於那個時脈速度是需求還是隨手填的；第一個設計通常是隨手填的。
+負 slack 代表設計沒有滿足 `config.yaml` 裡的時脈。**從這裡你自己伸手拿得到的答案有兩種**：給設計更多時間——把 `CLOCK_PERIOD` 調大，重跑 `make gds`——或者把慢的那條路徑縮短，插 pipeline 或把邏輯搬出去。哪一種才對，取決於那個時脈速度是需求還是隨手填的；第一個設計通常是隨手填的。
+
+這兩種動的都是設計或它的約束。**實體層面的答案——placement density、clock tree 的目標、resizer margin、繞線努力度——是 LibreLane 的，它們真的存在，而這份指南不涵蓋**：`config.yaml` 一個都沒設，[設定參考](#設定參考)也停在 LibreLane 自己的變數開始的地方。如果你是為了練手動收時序而來，那一塊你會是在讀 LibreLane 的文件。
 
 想知道*哪裡*慢，讀流程已經寫好的時序報告：
 
@@ -204,3 +206,8 @@ make schematic
 仍然可以固定尺寸：把 `FP_SIZING` 改成 `absolute`，並加上 `DIE_AREA: [0, 0, 寬, 高]`。但用 relative 的時候不要把 `DIE_AREA` 留在檔案裡——流程已經不讀它了，GDS stream-out 卻還是會照它畫晶片邊界，signoff 就會對著一個沒人用的邊界失敗。
 
 檔案中其餘的 key 都屬於 LibreLane，完整清單見[它的文件](https://librelane.readthedocs.io/)；這個引擎讀哪些，見 [c4o-core README](https://github.com/anlit75/c4o-core)。
+
+**這張表沒列的 key 一樣有效。** 沒有任何東西會過濾 `config.yaml`：c4o-core 只檢查它需
+要的那幾個 key 在不在、值合不合理，而 `make gds` 是把整份檔案原封不動交給 LibreLane。
+所以 `PL_TARGET_DENSITY`、`CTS_*`、`GRT_*` 以及 LibreLane 其餘的變數都可以直接加進去，
+而且真的會生效。這張表列的是**這個 repo 有理由去設的** key，不是**你被允許設的**。

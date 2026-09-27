@@ -25,7 +25,11 @@ The physical flow — RTL to GDSII — is [LibreLane](https://github.com/librela
 
 What LibreLane does not cover is simulation and verification. That is what this starter kit adds, plus the CI and the Dev Container to run it in.
 
-**What you make here is yours to publish.** The process is [Sky130](https://github.com/google/skywater-pdk), the PDK SkyWater released under Apache 2.0, with no NDA attached — so the layout, the area, the timing numbers and the GDS can all go into a repository, a portfolio or a write-up. If the PDK you normally use came from a foundry under a confidentiality agreement, none of that is true of its output, and that is one of the reasons this path exists.
+**The tools are open-source equivalents, not the commercial ones.** Yosys does the synthesis, LibreLane (OpenROAD underneath) the place and route, Icarus and Verilator the simulation and linting, Magic and KLayout the DRC — where a commercial flow would use Design Compiler, Innovus or IC Compiler, VCS or Questa, and Calibre. The flow shape is the same and the vocabulary transfers; the tools on your CV would not be the ones a job advert lists, so say which you used.
+
+**Looking for a worked verification example?** This repository's tests are a Verilog testbench and two cocotb ones — enough to show what a test that can fail looks like, and not a layered verification environment. [c4o-pyuvm](https://github.com/anlit75/c4o-pyuvm) is that: a pyuvm environment on a real UART — agent, driver, monitor, scoreboard, and a register model generated from SystemRDL — built from this template.
+
+**What you make here is yours to publish.** The process is [Sky130](https://github.com/google/skywater-pdk), the PDK SkyWater released under Apache 2.0, with no NDA attached — so the layout, the area, the timing numbers and the GDS can all go into a repository, a portfolio or a write-up. A foundry PDK under a confidentiality agreement does not allow any of that, which is why people who have one come here for a second set of results they are allowed to show — and why people who have never had one can produce results at all.
 
 ## 🚀 Quick Start
 
