@@ -25,7 +25,11 @@
 
 LibreLane 沒有涵蓋的是**模擬與驗證**。那才是這個起手式加上去的東西，外加跑它們的 CI 和 Dev Container。
 
-**這裡做出來的東西你可以公開。** 製程是 [Sky130](https://github.com/google/skywater-pdk)，SkyWater 用 Apache 2.0 開放出來的 PDK，沒有 NDA——所以 layout、面積、時序數字、GDS 全都能放進 GitHub、作品集或文章裡。如果你平常用的是 foundry 在保密條款下給的 PDK，那些結果不能公開；這條路存在的理由之一就是這個。
+**這裡用的是開源的對應工具，不是商用那幾套。** 合成是 Yosys、佈局繞線是 LibreLane（底層 OpenROAD）、模擬和 lint 是 Icarus 和 Verilator、DRC 是 Magic 和 KLayout——商用流程在這些位置放的會是 Design Compiler、Innovus 或 IC Compiler、VCS 或 Questa、以及 Calibre。流程的形狀一樣，詞彙也轉得過去；但你履歷上的工具名稱不會是職缺條列的那幾個，所以要講清楚你用的是哪一套。
+
+**在找一個完整的驗證範例嗎？** 這個 repo 的測試是一份 Verilog testbench 加兩份 cocotb 的——足以示範「一個會失敗的測試長什麼樣」，但不是一套分層的驗證環境。[c4o-pyuvm](https://github.com/anlit75/c4o-pyuvm) 才是：一個跑在真實 UART 上的 pyuvm 環境，有 agent、driver、monitor、scoreboard，以及從 SystemRDL 生成的暫存器模型，而且是從這個模板建出來的。
+
+**這裡做出來的東西你可以公開。** 製程是 [Sky130](https://github.com/google/skywater-pdk)，SkyWater 用 Apache 2.0 開放出來的 PDK，沒有 NDA——所以 layout、面積、時序數字、GDS 全都能放進 GitHub、作品集或文章裡。foundry 在保密條款下給的 PDK 不允許這些事，所以有那種 PDK 的人會來這裡做第二份可以公開的結果——而從來沒有過那種 PDK 的人，在這裡才有結果可做。
 
 ## 🚀 快速啟動
 
