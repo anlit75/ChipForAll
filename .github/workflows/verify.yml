@@ -239,14 +239,27 @@ jobs:
           }
           head -30 "$rpt"
 
-          # The guide also tells a reader with negative HOLD slack to list the
-          # sibling corner directories, because hold fails in the fast corner
-          # while the glob above is the slow one. That needs no assertion -- the
-          # glob above cannot have matched unless such a directory exists -- so
-          # this only prints them. It is here as evidence: naming a fast-corner
-          # glob in the guide without having seen one is how the wrong path got
-          # documented in the first place, and this log is where the next person
-          # can read the real corner names off a real run.
+          # Hold fails in the fast corner, so the guide gives a second command
+          # for it. That path is documented, so it is checked too -- the run that
+          # added the listing below is where its name came from.
+          holds=(runs/*/*-openroad-stapostpnr/*ff_*/checks.rpt)
+          if [ ${#holds[@]} -eq 0 ]; then
+            echo "Error: the guide points a hold failure at"
+            echo "  runs/*/*-openroad-stapostpnr/*ff_*/checks.rpt"
+            echo "and nothing is there. The corners this run did produce:"
+            ls -d runs/*/*-openroad-stapostpnr/*/ 2>/dev/null
+            exit 1
+          fi
+          grep -qF "slack" "${holds[0]}" || {
+            echo "Error: ${holds[0]} names no slack -- that is not the timing report."
+            exit 1
+          }
+          echo "--- ${holds[0]} ---"
+          head -10 "${holds[0]}"
+
+          # And print every corner. The guide tells the reader these globs match
+          # more than one file and that picking the worst is on them, so the
+          # count here is the evidence for that sentence.
           corners=(runs/*/*-openroad-stapostpnr/*/)
           echo "--- timing corners this run produced (${#corners[@]}) ---"
           printf '%s\n' "${corners[@]}"
