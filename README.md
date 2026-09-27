@@ -47,7 +47,7 @@ cd <your-repo>
 make gds
 ```
 
-*The first run installs the Sky130 PDK (~3GB) and takes a few minutes: synthesis, place & route, then the layout.*
+*The first run installs the Sky130 PDK (~3GB), then runs synthesis, place & route and the layout. Minutes.*
 
 ### 3. Make it your design
 
@@ -81,7 +81,7 @@ Get the first row wrong and you hear about it immediately, not three minutes int
 | `make cocotb` | Runs the Python (cocotb) testbenches. | `build/cocotb-results.xml` |
 | `make synth` | Synthesises RTL into gates with Yosys. | `build/synthesis.json` |
 | `make schematic` | Draws the circuit as an SVG you can open anywhere. | `build/schematic.svg` |
-| `make gds` | Builds the physical layout with LibreLane (~3 min). | `build/<DESIGN_NAME>.gds` |
+| `make gds` | Builds the physical layout with LibreLane. Minutes. | `build/<DESIGN_NAME>.gds` |
 | `make gatesim` | Re-runs simulation on the synthesised netlist. Needs `make gds` first. | `Terminal` |
 | `make report` | Area, timing, power and signoff from the last `make gds`. | `Terminal` |
 | `make shell` | A bash shell inside the c4o-core container. | — |
@@ -97,7 +97,7 @@ Get the first row wrong and you hear about it immediately, not three minutes int
 ```
   blinky
 
-  die              69.485 x 80.205 um  (5573.04 um^2)
+  die              69.5 x 80.2 um  (5573 um^2)
   utilization      57.1%
   standard cells   198
   setup slack      +4.70 ns  (0 violations)
@@ -107,6 +107,9 @@ Get the first row wrong and you hear about it immediately, not three minutes int
   lint warnings    0
   layout           runs/blinky_run/final/render/blinky.png
 ```
+
+Those are the example design's numbers, from one PDK version. Yours will differ;
+the lines are what to read.
 
 **`signoff`** says the thing nothing else says: your layout passes the manufacturability checks. LibreLane errors on every one of them by default, so a run that reached this line has already passed them — `clean` states it, and names which checks it saw. When something is wrong it names that instead: `2 Magic DRC, 1 LVS`.
 

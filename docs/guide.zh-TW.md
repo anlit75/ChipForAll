@@ -116,13 +116,13 @@ make gds       # 產生 netlist
 make gatesim   # 模擬它
 ```
 
-它需要自己的 testbench，放在 `test/gate/`，因為合成會把參數固定下來：`test/tb_blinky.v` 靠把 `WIDTH` 設成 4 來縮小設計，而 netlist 裡已經沒有 `WIDTH` 可以設。因此 `test/gate/tb_blinky_gl.v` 只驅動真正的接腳，並觀察 `led` 走完一個完整的除頻週期——整整 2^26 個 cycle，大約需要四分鐘（CI runner 上實測 3 分 36 秒）。
+它需要自己的 testbench，放在 `test/gate/`，因為合成會把參數固定下來：`test/tb_blinky.v` 靠把 `WIDTH` 設成 4 來縮小設計，而 netlist 裡已經沒有 `WIDTH` 可以設。因此 `test/gate/tb_blinky_gl.v` 只驅動真正的接腳，並觀察 `led` 走完一個完整的除頻週期——整整 2^26 個 cycle，需要幾分鐘。
 
 這個代價就是為什麼 CI 只在推送到 `main` 與 `v*` tag 時跑 `make gatesim`，而不是每個 pull request 都跑。
 
 ## 不重跑整條流程的迭代方式
 
-第一次 `make gds` 大約三分鐘。之後你會改的東西——`FP_CORE_UTIL`、`CLOCK_PERIOD`、floorplan——多半不需要重做合成，所以把恢復上次執行的旗標傳給 LibreLane：
+第一次 `make gds` 之後你會改的東西——`FP_CORE_UTIL`、`CLOCK_PERIOD`、floorplan——多半不需要重做合成，所以把恢復上次執行的旗標傳給 LibreLane：
 
 ```bash
 make gds LIBRELANE_ARGS="--last-run --from floorplan"

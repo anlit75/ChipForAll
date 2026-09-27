@@ -64,7 +64,7 @@ make gds
 
 **最後兩列是選用的。** 把 `"//COCOTB_TESTS"` 或 `"//GATE_TESTS"` 從 `config.yaml` 刪掉，CI 就會跳過那一類測試而不是失敗。但如果把 key 留著卻指向不存在的檔案，CI 還是會失敗——這是對的，你要求了不存在的測試。
 
-第一列弄錯的話，你會立刻知道，而不是等到 `make gds` 跑了三分鐘之後：
+第一列弄錯的話，你會立刻知道，而不是等到 `make gds` 跑到一半才發現：
 
 ```console
 [ERROR] DESIGN_NAME is 'my_cpu', but no module by that name is declared in
@@ -81,7 +81,7 @@ make gds
 | `make cocotb` | 執行 Python (cocotb) 測試平台。 | `build/cocotb-results.xml` |
 | `make synth` | 用 Yosys 把 RTL 合成成閘級電路。 | `build/synthesis.json` |
 | `make schematic` | 把電路畫成到處都開得了的 SVG。 | `build/schematic.svg` |
-| `make gds` | 用 LibreLane 產生實體版圖（約 3 分鐘）。 | `build/<DESIGN_NAME>.gds` |
+| `make gds` | 用 LibreLane 產生實體版圖。幾分鐘。 | `build/<DESIGN_NAME>.gds` |
 | `make gatesim` | 對合成後的 netlist 重跑模擬，需先執行 `make gds`。 | `終端機` |
 | `make report` | 顯示上次 `make gds` 的面積、時序、功耗與 signoff。 | `終端機` |
 | `make shell` | 進入 c4o-core 容器的互動式 shell。 | — |
@@ -97,7 +97,7 @@ make gds
 ```
   blinky
 
-  die              69.485 x 80.205 um  (5573.04 um^2)
+  die              69.5 x 80.2 um  (5573 um^2)
   utilization      57.1%
   standard cells   198
   setup slack      +4.70 ns  (0 violations)
@@ -107,6 +107,8 @@ make gds
   lint warnings    0
   layout           runs/blinky_run/final/render/blinky.png
 ```
+
+那是範例設計的數字，出自某一版 PDK。你的會不一樣；要看的是那些欄位。
 
 **`signoff`** 是那一列沒人會說的話：你的版圖通過了可製造性檢查。LibreLane 預設對每一項都會直接讓流程失敗，所以能跑到這一行就代表都過了——`clean` 只是把它講出來，並列出它實際看到哪幾項。有問題的時候它會改成指名道姓：`2 Magic DRC, 1 LVS`。
 
