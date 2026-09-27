@@ -21,6 +21,9 @@ VERILOG_FILES:
 # Simulation only. LibreLane has no testbench variable -- simulation sits
 # outside an RTL-to-GDSII flow -- and it ignores any key starting with '//',
 # which is what keeps this file valid for both tools.
+#
+# Globs do work on the '//' keys, here and below: they are c4o-core's, and only
+# LibreLane's own keys are held to literal paths.
 "//TEST_FILES":
   - dir::test/*.v
 

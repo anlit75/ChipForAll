@@ -11,10 +11,12 @@ Negative slack means the design does not meet the clock in `config.yaml`, and th
 To see *what* is slow, read the timing report the flow already wrote:
 
 ```bash
-cat runs/*/final/*.rpt          # or look under runs/<tag>/ for the STA steps
+cat runs/*/*-openroad-stapostpnr/*ss_*/checks.rpt
 ```
 
-The worst path is listed with every gate along it, which is where the time actually went.
+One file per timing corner; `ss` is the slow one, which is the corner setup fails
+in first. The worst path is listed with every gate along it and how long each took,
+which is where the time actually went.
 
 ## Writing a testbench for your own design
 

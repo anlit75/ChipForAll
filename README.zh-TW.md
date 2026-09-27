@@ -7,12 +7,14 @@
 
 *[English](README.md)*
 
-**開源晶片的驗證與 CI 起手式。** 模擬你的 RTL、用 Python 驅動它、模擬它合成出來的閘級電路、讀懂 signoff 數字——實體流程交給 LibreLane。每件事一個 `make` 指令，什麼都不用裝。
+**開源晶片的驗證與 CI 範本，一套現成的起點。** 模擬你的 RTL、用 Python 驅動它、模擬它合成出來的閘級電路、讀懂 signoff 數字——實體流程交給 LibreLane。每件事一個 `make` 指令，什麼都不用裝。
+
+範例設計是 Verilog 寫的。你不必先會 Verilog 才能跑完整條流程看結果，但要改設計或寫測試就需要——[前置作業](#前置作業)講得更清楚。
 
 ## ✨ 特色
 
 * **🧪 真的會失敗的測試平台**：`make sim` 寫 Verilog，`make cocotb` 寫 Python。兩者該紅的時候都會回傳非零——在壞掉的設計上還會通過的測試，比沒有測試更糟。
-* **🔬 閘級模擬**：`make gatesim` 拿你的測試去跑合成真正產出的 netlist。latch 推導、reset 處理都卡在 RTL 和那些閘之間，從 RTL 完全看不出來。
+* **🔬 閘級模擬**：`make gatesim` 拿你的測試去跑合成真正產出的 netlist。合成器會不會意外推論出一顆你沒寫的 latch、reset 怎麼被實作出來，都發生在 RTL 和那些閘之間，從 RTL 完全看不出來。
 * **📊 看得懂的 signoff**：`make report` 從沒人會打開的 300 個 key 的 `metrics.json` 裡，挑出真正要看的幾個數字——面積、時序、功耗、DRC/LVS/antenna。
 * **✅ CI 全部都跑**：一份 GitHub Actions 工作流，每次 push 都 lint、模擬、合成、產 GDS、再重跑閘級模擬。
 * **🐳 什麼都不用裝**：Docker，或 Dev Container / Codespace。`make gds` 三種都能跑。
@@ -32,7 +34,9 @@ LibreLane 沒有涵蓋的是**模擬與驗證**。那才是這個起手式加上
 
 *……或者以上都不需要：用 GitHub Codespace 打開，一切都已經就緒。*
 
-**有一個前置條件不是下載就有的。** 範例設計是 Verilog 寫的，而測試平台是在對它做斷言，所以你需要看得懂一點 Verilog——一個 `always @(posedge clk)` 區塊、一個 `<=` 指定、一個 `$fatal`。這裡每一個指令在你不會 Verilog 的情況下都跑得起來，但跑出來的東西你一個都看不懂。如果你還沒學過 Verilog，先去學——一般會從 [HDLBits](https://hdlbits.01xz.net/) 開始——再回來。
+**有一個前置條件不是下載就有的：一點 Verilog。** 不用多——看得懂一個 `always @(posedge clk)` 區塊、一個 `<=` 指定、一個 `$fatal` 就夠。在 [HDLBits](https://hdlbits.01xz.net/) 上大約是 *Verilog Language* 那一段，不是整個網站。
+
+**你不需要先會它才能開始。** `make gds` 直接就能把範例跑完，印出真實的面積、時序和功耗；`make all` 會讓你看到測試通過。先做這件事是值得的，因為它告訴你整套工具在你的機器上是通的。真正需要 Verilog 的是下一步：改 `src/blinky.v`、判斷一個「通過」的測試到底證明了什麼、或者自己寫一個。先跑再學，然後回來做那一步。
 
 ### 1. 做一份自己的副本
 
@@ -64,7 +68,7 @@ make gds
 
 沒有別的地方寫死設計名稱：`Makefile` 和 CI 工作流都從 `config.yaml` 讀 `DESIGN_NAME`。
 
-**最後兩列是選用的。** 把 `"//COCOTB_TESTS"` 或 `"//GATE_TESTS"` 從 `config.yaml` 刪掉，CI 就會跳過那一類測試而不是失敗。但如果把 key 留著卻指向不存在的檔案，CI 還是會失敗——這是對的，你要求了不存在的測試。
+**最後兩列是選用的。** 把 `"//COCOTB_TESTS"` 或 `"//GATE_TESTS"` 從 `config.yaml` 刪掉——連 key 那一行**和它下面縮排的路徑**一起刪，只刪 key 會留下一個沒有主人的列表項，YAML 會直接解析失敗——CI 就會跳過那一類測試而不是失敗。但如果把 key 留著卻指向不存在的檔案，CI 還是會失敗，這是對的：你要求了不存在的測試。
 
 第一列弄錯的話，你會立刻知道，而不是等到 `make gds` 跑到一半才發現：
 

@@ -215,6 +215,30 @@ jobs:
           fi
           ls -lh "${png[@]}"
 
+      # docs/guide.zh-TW.md tells a reader with negative slack to cat this exact
+      # glob. The path it used to give -- runs/*/final/*.rpt -- matched nothing,
+      # and the reader who needed it most got silence back. A documented path
+      # that nothing checks is a path that rots, so check it here.
+      - name: The timing report the guide tells you to read is where it says
+        run: |
+          shopt -s nullglob
+          rpts=(runs/*/*-openroad-stapostpnr/*ss_*/checks.rpt)
+          if [ ${#rpts[@]} -eq 0 ]; then
+            echo "Error: the guide points at runs/*/*-openroad-stapostpnr/*ss_*/checks.rpt,"
+            echo "and nothing is there. What the flow did write:"
+            find runs -name '*.rpt' 2>/dev/null | head -20
+            exit 1
+          fi
+          # Not just present: it has to be a timing report, or the guide is
+          # sending the reader to the wrong file rather than to no file.
+          rpt="${rpts[0]}"
+          echo "--- $rpt ---"
+          grep -qF "slack" "$rpt" || {
+            echo "Error: $rpt names no slack -- that is not the timing report."
+            exit 1
+          }
+          head -30 "$rpt"
+
       # Gate-level simulation of the netlist the step above just produced.
       #
       # Push-only, and a step rather than a job: it needs that netlist, so it

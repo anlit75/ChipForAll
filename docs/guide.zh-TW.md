@@ -11,10 +11,11 @@
 想知道*哪裡*慢，讀流程已經寫好的時序報告：
 
 ```bash
-cat runs/*/final/*.rpt          # 或到 runs/<tag>/ 底下找 STA 那幾步
+cat runs/*/*-openroad-stapostpnr/*ss_*/checks.rpt
 ```
 
-最差路徑會連同上面經過的每一個閘一起列出來，時間就花在那裡。
+每個時序 corner 一個檔，`ss` 是慢的那個，setup 通常先在這個 corner 掛掉。最差路徑會
+連同上面經過的每一個閘、以及每一個閘花了多久一起列出來，時間就花在那裡。
 
 ## 幫你自己的設計寫測試平台
 
