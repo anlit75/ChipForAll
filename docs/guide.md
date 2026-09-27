@@ -62,6 +62,8 @@ Three things are doing the work:
 
 Try it: change `src/blinky.v` so the design is wrong, run `make sim`, and watch it go red. A testbench you have never seen fail is a testbench you do not know works.
 
+That is the whole method, and it works on any design, not just this one. Break one thing, run the tests, check that the one you aimed at fails and says something you could act on, then `git checkout -- src/blinky.v` and break the next thing. What you learn is not "the tests pass" but which test catches which mistake — and where nothing catches anything, which is the test you have not written yet. It is the only answer to "is my test actually checking the design", because a test that cannot fail cannot tell you.
+
 ## When a test fails: look at the waveform
 
 `make sim` writes `build/wave.vcd` — every signal, every cycle — provided your testbench has the two `$dumpfile`/`$dumpvars` lines from the skeleton above. Open it with GTKWave, or with the **WaveTrace** extension the Dev Container already installs (click the `.vcd` file). A failing assertion tells you *that* the design is wrong; the waveform is how you find out *why*.
@@ -111,7 +113,7 @@ It does not check reset *timing*: the stimulus moves `rst` just after a clock ed
 
 ## Simulating the gates, not just the RTL
 
-`make sim` says your Verilog behaves. It says nothing about the netlist the tools produced from it — latch inference, reset handling and how a synthesiser reads an ambiguous `always` block all sit between the two, and none of them are visible from the RTL. `make gatesim` closes that gap: it simulates `runs/<tag>/final/nl/`, the gate-level netlist `make gds` left behind, against the Sky130 cells' own Verilog models.
+`make sim` says your Verilog behaves. It says nothing about the netlist the tools produced from it — latch inference, reset handling and how a synthesiser reads an ambiguous `always` block all sit between the two, and none of them are visible from the RTL. `make gatesim` closes that gap: it simulates `runs/<tag>/final/nl/` — `<tag>` is the run directory, `<DESIGN_NAME>_run` unless you name it yourself — the gate-level netlist `make gds` left behind, against the Sky130 cells' own Verilog models.
 
 ```bash
 make gds       # produces the netlist
@@ -119,6 +121,8 @@ make gatesim   # simulates it
 ```
 
 It needs its own testbench, in `test/gate/`, because synthesis resolves parameters: `test/tb_blinky.v` shrinks the design by setting `WIDTH` to 4, and a netlist has no `WIDTH` left to set — it is fixed at the 26 `src/blinky.v` declares. `test/gate/tb_blinky_gl.v` therefore drives the real pins and watches `led` over a full divider period — all 2^26 cycles of it, which takes a few minutes.
+
+Parameters are not the only thing synthesis takes away. Internal names go too, so the trick the cocotb test uses above — writing to `dut.count` to skip 2^25 cycles — has nothing to write to here: there is no `count` in a netlist. Anything that reaches inside the design works on the RTL and stops working at this step, which is one of the things this step is for.
 
 That cost is why CI runs `make gatesim` on pushes to `main` and on `v*` tags, but not on every pull request.
 

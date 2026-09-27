@@ -15,6 +15,13 @@ DESIGN_NAME: blinky
 # lints, simulates and synthesises fine -- c4o-core does expand it -- and then
 # `make gds` stops with "'/workspace/src/**/*.v' does not exist". Measured in
 # CI, not guessed.
+#
+# More than one file is one entry each, and order does not matter -- the top
+# module is DESIGN_NAME, not the first line:
+#
+#   VERILOG_FILES:
+#     - dir::src/my_cpu.v
+#     - dir::src/alu.v
 VERILOG_FILES:
   - dir::src/blinky.v
 
