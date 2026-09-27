@@ -68,7 +68,7 @@ help:
 	@echo "  make gatesim - Re-simulate the synthesised netlist (~5 min, after make gds)"
 	@echo "  make synth   - Run Yosys synthesis"
 	@echo "  make schematic - Draw the circuit as build/schematic.svg"
-	@echo "  make pdk     - Install/Enable Sky130 PDK via Ciel"
+	@echo "  make pdk     - Install/Enable Sky130 PDK via Ciel, LibreLane's PDK manager"
 	@echo "  make gds     - Run LibreLane GDSII flow"
 	@echo "  make report  - Show area, timing and power from the last GDS run"
 	@echo "  make shell   - Enter c4o-core interactive shell"
