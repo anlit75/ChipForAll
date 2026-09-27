@@ -92,7 +92,7 @@ Verilog 那個邊緣的坑在這裡一樣成立：`RisingEdge` 是在時脈邊�
 
 三個部分，每個大約十行：
 
-* **模型**——`BlinkyModel`，用 Python 把 blinky 的行為再寫一次。刻意不是 RTL 的逐行翻譯：一個會重複設計錯誤的模型，不可能跟設計意見不合。
+* **模型**——`BlinkyModel`，用 Python 把 blinky 的行為再寫一次。刻意不是 RTL 的逐行翻譯：如果模型把設計的錯誤照抄一遍，那它在每一點上都會同意設計，也就永遠抓不到任何錯。
 * **刺激**——隨機的起始計數與隨機的 reset 脈衝，五個視窗裡有兩個固定放在 `led` 會變的位置，這樣一次執行不會整場盯著一條不動的訊號。
 * **scoreboard**——每個時脈之後把 `led` 和模型比對，失敗時印出第幾個 cycle、兩邊的值，以及那個視窗的起始計數。
 
@@ -116,7 +116,7 @@ make gds       # 產生 netlist
 make gatesim   # 模擬它
 ```
 
-它需要自己的 testbench，放在 `test/gate/`，因為合成會把參數固定下來：`test/tb_blinky.v` 靠把 `WIDTH` 設成 4 來縮小設計，而 netlist 裡已經沒有 `WIDTH` 可以設。因此 `test/gate/tb_blinky_gl.v` 只驅動真正的接腳，並觀察 `led` 走完一個完整的除頻週期——整整 2^26 個 cycle，需要幾分鐘。
+它需要自己的 testbench，放在 `test/gate/`，因為合成會把參數固定下來：`test/tb_blinky.v` 靠把 `WIDTH` 設成 4 來縮小設計，而 netlist 裡已經沒有 `WIDTH` 可以設——它被固定成 `src/blinky.v` 宣告的 26，這也是下面那個 2^26 的由來。因此 `test/gate/tb_blinky_gl.v` 只驅動真正的接腳，並觀察 `led` 走完一個完整的除頻週期——整整 2^26 個 cycle，需要幾分鐘。
 
 這個代價就是為什麼 CI 只在推送到 `main` 與 `v*` tag 時跑 `make gatesim`，而不是每個 pull request 都跑。
 
@@ -171,7 +171,7 @@ make schematic
 | `FP_SIZING` / `FP_CORE_UTIL` | die 怎麼算出來的——見下。 |
 | `PDK` / `STD_CELL_LIBRARY` | Sky130 與它的標準元件庫。保持原樣。 |
 
-**晶片尺寸會自己長。** `FP_SIZING: relative` 依 `FP_CORE_UTIL`（core 要放多滿，這裡是 40%）算出 die，所以較大的設計會得到較大的 die，而不是「放不下」。繞線太擠就調低，想要更小的晶片就調高。
+**晶片尺寸會自己長。** `FP_SIZING: relative` 依 `FP_CORE_UTIL`（core 要放多滿，單位是百分比，所以這裡的 40 就是 40%）算出 die，所以較大的設計會得到較大的 die，而不是「放不下」。繞線太擠就調低，想要更小的晶片就調高。
 
 仍然可以固定尺寸：把 `FP_SIZING` 改成 `absolute`，並加上 `DIE_AREA: [0, 0, 寬, 高]`。但用 relative 的時候不要把 `DIE_AREA` 留在檔案裡——流程已經不讀它了，GDS stream-out 卻還是會照它畫晶片邊界，signoff 就會對著一個沒人用的邊界失敗。
 

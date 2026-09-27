@@ -32,6 +32,8 @@ LibreLane 沒有涵蓋的是**模擬與驗證**。那才是這個起手式加上
 
 *……或者以上都不需要：用 GitHub Codespace 打開，一切都已經就緒。*
 
+**有一個前置條件不是下載就有的。** 範例設計是 Verilog 寫的，而測試平台是在對它做斷言，所以你需要看得懂一點 Verilog——一個 `always @(posedge clk)` 區塊、一個 `<=` 指定、一個 `$fatal`。這裡每一個指令在你不會 Verilog 的情況下都跑得起來，但跑出來的東西你一個都看不懂。如果你還沒學過 Verilog，先去學——一般會從 [HDLBits](https://hdlbits.01xz.net/) 開始——再回來。
+
 ### 1. 做一份自己的副本
 
 這個儲存庫是 **GitHub 範本（template）**。按 **Use this template → Create a new repository**，然後 clone 你自己的副本：

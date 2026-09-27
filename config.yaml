@@ -47,7 +47,8 @@ PDK: sky130A
 STD_CELL_LIBRARY: sky130_fd_sc_hd
 
 # The die sizes itself around your design: FP_SIZING: relative floorplans from
-# FP_CORE_UTIL (how full the core should be) instead of a fixed rectangle. Swap
+# FP_CORE_UTIL (how full the core should be, as a percentage) instead of a
+# fixed rectangle. Swap
 # in a bigger design and it grows; the old absolute 100x100 refused it instead.
 #
 # There is deliberately no DIE_AREA here. Relative sizing never reads it, but
