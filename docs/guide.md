@@ -116,13 +116,13 @@ make gds       # produces the netlist
 make gatesim   # simulates it
 ```
 
-It needs its own testbench, in `test/gate/`, because synthesis resolves parameters: `test/tb_blinky.v` shrinks the design by setting `WIDTH` to 4, and a netlist has no `WIDTH` left to set. `test/gate/tb_blinky_gl.v` therefore drives the real pins and watches `led` over a full divider period — all 2^26 cycles of it, which takes about four minutes (3:36 on a CI runner).
+It needs its own testbench, in `test/gate/`, because synthesis resolves parameters: `test/tb_blinky.v` shrinks the design by setting `WIDTH` to 4, and a netlist has no `WIDTH` left to set. `test/gate/tb_blinky_gl.v` therefore drives the real pins and watches `led` over a full divider period — all 2^26 cycles of it, which takes a few minutes.
 
 That cost is why CI runs `make gatesim` on pushes to `main` and on `v*` tags, but not on every pull request.
 
 ## Iterating without re-running the whole flow
 
-The first `make gds` is about three minutes. Most of what you change after it — `FP_CORE_UTIL`, `CLOCK_PERIOD`, the floorplan — does not need synthesis redone, so hand LibreLane the flags that resume the last run:
+Most of what you change after the first `make gds` — `FP_CORE_UTIL`, `CLOCK_PERIOD`, the floorplan — does not need synthesis redone, so hand LibreLane the flags that resume the last run:
 
 ```bash
 make gds LIBRELANE_ARGS="--last-run --from floorplan"
