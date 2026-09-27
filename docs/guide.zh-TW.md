@@ -14,8 +14,16 @@
 cat runs/*/*-openroad-stapostpnr/*ss_*/checks.rpt
 ```
 
-每個時序 corner 一個檔，`ss` 是慢的那個，setup 通常先在這個 corner 掛掉。最差路徑會
-連同上面經過的每一個閘、以及每一個閘花了多久一起列出來，時間就花在那裡。
+每個時序 corner 一個檔。`ss` 是慢的那個，setup 先在這裡掛掉——但 hold 是相反的問
+題，它掛在快的 corner，所以**hold** slack 為負的時候，要把旁邊的目錄列出來、讀那一
+個：
+
+```bash
+ls -d runs/*/*-openroad-stapostpnr/*/
+```
+
+兩種情況下，最差路徑都會連同上面經過的每一個閘、以及每一個閘花了多久一起列出來，時間
+就花在那裡。
 
 ## 幫你自己的設計寫測試平台
 
@@ -122,6 +130,12 @@ make gatesim   # 模擬它
 它需要自己的 testbench，放在 `test/gate/`，因為合成會把參數固定下來：`test/tb_blinky.v` 靠把 `WIDTH` 設成 4 來縮小設計，而 netlist 裡已經沒有 `WIDTH` 可以設——它被固定成 `src/blinky.v` 宣告的 26，這也是下面那個 2^26 的由來。因此 `test/gate/tb_blinky_gl.v` 只驅動真正的接腳，並觀察 `led` 走完一個完整的除頻週期——整整 2^26 個 cycle，需要幾分鐘。
 
 合成拿掉的不只是參數。內部訊號的名字也會消失，所以上面 cocotb 測試用的那一招——直接寫 `dut.count` 來跳過 2^25 個 cycle——在這裡沒有東西可以寫：netlist 裡沒有 `count` 這個名字。任何伸手進設計內部的東西在 RTL 上會過、到這一步就停止運作，而這正是這一步存在的理由之一。
+
+**這是功能驗證，不是時序驗證。** 這裡沒有任何地方做 SDF back-annotation，所以元件是
+零延遲切換的，這次模擬看不到只在真實延遲下才出現的競態。它看得到的是合成做的每一個
+決定：被推論出來的 latch、reset 被實作成什麼樣、有歧義的 `always` 區塊被怎麼解讀。時
+序是 STA 的工作，在 `make gds` 裡，負責回答它的是上面那些 per-corner 報告——如果你習
+慣的流程是把 SDF-annotated 閘級模擬當成時序的最後一道關卡，那道關卡不是這一步。
 
 這個代價就是為什麼 CI 只在推送到 `main` 與 `v*` tag 時跑 `make gatesim`，而不是每個 pull request 都跑。
 

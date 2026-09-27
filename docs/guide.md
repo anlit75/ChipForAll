@@ -14,8 +14,15 @@ To see *what* is slow, read the timing report the flow already wrote:
 cat runs/*/*-openroad-stapostpnr/*ss_*/checks.rpt
 ```
 
-One file per timing corner; `ss` is the slow one, which is the corner setup fails
-in first. The worst path is listed with every gate along it and how long each took,
+One file per timing corner. `ss` is the slow one, which is where setup fails
+first — but hold is the opposite problem and fails in the fast corner, so for a
+negative *hold* slack, list the sibling directories and read that one instead:
+
+```bash
+ls -d runs/*/*-openroad-stapostpnr/*/
+```
+
+Either way the worst path is listed with every gate along it and how long each took,
 which is where the time actually went.
 
 ## Writing a testbench for your own design
@@ -123,6 +130,14 @@ make gatesim   # simulates it
 It needs its own testbench, in `test/gate/`, because synthesis resolves parameters: `test/tb_blinky.v` shrinks the design by setting `WIDTH` to 4, and a netlist has no `WIDTH` left to set — it is fixed at the 26 `src/blinky.v` declares. `test/gate/tb_blinky_gl.v` therefore drives the real pins and watches `led` over a full divider period — all 2^26 cycles of it, which takes a few minutes.
 
 Parameters are not the only thing synthesis takes away. Internal names go too, so the trick the cocotb test uses above — writing to `dut.count` to skip 2^25 cycles — has nothing to write to here: there is no `count` in a netlist. Anything that reaches inside the design works on the RTL and stops working at this step, which is one of the things this step is for.
+
+**This is a functional check, not a timing one.** Nothing here back-annotates an
+SDF, so the cells switch with zero delay and the run cannot see a race that only
+appears at real delays. What it does see is everything synthesis decided:
+inferred latches, how reset was implemented, how an ambiguous `always` block was
+read. Timing is STA's job, in `make gds`, and the reports that answer for it are
+the per-corner ones above — if you are used to a flow where SDF-annotated
+gate-level simulation is the last timing gate, that gate is not this step.
 
 That cost is why CI runs `make gatesim` on pushes to `main` and on `v*` tags, but not on every pull request.
 
