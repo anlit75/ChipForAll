@@ -9,6 +9,8 @@
 
 **A verification and CI starter kit for open-source silicon.** Simulate your RTL, drive it from Python, simulate the gates it synthesises into, and read the signoff numbers — then hand the physical flow to LibreLane. One `make` command each, nothing to install.
 
+The example design is Verilog. You do not need Verilog to run the whole flow and read what it measured, but you do to change the design or write a test — [Prerequisites](#prerequisites) is more specific.
+
 ## ✨ Features
 
 *   **🧪 Testbenches that can actually fail**: `make sim` for Verilog, `make cocotb` for Python. Both exit non-zero when they should — a test that passes on a broken design is worse than no test.
@@ -32,7 +34,9 @@ What LibreLane does not cover is simulation and verification. That is what this 
 
 *… or none of the above: open it in a GitHub Codespace and everything is already there.*
 
-**One prerequisite is not a download.** The example design is Verilog and the testbenches assert things about it, so you need to read a little of it — an `always @(posedge clk)` block, a `<=` assignment, a `$fatal`. Every command here runs without that, and none of the output will mean anything. If you have not met Verilog yet, learn it first — [HDLBits](https://hdlbits.01xz.net/) is the usual place — and come back.
+**One prerequisite is not a download: some Verilog.** Not much — enough to read an `always @(posedge clk)` block, a `<=` assignment and a `$fatal`. On [HDLBits](https://hdlbits.01xz.net/) that is the *Verilog Language* section, not the whole site.
+
+You do not need it to start. `make gds` runs the example as it stands and prints real area, timing and power, and `make all` shows you tests passing; that is worth doing first, because it tells you the toolchain works on your machine. What needs Verilog is the step after: changing `src/blinky.v`, judging whether a test that passed proves anything, or writing one of your own. Run it first, learn Verilog, then come back for that.
 
 ### 1. Make your own copy
 
@@ -64,7 +68,7 @@ The example is a blinky — a clock divider. To replace it with your own, four t
 
 Nothing else names the design: the `Makefile` and the CI workflow both read `DESIGN_NAME` from `config.yaml`.
 
-**The last two rows are optional.** Delete `"//COCOTB_TESTS"` or `"//GATE_TESTS"` from `config.yaml` and CI skips that kind of test instead of failing. Keep the key and point it at nothing and CI fails — correctly, since you asked for tests that are not there.
+**The last two rows are optional.** Delete `"//COCOTB_TESTS"` or `"//GATE_TESTS"` from `config.yaml` — the key line *and* the indented paths under it — and CI skips that kind of test instead of failing. Keep the key and point it at nothing and CI fails, correctly: you asked for tests that are not there.
 
 Get the first row wrong and you hear about it immediately, not three minutes into `make gds`:
 

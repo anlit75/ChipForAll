@@ -11,10 +11,11 @@
 想知道*哪裡*慢，讀流程已經寫好的時序報告：
 
 ```bash
-cat runs/*/final/*.rpt          # 或到 runs/<tag>/ 底下找 STA 那幾步
+cat runs/*/*-openroad-stapostpnr/*ss_*/checks.rpt
 ```
 
-最差路徑會連同上面經過的每一個閘一起列出來，時間就花在那裡。
+每個時序 corner 一個檔，`ss` 是慢的那個，setup 通常先在這個 corner 掛掉。最差路徑會
+連同上面經過的每一個閘、以及每一個閘花了多久一起列出來，時間就花在那裡。
 
 ## 幫你自己的設計寫測試平台
 
@@ -59,6 +60,8 @@ endmodule
 * **`$dumpfile`/`$dumpvars` 來自你**，不是來自工具。沒有它們，上面那個斷言炸掉的時候你沒有波形可以看。
 
 試試看：把 `src/blinky.v` 改壞，執行 `make sim`，看著它變紅。一個你從沒看它失敗過的測試平台，是一個你不知道它有沒有用的測試平台。
+
+**這就是整套方法，而且對任何設計都成立，不只是這一個。** 一次改壞一個地方、跑測試、確認你瞄準的那個測試會失敗而且訊息你看得懂，然後 `git checkout -- src/blinky.v` 再改壞下一個。你得到的不是「測試都過了」，而是哪個測試抓得到哪種錯——以及哪裡什麼都抓不到，那就是你還沒寫的那個測試。這也是「我的測試到底有沒有在檢查設計」唯一的答案，因為一個不會失敗的測試什麼都告訴不了你。
 
 ## 測試失敗的時候：去看波形
 
@@ -109,7 +112,7 @@ cocotb 自己會 seed Python 的 `random` 並把用的 seed 印出來，所以 C
 
 ## 模擬閘級電路，而不只是 RTL
 
-`make sim` 驗證的是你寫的 Verilog，它並不能證明工具從中產生的 netlist 也對。latch 被誤推斷、reset 處理方式、合成器如何解讀有歧義的 `always` 區塊——這些都夾在兩者之間，而且從 RTL 看不出來。`make gatesim` 補上這一段：它拿 `make gds` 留下的閘級 netlist（`runs/<tag>/final/nl/`），對著 Sky130 元件自己的 Verilog model 跑模擬。
+`make sim` 驗證的是你寫的 Verilog，它並不能證明工具從中產生的 netlist 也對。latch 被誤推斷、reset 處理方式、合成器如何解讀有歧義的 `always` 區塊——這些都夾在兩者之間，而且從 RTL 看不出來。`make gatesim` 補上這一段：它拿 `make gds` 留下的閘級 netlist（`runs/<tag>/final/nl/`，`<tag>` 是這次執行的目錄，沒有自己命名的話就是 `<DESIGN_NAME>_run`），對著 Sky130 元件自己的 Verilog model 跑模擬。
 
 ```bash
 make gds       # 產生 netlist
@@ -117,6 +120,8 @@ make gatesim   # 模擬它
 ```
 
 它需要自己的 testbench，放在 `test/gate/`，因為合成會把參數固定下來：`test/tb_blinky.v` 靠把 `WIDTH` 設成 4 來縮小設計，而 netlist 裡已經沒有 `WIDTH` 可以設——它被固定成 `src/blinky.v` 宣告的 26，這也是下面那個 2^26 的由來。因此 `test/gate/tb_blinky_gl.v` 只驅動真正的接腳，並觀察 `led` 走完一個完整的除頻週期——整整 2^26 個 cycle，需要幾分鐘。
+
+合成拿掉的不只是參數。內部訊號的名字也會消失，所以上面 cocotb 測試用的那一招——直接寫 `dut.count` 來跳過 2^25 個 cycle——在這裡沒有東西可以寫：netlist 裡沒有 `count` 這個名字。任何伸手進設計內部的東西在 RTL 上會過、到這一步就停止運作，而這正是這一步存在的理由之一。
 
 這個代價就是為什麼 CI 只在推送到 `main` 與 `v*` tag 時跑 `make gatesim`，而不是每個 pull request 都跑。
 
