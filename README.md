@@ -121,7 +121,18 @@ the lines are what to read.
 
 **`layout`** is the PNG the flow drew of your chip. Open it.
 
+`XOR` there is not a process-rule check: it is two tools writing the same layout out as GDS and comparing the results, which has to agree. It buys back some of the confidence you get from having two vendors' tools cross-check each other.
+
 **Positive slack** means the design meets the clock in `config.yaml`. Negative means it does not, and the flow does not stop for it — so a run can finish and still be telling you it missed. [What to do about that](docs/guide.md#when-slack-is-negative) is in the guide.
+
+**Those nine lines are a summary, not a signoff report.** They are pulled out of a
+300-key `metrics.json`, so what they leave out matters: which PVT corners ran, what
+clock uncertainty and derating were applied, what the clock tree's skew came to.
+All of that is LibreLane's defaults — `config.yaml` sets none of it — and all of it
+is under `runs/`, one directory per step. The difference is practical: a `+0.11 ns`
+hold slack is not what a flow where you filled in the OCV derates yourself would
+call passing. For confidence at that level, read the per-corner reports, not these
+nine lines.
 
 `make report` prints all of it again without re-running anything.
 

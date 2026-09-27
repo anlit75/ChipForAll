@@ -239,6 +239,18 @@ jobs:
           }
           head -30 "$rpt"
 
+          # The guide also tells a reader with negative HOLD slack to list the
+          # sibling corner directories, because hold fails in the fast corner
+          # while the glob above is the slow one. That needs no assertion -- the
+          # glob above cannot have matched unless such a directory exists -- so
+          # this only prints them. It is here as evidence: naming a fast-corner
+          # glob in the guide without having seen one is how the wrong path got
+          # documented in the first place, and this log is where the next person
+          # can read the real corner names off a real run.
+          corners=(runs/*/*-openroad-stapostpnr/*/)
+          echo "--- timing corners this run produced (${#corners[@]}) ---"
+          printf '%s\n' "${corners[@]}"
+
       # Gate-level simulation of the netlist the step above just produced.
       #
       # Push-only, and a step rather than a job: it needs that netlist, so it

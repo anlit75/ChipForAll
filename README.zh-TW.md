@@ -120,7 +120,16 @@ make gds
 
 **`layout`** 是流程幫你的晶片畫的 PNG。打開來看看。
 
+其中 `XOR` 不是製程規則檢查，是兩套工具把同一份 layout 各自寫成 GDS 之後互相比對——一致才算過。它在沒有原廠工具互相印證的情況下補上一點信心。
+
 **slack 為正值**代表設計滿足 `config.yaml` 裡設定的時脈；負值代表沒滿足，而流程不會因此停下來——所以一次成功結束的執行，仍然可能正在告訴你它沒達標。[該怎麼辦](docs/guide.zh-TW.md#slack-為負值的時候)寫在指南裡。
+
+**這九行是摘要，不是簽核報告。** 它從 300 個 key 的 `metrics.json` 裡挑出來，所以它沒
+告訴你的比告訴你的多：跑了哪幾個 PVT corner、clock uncertainty 和 derate 設多少、clock
+tree 的 skew 是多少。這些全是 LibreLane 的預設值——`config.yaml` 一個都沒設——而且全都
+在 `runs/` 底下，一個 step 一個目錄。差別是實務上的：一個 `+0.11 ns` 的 hold slack，在
+自己填 OCV derate 的簽核流程裡不會被當成「過了」。要對這些數字有商用流程等級的信心，
+就去讀那些 per-corner 報告，別只讀這九行。
 
 單獨執行 `make report` 可以再看一次，不必重跑流程。
 
