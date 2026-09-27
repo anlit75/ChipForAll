@@ -32,6 +32,8 @@ What LibreLane does not cover is simulation and verification. That is what this 
 
 *… or none of the above: open it in a GitHub Codespace and everything is already there.*
 
+**One prerequisite is not a download.** The example design is Verilog and the testbenches assert things about it, so you need to read a little of it — an `always @(posedge clk)` block, a `<=` assignment, a `$fatal`. Every command here runs without that, and none of the output will mean anything. If you have not met Verilog yet, learn it first — [HDLBits](https://hdlbits.01xz.net/) is the usual place — and come back.
+
 ### 1. Make your own copy
 
 This repository is a **GitHub template**. Press **Use this template → Create a new repository**, then clone your copy:

@@ -92,7 +92,7 @@ The same edge gotcha as in Verilog applies: `RisingEdge` resumes *at* the edge, 
 
 Three pieces, each about ten lines:
 
-*   **The model** — `BlinkyModel`, blinky's behaviour written a second way in Python. Deliberately not a transcription of the RTL: a model that repeats the design's mistakes cannot disagree with it.
+*   **The model** — `BlinkyModel`, blinky's behaviour written a second way in Python. Deliberately not a transcription of the RTL: a model that copies the design's mistakes agrees with it everywhere, and so can never catch one.
 *   **The stimulus** — random starting counts and random reset pulses, with two of the five windows placed where `led` changes so a run cannot watch a signal that never moves.
 *   **The scoreboard** — `led` compared against the model after every clock, failing with the cycle, both values and the starting count.
 
@@ -116,7 +116,7 @@ make gds       # produces the netlist
 make gatesim   # simulates it
 ```
 
-It needs its own testbench, in `test/gate/`, because synthesis resolves parameters: `test/tb_blinky.v` shrinks the design by setting `WIDTH` to 4, and a netlist has no `WIDTH` left to set. `test/gate/tb_blinky_gl.v` therefore drives the real pins and watches `led` over a full divider period — all 2^26 cycles of it, which takes a few minutes.
+It needs its own testbench, in `test/gate/`, because synthesis resolves parameters: `test/tb_blinky.v` shrinks the design by setting `WIDTH` to 4, and a netlist has no `WIDTH` left to set — it is fixed at the 26 `src/blinky.v` declares. `test/gate/tb_blinky_gl.v` therefore drives the real pins and watches `led` over a full divider period — all 2^26 cycles of it, which takes a few minutes.
 
 That cost is why CI runs `make gatesim` on pushes to `main` and on `v*` tags, but not on every pull request.
 
@@ -171,7 +171,7 @@ Prefer to stay in your own editor? `make shell` drops you into the same image fr
 | `FP_SIZING` / `FP_CORE_UTIL` | How the die is sized — see below. |
 | `PDK` / `STD_CELL_LIBRARY` | Sky130 and its standard cells. Leave alone. |
 
-**The die sizes itself.** `FP_SIZING: relative` floorplans from `FP_CORE_UTIL` — how full the core should be, 40% here — so a bigger design gets a bigger die instead of "does not fit". Lower it if routing is tight, raise it for a smaller chip.
+**The die sizes itself.** `FP_SIZING: relative` floorplans from `FP_CORE_UTIL` — how full the core should be, as a percentage, so the 40 here means 40% — so a bigger design gets a bigger die instead of "does not fit". Lower it if routing is tight, raise it for a smaller chip.
 
 A fixed die is still available: set `FP_SIZING: absolute` and add `DIE_AREA: [0, 0, w, h]`. Do not leave `DIE_AREA` in the file under relative sizing — the flow no longer reads it, but the GDS stream-out still draws the chip boundary from it, and signoff then fails on a boundary nothing else used.
 
