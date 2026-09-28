@@ -126,7 +126,7 @@ cocotb seeds Python's `random` itself and logs the seed it used, so a failure on
 
 The test also fails when `led` never moved at all — 200 green cycles that watched a constant signal proved nothing, and a suite that reports PASS for that is the thing this repo spends most of its effort avoiding.
 
-It does not check reset *timing*: the stimulus moves `rst` just after a clock edge, so an asynchronous reset and a synchronous one look the same here. That question belongs to static timing, which `make gds` already reports.
+It does not check reset *timing*: the stimulus moves `rst` just after a clock edge, so an asynchronous reset and a synchronous one look the same here. That question belongs to static timing — recovery and removal — and nothing here reports it: the two slack rows in the summary are setup and hold, which are different checks, and whether the flow runs the reset ones at all depends on arcs in the cell library. Treat reset timing as unanswered rather than answered elsewhere.
 
 ## Simulating the gates, not just the RTL
 
