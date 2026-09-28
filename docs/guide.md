@@ -250,3 +250,17 @@ over-constrain place and route, then sign the design off against what it
 actually has to meet. CI asserts that the pinned LibreLane still declares both
 keys, so an upgrade cannot quietly make this paragraph wrong. It does not check
 that your file was read: only a run with one in it tells you that.
+
+**A second clock lives in that file, not in this one.** `CLOCK_PORT` and
+`CLOCK_PERIOD` are single-valued and c4o-core requires both before it will start
+the flow, so a design with two clocks names one of them here and creates both in
+its SDC — this file's pair is what the convenience keys constrain, the SDC is
+what the design is actually signed off against.
+
+**Macros are LibreLane's, and this guide does not cover them.** A hard macro — an
+SRAM, a PLL, somebody else's block — goes in through LibreLane's `MACROS`
+variable, a dictionary of definitions each carrying its own GDS and LEF views,
+and it brings power routing over the macro and placement blockages with it. The
+pass-through means you can do it from `config.yaml` without anything here
+changing. What this repository has to offer is a design small enough to read in
+one sitting, which is the opposite end of that.
