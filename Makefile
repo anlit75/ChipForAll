@@ -26,6 +26,16 @@ LIBRELANE_ARGS ?=
 DESIGN_NAME := $(shell grep -E '^DESIGN_NAME:' config.yaml | sed -e 's/^DESIGN_NAME:[[:space:]]*//' -e 's/["'"'"']//g')
 PWD := $(shell pwd)
 
+# Where the Sky130 PDK lives on the host. One copy is 3GB and every checkout
+# needs the same one, so a machine with several -- a lab, a teaching account --
+# can point them all at one directory instead of paying for it again each time:
+#
+#   make gds PDK_ROOT=/opt/sky130
+#
+# Both halves honour it: `make pdk` installs there (c4o-core 2.8.2 and up) and
+# the LibreLane sidecar reads from there. Default is this checkout's own pdks/.
+PDK_ROOT ?= $(PWD)/pdks
+
 # Common Docker Flags
 # We mount the current directory to /workspace so artifacts persist in build/
 DOCKER_RUN := docker run --rm -v $(PWD):/workspace -w /workspace -u $(shell id -u):$(shell id -g)
@@ -49,10 +59,12 @@ ifneq ($(wildcard $(ENTRYPOINT_SCRIPT)),)
 	# Case A: We are inside the DevContainer
 	C4O_CMD := python3 $(ENTRYPOINT_SCRIPT)
 	C4O_COCOTB = $(if $(SEED),env RANDOM_SEED=$(SEED)) $(C4O_CMD)
+	C4O_PDK := env PDK_ROOT=$(PDK_ROOT) $(C4O_CMD)
 else
 	# Case B: We are on the Host Machine
 	C4O_CMD := $(DOCKER_RUN) $(C4O_IMAGE)
 	C4O_COCOTB = $(DOCKER_RUN) $(if $(SEED),-e RANDOM_SEED=$(SEED)) $(C4O_IMAGE)
+	C4O_PDK := $(DOCKER_RUN) -v $(PDK_ROOT):/pdks -e PDK_ROOT=/pdks $(C4O_IMAGE)
 endif
 
 .PHONY: all help lint sim cocotb gatesim synth schematic gds pdk report clean distclean shell
@@ -112,7 +124,11 @@ schematic:
 
 pdk:
 	@echo "📦 Installing PDK (Sky130)..."
-	$(C4O_CMD) pdk
+	@# Created here, not by the mount below: a bind mount of a path that does
+	@# not exist yet is made by the daemon and owned by root, which the
+	@# --user container then cannot write into.
+	mkdir -p $(PDK_ROOT)
+	$(C4O_PDK) pdk
 
 # --- Physical Design (Sidecar Pattern) ---
 # 1. Guard Check: Stop unless a Docker daemon answers.
@@ -148,7 +164,7 @@ gds:
 	mkdir -p build
 	docker run --rm \
 		-v $(PWD):/workspace -w /workspace \
-		-v $(PWD)/pdks:/pdks \
+		-v $(PDK_ROOT):/pdks \
 		-e PDK_ROOT=/pdks \
 		-e HOME=/tmp \
 		-u $(shell id -u):$(shell id -g) \

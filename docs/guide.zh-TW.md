@@ -185,6 +185,14 @@ make schematic
 * **容器內以 `root` 執行。** 在 Linux 主機上，這代表它寫進 `build/` 的檔案擁有者會是 `root`，從主機執行 `make clean` 可能需要 `sudo`。改用一般使用者會讓 Codespaces 無法連線。
 * **在 Codespace 裡要注意磁碟。** 內部 daemon 有自己的映像檔儲存區，所以 LibreLane 映像檔是重拉一份而不是跟主機共用，再加上 Sky130 PDK 的 3GB。在最小規格的 Codespace 上那已經吃掉大半個磁碟——選大一點的規格，或者改從自己的主機跑 `make gds`。
 
+**一份 PDK 可以給好幾個 checkout 用。** Sky130 裝起來是 3GB，而且每次都一模一樣，所以 `PDK_ROOT` 會把兩邊——安裝，以及讀它的 LibreLane sidecar——同時指到同一個目錄：
+
+```bash
+make gds PDK_ROOT=/opt/sky130
+```
+
+不設它的話，每個 clone 都會在自己的 `pdks/` 底下留一份。共用的機器，或是你手上不只一個設計的時候，那 3GB 就只付一次，而不是每個 checkout 各付一次。這需要 c4o-core 2.8.2 或更新的版本，而釘住的 `2.8` 標籤已經給你了。
+
 習慣用自己的編輯器？`make shell` 可以從任何終端機進入同一個映像檔。
 
 ## 設定參考

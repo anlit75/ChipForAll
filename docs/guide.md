@@ -191,6 +191,14 @@ Two things to know:
 *   **It runs as `root`.** On a Linux host that means files it writes into `build/` end up owned by `root`, so `make clean` from your host may need `sudo`. Running as a normal user instead breaks Codespaces.
 *   **Watch the disk in a Codespace.** The inner daemon has its own image store, so the LibreLane image is pulled again rather than shared with the host, and the Sky130 PDK is another 3GB on top. On the smallest Codespace machine that is most of the disk — pick a larger one, or run `make gds` from your own host.
 
+**One PDK can serve several checkouts.** The Sky130 install is 3GB and identical every time, so `PDK_ROOT` points both halves — the install and the LibreLane sidecar that reads it — at one directory:
+
+```bash
+make gds PDK_ROOT=/opt/sky130
+```
+
+Without it, every clone keeps its own copy under `pdks/`. A shared machine, or one where you keep more than one design, pays for those 3GB once instead of once per checkout. It needs c4o-core 2.8.2 or newer, which the pinned `2.8` tag already gives you.
+
 Prefer to stay in your own editor? `make shell` drops you into the same image from any terminal.
 
 ## Configuration reference
