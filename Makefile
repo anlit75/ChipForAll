@@ -73,6 +73,7 @@ all: lint sim cocotb synth
 
 help:
 	@echo "Available targets:"
+	@echo "  make all     - Everything that runs in seconds: lint, sim, cocotb, synth"
 	@echo "  make lint    - Run Verilator lint check"
 	@echo "  make sim     - Run Icarus Verilog simulation"
 	@echo "  make cocotb  - Run the Python (cocotb) testbenches"

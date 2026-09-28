@@ -94,7 +94,7 @@ make gds
 | `make lint` | 用 Verilator 檢查 Verilog。 | `終端機` |
 | `make sim` | 用 Icarus Verilog 跑 Verilog 測試平台。 | `build/wave.vcd` |
 | `make cocotb` | 執行 Python (cocotb) 測試平台。 | `build/cocotb-results.xml` |
-| `make synth` | 用 Yosys 把 RTL 合成成閘級電路。 | `build/synthesis.json` |
+| `make synth` | 用 Yosys 把 RTL 合成成閘級電路。腳本是固定的一份；想自己操作 Yosys 就用 `make shell`。 | `build/synthesis.json` |
 | `make pdk` | 安裝 Sky130 PDK。`make gds` 會自己叫它；單獨跑可以把那 3GB 的下載提前做掉。 | `pdks/` |
 | `make schematic` | 把電路畫成到處都開得了的 SVG。 | `build/schematic.svg` |
 | `make gds` | 用 LibreLane 產生實體版圖。大約三分鐘，第一次還要加上 PDK 下載。 | `build/<DESIGN_NAME>.gds` |

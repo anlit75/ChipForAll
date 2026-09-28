@@ -99,7 +99,7 @@ Get the first row wrong and you hear about it immediately, not three minutes int
 | `make lint` | Checks your Verilog with Verilator. | `Terminal` |
 | `make sim` | Runs the Verilog testbenches with Icarus Verilog. | `build/wave.vcd` |
 | `make cocotb` | Runs the Python (cocotb) testbenches. | `build/cocotb-results.xml` |
-| `make synth` | Synthesises RTL into gates with Yosys. | `build/synthesis.json` |
+| `make synth` | Synthesises RTL into gates with Yosys. One fixed script; `make shell` if you want to drive Yosys yourself. | `build/synthesis.json` |
 | `make pdk` | Installs the Sky130 PDK. `make gds` runs it for you; run it alone to do the 3GB download ahead of time. | `pdks/` |
 | `make schematic` | Draws the circuit as an SVG you can open anywhere. | `build/schematic.svg` |
 | `make gds` | Builds the physical layout with LibreLane. About three minutes, plus the PDK download on a first run. | `build/<DESIGN_NAME>.gds` |
