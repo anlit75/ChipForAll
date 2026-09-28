@@ -172,6 +172,46 @@ jobs:
             exit 1
           fi
 
+      # README tells a reader that SystemVerilog works in every command from
+      # c4o-core 2.8.3 on. `make sim` is the one that used to reject it, so run
+      # the pinned image against a file that needs it. Written by this step
+      # rather than shipped into the template: the claim is about the image, not
+      # about the example, and the template stays a Verilog one.
+      - name: SystemVerilog reads, as the README says it does
+        run: |
+          image=$(grep -E '^C4O_IMAGE :=' Makefile | sed 's/.*:= *//')
+          work=$(mktemp -d)
+          python3 - "$work" <<'PY'
+          import os, sys, textwrap
+          work = sys.argv[1]
+          os.makedirs(f"{work}/src", exist_ok=True)
+          os.makedirs(f"{work}/test", exist_ok=True)
+          open(f"{work}/src/sv.sv", "w").write(textwrap.dedent("""\
+              module sv (input logic clk, input logic rst, output logic q);
+                always_ff @(posedge clk or posedge rst) q <= rst ? 1'b0 : ~q;
+              endmodule
+              """))
+          open(f"{work}/test/sv_tb.v", "w").write(textwrap.dedent("""\
+              `timescale 1ns/1ps
+              module sv_tb;
+                reg clk = 0, rst = 1; wire q;
+                sv dut (.clk(clk), .rst(rst), .q(q));
+                always #5 clk = ~clk;
+                initial begin #12 rst = 0; #40 $display("ok q=%b", q); $finish; end
+              endmodule
+              """))
+          open(f"{work}/config.yaml", "w").write(textwrap.dedent("""\
+              DESIGN_NAME: sv
+              VERILOG_FILES:
+                - dir::src/sv.sv
+              "//TEST_FILES":
+                - dir::test/sv_tb.v
+              """))
+          PY
+          docker run --rm -v "$work:/workspace" -w /workspace \
+            -u "$(id -u):$(id -g)" "$image" sim
+          echo "  sim accepted always_ff and logic"
+
       - name: 1. Lint Check
         run: make lint
 

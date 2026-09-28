@@ -49,6 +49,13 @@ measured here. A Codespace is `amd64` throughout.
 
 **One prerequisite is not a download: some Verilog.** Not much — enough to read an `always @(posedge clk)` block, a `<=` assignment and a `$fatal`. On [HDLBits](https://hdlbits.01xz.net/) that is the *Verilog Language* section, not the whole site.
 
+**SystemVerilog is read too.** `logic`, `always_ff` and the synthesisable subset
+work in every command, on c4o-core 2.8.3 and newer, which the pinned `2.8` tag
+gives you. Before that the same file passed `make cocotb` and `make gds` and
+failed `make sim` and `make synth`. What still does not work is an `interface` as
+a module boundary — yosys parses the declaration and then fails at `hierarchy` —
+so keep interfaces in the testbench, not between synthesisable modules.
+
 You do not need it to start. `make gds` runs the example as it stands and prints real area, timing and power, and `make all` shows you tests passing; that is worth doing first, because it tells you the toolchain works on your machine. What needs Verilog is the step after: changing `src/blinky.v`, judging whether a test that passed proves anything, or writing one of your own. Run it first, learn Verilog, then come back for that.
 
 ### 1. Make your own copy

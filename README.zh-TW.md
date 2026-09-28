@@ -48,6 +48,12 @@ Codespace 全程都是 `amd64`。
 
 **有一個前置條件不是下載就有的：一點 Verilog。** 不用多——看得懂一個 `always @(posedge clk)` 區塊、一個 `<=` 指定、一個 `$fatal` 就夠。在 [HDLBits](https://hdlbits.01xz.net/) 上大約是 *Verilog Language* 那一段，不是整個網站。
 
+**SystemVerilog 也讀得進來。** `logic`、`always_ff` 和可合成的那個子集在每個指令下都
+能用，條件是 c4o-core 2.8.3 或更新——釘住的 `2.8` 標籤就會給你。在那之前，同一個檔案會
+過 `make cocotb` 和 `make gds`，卻掛在 `make sim` 和 `make synth`。仍然不行的是把
+`interface` 當成模組邊界——yosys 讀得懂宣告，然後在 `hierarchy` 階段失敗——所以 interface
+留在測試平台裡，不要放在可合成模組之間。
+
 **你不需要先會它才能開始。** `make gds` 直接就能把範例跑完，印出真實的面積、時序和功耗；`make all` 會讓你看到測試通過。先做這件事是值得的，因為它告訴你整套工具在你的機器上是通的。真正需要 Verilog 的是下一步：改 `src/blinky.v`、判斷一個「通過」的測試到底證明了什麼、或者自己寫一個。先跑再學，然後回來做那一步。
 
 ### 1. 做一份自己的副本
