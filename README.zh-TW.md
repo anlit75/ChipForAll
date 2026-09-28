@@ -49,7 +49,7 @@ Codespace 全程都是 `amd64`。
 **有一個前置條件不是下載就有的：一點 Verilog。** 不用多——看得懂一個 `always @(posedge clk)` 區塊、一個 `<=` 指定、一個 `$fatal` 就夠。在 [HDLBits](https://hdlbits.01xz.net/) 上大約是 *Verilog Language* 那一段，不是整個網站。
 
 **SystemVerilog 也讀得進來。** `logic`、`always_ff` 和可合成的那個子集在每個指令下都
-能用，條件是 c4o-core 2.8.3 或更新——釘住的 `2.8` 標籤就會給你。在那之前，同一個檔案會
+能用，條件是 c4o-core 2.8.3 或更新——釘住的 `2.9` 標籤就會給你。在那之前，同一個檔案會
 過 `make cocotb` 和 `make gds`，卻掛在 `make sim` 和 `make synth`。仍然不行的是把
 `interface` 當成模組邊界——yosys 讀得懂宣告，然後在 `hierarchy` 階段失敗——所以 interface
 留在測試平台裡，不要放在可合成模組之間。
@@ -112,6 +112,7 @@ make gds
 | `make gds` | 用 LibreLane 產生實體版圖。大約三分鐘，第一次還要加上 PDK 下載。 | `build/<DESIGN_NAME>.gds` |
 | `make gatesim` | 對合成後的 netlist 重跑模擬，需先執行 `make gds`。 | `終端機` |
 | `make report` | 顯示上次 `make gds` 的面積、時序、功耗與 signoff。 | `終端機` |
+| `make site` | 把 `report`、版圖、電路圖和 cocotb 結果放進同一個網頁。 | `build/site/index.html` |
 | `make shell` | 進入 c4o-core 容器的互動式 shell。 | — |
 | `make clean` | 清除 `build/`。保留 `runs/`，`report` 和 `gatesim` 要讀它。 | — |
 | `make distclean` | 清除 `build/` 和 `runs/`。 | — |
@@ -154,6 +155,16 @@ make gds
 就去讀那些 per-corner 報告，別只讀這九行。
 
 單獨執行 `make report` 可以再看一次，不必重跑流程。
+
+### 發佈結果網頁
+
+`make site` 把上面那幾行、版圖、電路圖，以及每個 cocotb 測試的結果和 seed 放進同一
+個網頁 `build/site/index.html`。每一塊在你跑過對應的指令之後才會出現。
+
+CI 每次都會產生這個網頁，並從 `main` 發佈到 GitHub Pages，網址是
+`https://<你的帳號>.github.io/<你的-repo>/`。剛從 template 複製出來的 repo 沒有開
+Pages，而且沒有任何 workflow 能替你打開。做一次就好：**Settings → Pages → Source:
+GitHub Actions**。在那之前 CI 照樣會過，只會用一則 notice 告訴你這次沒有發佈。
 
 ## 📚 接下來
 

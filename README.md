@@ -50,7 +50,7 @@ measured here. A Codespace is `amd64` throughout.
 **One prerequisite is not a download: some Verilog.** Not much — enough to read an `always @(posedge clk)` block, a `<=` assignment and a `$fatal`. On [HDLBits](https://hdlbits.01xz.net/) that is the *Verilog Language* section, not the whole site.
 
 **SystemVerilog is read too.** `logic`, `always_ff` and the synthesisable subset
-work in every command, on c4o-core 2.8.3 and newer, which the pinned `2.8` tag
+work in every command, on c4o-core 2.8.3 and newer, which the pinned `2.9` tag
 gives you. Before that the same file passed `make cocotb` and `make gds` and
 failed `make sim` and `make synth`. What still does not work is an `interface` as
 a module boundary — yosys parses the declaration and then fails at `hierarchy` —
@@ -119,6 +119,7 @@ Get the first row wrong and you hear about it immediately, not three minutes int
 | `make gds` | Builds the physical layout with LibreLane. About three minutes, plus the PDK download on a first run. | `build/<DESIGN_NAME>.gds` |
 | `make gatesim` | Re-runs simulation on the synthesised netlist. Needs `make gds` first. | `Terminal` |
 | `make report` | Area, timing, power and signoff from the last `make gds`. | `Terminal` |
+| `make site` | Puts `report`, the layout, the schematic and the cocotb results on one page. | `build/site/index.html` |
 | `make shell` | A bash shell inside the c4o-core container. | — |
 | `make clean` | Removes `build/`. Keeps `runs/`, which `report` and `gatesim` read. | — |
 | `make distclean` | Removes `build/` and `runs/`. | — |
@@ -165,6 +166,18 @@ call passing. For confidence at that level, read the per-corner reports, not the
 nine lines.
 
 `make report` prints all of it again without re-running anything.
+
+### Publishing the results page
+
+`make site` puts those lines, the layout image, the schematic and every cocotb
+test with its verdict and seed on one page, `build/site/index.html`. Each part
+shows up once you have run the command behind it.
+
+CI builds that page on every run and publishes it from `main` to GitHub Pages,
+at `https://<your-user>.github.io/<your-repo>/`. A new copy of this template
+has Pages off, and no workflow can turn it on for you. Do it once: **Settings →
+Pages → Source: GitHub Actions**. Until then, CI still passes and says in a
+notice that nothing was published.
 
 ## 📚 Next steps
 
