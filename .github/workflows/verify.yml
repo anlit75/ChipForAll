@@ -182,6 +182,34 @@ jobs:
         # This step will automatically trigger 'make pdk' first
         run: make gds
 
+      # docs/guide.md tells a reader they can bring their own timing constraints
+      # by setting PNR_SDC_FILE and SIGNOFF_SDC_FILE. Those are LibreLane's
+      # variables, not this repository's -- nothing here would notice if an
+      # upgrade renamed or dropped them, and the guide would go on telling
+      # people to set keys that do nothing. So ask the pinned image itself. This
+      # asserts the keys exist, not that a given SDC file is read; only a run
+      # with one in it can say that.
+      - name: The SDC keys the guide documents exist in this LibreLane
+        run: |
+          image=$(grep -E '^LIBRELANE_IMAGE :=' Makefile | sed 's/.*:= *//')
+          echo "Asking $image which SDC variables it declares:"
+          declared=$(docker run --rm "$image" python3 -c "
+          import librelane, pathlib
+          src = (pathlib.Path(librelane.__file__).parent / 'steps' / 'openroad.py').read_text()
+          for key in ('PNR_SDC_FILE', 'SIGNOFF_SDC_FILE'):
+              if '\"%s\"' % key in src:
+                  print(key)
+          ")
+          for key in PNR_SDC_FILE SIGNOFF_SDC_FILE; do
+            if ! grep -qx "$key" <<<"$declared"; then
+              echo "Error: docs/guide.md documents $key, and $image does not declare it."
+              echo "What it does declare:"
+              echo "${declared:-(nothing)}"
+              exit 1
+            fi
+            echo "  $key ok"
+          done
+
       # Matched rather than named. `make gds` names its output after DESIGN_NAME
       # in config.yaml, so hardcoding "blinky" meant the first thing anyone does
       # with this template -- put their own design in it -- broke CI, on a line

@@ -115,9 +115,12 @@ pdk:
 	$(C4O_CMD) pdk
 
 # --- Physical Design (Sidecar Pattern) ---
-# 1. Ensure PDK is ready.
-# 2. Guard Check: Stop unless a Docker daemon answers.
-# 3. c4o-core validates the config.
+# 1. Guard Check: Stop unless a Docker daemon answers.
+# 2. c4o-core validates the config. Before the PDK, not after: `check` reads
+#    config.yaml and the RTL and needs no PDK at all, so a DESIGN_NAME that
+#    names no module costs a second on a first run instead of arriving behind a
+#    3GB download -- which is what the README promises it does.
+# 3. Ensure the PDK is ready.
 # 4. We run the heavy LibreLane image using the PDKs installed in the previous step.
 #
 # The container command mirrors what `librelane --dockerized` runs itself:
@@ -137,10 +140,10 @@ gds:
 		exit 1; \
 	fi
 
-	$(MAKE) pdk
-
 	@echo "🟢 Validating config with c4o-core..."
 	$(C4O_CMD) check
+
+	$(MAKE) pdk
 	@echo "🟢 Running LibreLane..."
 	mkdir -p build
 	docker run --rm \

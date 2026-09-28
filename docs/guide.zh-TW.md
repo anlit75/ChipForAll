@@ -10,6 +10,8 @@
 
 這兩種動的都是設計或它的約束。**實體層面的答案——placement density、clock tree 的目標、resizer margin、繞線努力度——是 LibreLane 的，它們真的存在，而這份指南不涵蓋**：`config.yaml` 一個都沒設，[設定參考](#設定參考)也停在 LibreLane 自己的變數開始的地方。如果你是為了練手動收時序而來，那一塊你會是在讀 LibreLane 的文件。
 
+還有第三種答案，是約束本身。如果失敗的那條路徑根本不該被算時序，或者流程假設的input delay 不是你板子上的那一個，那再怎麼改設計都不對——這是 SDC 檔的事，[設定參考](#設定參考)裡寫了怎麼給一份。
+
 想知道*哪裡*慢，讀流程已經寫好的時序報告：
 
 ```bash
@@ -198,6 +200,7 @@ make schematic
 | `"//COCOTB_TESTS"` | 給 `make cocotb` 的 Python 測試平台。選用。 |
 | `"//GATE_TESTS"` / `"//GATE_TOP"` | 給 `make gatesim` 的閘級測試平台。選用。 |
 | `CLOCK_PORT` / `CLOCK_PERIOD` | 要約束的時脈，以及它的週期（ns）。 |
+| `PNR_SDC_FILE` / `SIGNOFF_SDC_FILE` | 你自己的時序約束，當上面那兩個 key 不夠用的時候——見下。 |
 | `FP_SIZING` / `FP_CORE_UTIL` | die 怎麼算出來的——見下。 |
 | `PDK` / `STD_CELL_LIBRARY` | Sky130 與它的標準元件庫。保持原樣。 |
 
@@ -211,3 +214,19 @@ make schematic
 要的那幾個 key 在不在、值合不合理，而 `make gds` 是把整份檔案原封不動交給 LibreLane。
 所以 `PL_TARGET_DENSITY`、`CTS_*`、`GRT_*` 以及 LibreLane 其餘的變數都可以直接加進去，
 而且真的會生效。這張表列的是**這個 repo 有理由去設的** key，不是**你被允許設的**。
+
+**時序約束就只有兩個 key，而 SDC 檔可以取代它們。** 這個 repo 約束的東西就是
+`CLOCK_PORT` 和 `CLOCK_PERIOD`。一個靜態時序工具需要的其他東西——input/output
+delay、transition 和 fanout 上限、clock uncertainty，以及所有的例外——都來自
+LibreLane 的預設值：單一時脈、沒有 false path 的設計這樣就夠，其他任何東西都遠遠不夠。
+要自己寫，就把檔案指出來：
+
+```yaml
+PNR_SDC_FILE: dir::constraints/pnr.sdc
+SIGNOFF_SDC_FILE: dir::constraints/signoff.sdc
+```
+
+這兩個是 LibreLane 自己的路徑變數，所以它們是走上面那條直通進去的，不需要 c4o-core 做
+任何事。分成兩個而不是一個正是重點：把 place and route 約束得更緊，再用設計真正必須滿足
+的條件去簽核。CI 會斷言釘住的那版 LibreLane 仍然宣告這兩個 key，所以升版不會讓這段話
+悄悄變成錯的——它不會去讀你的檔案內容，那是跑一次才會告訴你的事。

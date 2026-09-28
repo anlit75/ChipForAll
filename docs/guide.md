@@ -10,6 +10,8 @@ Negative slack means the design does not meet the clock in `config.yaml`. Two an
 
 Both of those change the design or its constraints. The physical answers — placement density, clock tree targets, resizer margins, routing effort — are LibreLane's, they are real, and this guide does not cover them: `config.yaml` sets none of those keys and the [configuration reference](#configuration-reference) stops where LibreLane's own variables begin. If you came here to practise timing closure by hand, that is the part you will be reading LibreLane's documentation for.
 
+A third answer is the constraint itself. If the path that fails should never have been timed, or the input delay the flow assumed is not the one your board gives you, no amount of design change fixes that — an SDC file does, and the [configuration reference](#configuration-reference) says how to supply one.
+
 To see *what* is slow, read the timing report the flow already wrote:
 
 ```bash
@@ -204,6 +206,7 @@ Prefer to stay in your own editor? `make shell` drops you into the same image fr
 | `"//COCOTB_TESTS"` | Python testbenches for `make cocotb`. Optional. |
 | `"//GATE_TESTS"` / `"//GATE_TOP"` | Gate-level testbenches for `make gatesim`. Optional. |
 | `CLOCK_PORT` / `CLOCK_PERIOD` | The clock to constrain, and its period in ns. |
+| `PNR_SDC_FILE` / `SIGNOFF_SDC_FILE` | Your own timing constraints, when those two keys are not enough — see below. |
 | `FP_SIZING` / `FP_CORE_UTIL` | How the die is sized — see below. |
 | `PDK` / `STD_CELL_LIBRARY` | Sky130 and its standard cells. Leave alone. |
 
@@ -219,3 +222,23 @@ c4o-core checks that the handful of keys it needs are present and sensible, and
 `CTS_*`, `GRT_*` and the rest of LibreLane's variables can go straight in, and
 they take effect. This reference covers the ones this repository has a reason to
 set — not the ones you are allowed to.
+
+**Two keys are the whole timing constraint, and an SDC file can replace them.**
+`CLOCK_PORT` and `CLOCK_PERIOD` are all this repository constrains. Everything
+else a static timing tool needs — input and output delay, transition and fanout
+limits, clock uncertainty, and every exception — comes from LibreLane's
+defaults, which is fine for a design with one clock and no false paths and
+nowhere near enough for anything else. Write the constraints yourself and name
+the file:
+
+```yaml
+PNR_SDC_FILE: dir::constraints/pnr.sdc
+SIGNOFF_SDC_FILE: dir::constraints/signoff.sdc
+```
+
+Both are LibreLane's own path variables, so they arrive by the pass-through
+above and need nothing from c4o-core. Two of them rather than one is the point:
+over-constrain place and route, then sign the design off against what it
+actually has to meet. CI asserts that the pinned LibreLane still declares both
+keys, so an upgrade cannot quietly make this paragraph wrong — it does not read
+your file, which is what the run reports.
