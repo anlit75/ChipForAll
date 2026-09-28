@@ -15,10 +15,12 @@ run that failed can be run again exactly:
 What this does not check: reset *timing*. The stimulus moves rst only
 just after a clock edge, so an asynchronous reset and a synchronous one
 behave identically here. Recovery and removal are a static-timing
-question, and not one this repository reports: the summary's two slack
-rows are setup and hold, which are different checks. Whether the flow
-runs them at all depends on arcs in the cell library, so treat reset
-timing as unanswered here rather than as answered somewhere else.
+question, and the nine-line summary does not carry them: its two slack
+rows are setup and hold, which are different checks. The per-corner
+reports do. This design's run puts `recovery check against rising-edge
+clock clk` under `Path Group: asynchronous` in all nine of them, which
+CI prints -- so reset timing is answered, just not where the summary
+looks.
 """
 
 import random

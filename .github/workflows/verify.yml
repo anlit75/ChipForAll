@@ -144,6 +144,34 @@ jobs:
           echo "image=$1 remoteUser=$2"
           docker run --rm --entrypoint id "$1" -u "$2"
 
+      # README tells anyone on an Apple Silicon machine that `make gds` runs
+      # native because LibreLane publishes arm64, and that is a fact about
+      # somebody else's registry: if they stop publishing it, or the pinned tag
+      # moves, that paragraph is wrong with nothing failing. Ask the registry.
+      # No arm64 runner needed -- a manifest index lists its platforms.
+      - name: The arm64 image the README promises is still published
+        run: |
+          image=$(grep -E '^LIBRELANE_IMAGE :=' Makefile | sed 's/.*:= *//')
+          repo=${image%:*}; repo=${repo#ghcr.io/}; tag=${image##*:}
+          token=$(curl -sS "https://ghcr.io/token?scope=repository:$repo:pull&service=ghcr.io" \
+            | python3 -c "import sys,json;print(json.load(sys.stdin).get('token',''))")
+          platforms=$(curl -sS -H "Authorization: Bearer $token" \
+            -H "Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json" \
+            "https://ghcr.io/v2/$repo/manifests/$tag" \
+            | python3 -c "
+          import sys, json
+          d = json.load(sys.stdin)
+          for m in d.get('manifests', []):
+              p = m.get('platform', {})
+              print(p.get('os', '?') + '/' + p.get('architecture', '?'))
+          ")
+          echo "$image publishes:"
+          echo "${platforms:-  (a single manifest, no platform list)}"
+          if ! grep -qx 'linux/arm64' <<<"$platforms"; then
+            echo "::error::README says make gds runs native on arm64 because $image is published for it. It is not."
+            exit 1
+          fi
+
       - name: 1. Lint Check
         run: make lint
 
@@ -315,6 +343,25 @@ jobs:
       # so it is the hardest file in this repo to write. Requiring it of
       # everyone who pushes their own design would mean red CI on their first
       # push, for a test they were never told was mandatory.
+      # docs/guide.md says reset timing is unanswered here, and says whether the
+      # flow checks recovery and removal at all depends on arcs in the cell
+      # library. blinky is an async-reset design, the corner reports are right
+      # here, and nobody has looked. Printed rather than asserted: this is how
+      # the next edit to that paragraph gets a fact instead of a hedge.
+      - name: What the corner reports say about reset timing
+        run: |
+          shopt -s nullglob
+          rpts=(runs/*/*-openroad-stapostpnr/*/checks.rpt)
+          echo "${#rpts[@]} corner report(s)"
+          hits=$(grep -ril -e recovery -e removal "${rpts[@]}" 2>/dev/null | wc -l)
+          echo "naming recovery or removal: $hits"
+          if [ "$hits" -gt 0 ]; then
+            grep -rih -A2 -e recovery -e removal "${rpts[@]}" | head -30
+          else
+            echo "None of them mention either check. Section headings present:"
+            grep -rhoE '^[a-z ]+(check|checks|slack)' "${rpts[0]}" | sort -u | head -20
+          fi
+
       - name: 5. Gate-Level Simulation
         if: github.event_name != 'pull_request'
         timeout-minutes: 15
