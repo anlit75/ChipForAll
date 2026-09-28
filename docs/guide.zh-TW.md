@@ -123,7 +123,13 @@ cocotb 自己會 seed Python 的 `random` 並把用的 seed 印出來，所以 C
 
 `led` 從頭到尾沒動過的話，這個測試也會失敗——200 個綠色 cycle 盯著一條常數訊號，什麼都沒證明，而一個會為此回報 PASS 的測試套件，正是這個專案花最多力氣在避免的東西。
 
-它不檢查 reset 的*時序*：刺激只在時脈邊緣之後才動 `rst`，所以非同步 reset 和同步 reset 在這裡看起來一樣。那是靜態時序的問題——recovery 和 removal——而這裡沒有任何東西在報告它：摘要裡那兩列 slack 是 setup 和 hold，是不同的檢查，而且這個流程到底有沒有跑 reset 那兩項，取決於元件庫裡有沒有對應的 arc。把 reset 時序當成「這裡沒有答案」，而不是「答案在別的地方」。
+它不檢查 reset 的*時序*：刺激只在時脈邊緣之後才動 `rst`，所以非同步 reset 和同步 reset 在這裡看起來一樣。那是靜態時序的問題——recovery 和 removal——而那九行摘要沒有帶它：摘要裡那兩列 slack 是 setup 和 hold，是不同的檢查。但 per-corner 報告有帶，而且自己一個 path group：
+
+```bash
+grep -A12 'Path Group: asynchronous' runs/*/*-openroad-stapostpnr/*/checks.rpt
+```
+
+量過的，不是猜的：這個設計的一次 CI 執行在九份 corner 報告裡都產出了 `recovery check against rising-edge clock clk`，而 CI 每次都會把它在那裡找到什麼印出來。同步 reset 的設計在那個 path group 裡什麼都沒有，那對它來說是正確的答案，不是缺漏。
 
 ## 模擬閘級電路，而不只是 RTL
 

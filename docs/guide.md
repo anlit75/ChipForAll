@@ -126,7 +126,13 @@ cocotb seeds Python's `random` itself and logs the seed it used, so a failure on
 
 The test also fails when `led` never moved at all — 200 green cycles that watched a constant signal proved nothing, and a suite that reports PASS for that is the thing this repo spends most of its effort avoiding.
 
-It does not check reset *timing*: the stimulus moves `rst` just after a clock edge, so an asynchronous reset and a synchronous one look the same here. That question belongs to static timing — recovery and removal — and nothing here reports it: the two slack rows in the summary are setup and hold, which are different checks, and whether the flow runs the reset ones at all depends on arcs in the cell library. Treat reset timing as unanswered rather than answered elsewhere.
+It does not check reset *timing*: the stimulus moves `rst` just after a clock edge, so an asynchronous reset and a synchronous one look the same here. That question belongs to static timing — recovery and removal — and the nine-line summary does not carry it: its two slack rows are setup and hold, which are different checks. The per-corner reports do carry it, in a path group of their own:
+
+```bash
+grep -A12 'Path Group: asynchronous' runs/*/*-openroad-stapostpnr/*/checks.rpt
+```
+
+Measured, not assumed: a CI run of this design produced `recovery check against rising-edge clock clk` in all nine corner reports, and CI prints what it finds there on every run. A design with a synchronous reset has nothing in that path group, which is the right answer for it rather than a missing one.
 
 ## Simulating the gates, not just the RTL
 
