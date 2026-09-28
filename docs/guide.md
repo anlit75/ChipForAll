@@ -248,5 +248,5 @@ Both are LibreLane's own path variables, so they arrive by the pass-through
 above and need nothing from c4o-core. Two of them rather than one is the point:
 over-constrain place and route, then sign the design off against what it
 actually has to meet. CI asserts that the pinned LibreLane still declares both
-keys, so an upgrade cannot quietly make this paragraph wrong — it does not read
-your file, which is what the run reports.
+keys, so an upgrade cannot quietly make this paragraph wrong. It does not check
+that your file was read: only a run with one in it tells you that.
