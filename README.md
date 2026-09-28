@@ -40,6 +40,13 @@ What LibreLane does not cover is simulation and verification. That is what this 
 
 *… or none of the above: open it in a GitHub Codespace and everything is already there.*
 
+**On Apple Silicon, part of this runs emulated.** The c4o-core image is built for
+`amd64` only — one runner, no `platforms:` — so `lint`, `sim`, `cocotb`, `synth`
+and `gatesim` go through emulation on an `arm64` machine. `make gds` does not:
+the heavy step runs LibreLane's own image, and that one is published for `arm64`
+as well, so it runs native. How much the emulated commands slow down is not
+measured here. A Codespace is `amd64` throughout.
+
 **One prerequisite is not a download: some Verilog.** Not much — enough to read an `always @(posedge clk)` block, a `<=` assignment and a `$fatal`. On [HDLBits](https://hdlbits.01xz.net/) that is the *Verilog Language* section, not the whole site.
 
 You do not need it to start. `make gds` runs the example as it stands and prints real area, timing and power, and `make all` shows you tests passing; that is worth doing first, because it tells you the toolchain works on your machine. What needs Verilog is the step after: changing `src/blinky.v`, judging whether a test that passed proves anything, or writing one of your own. Run it first, learn Verilog, then come back for that.
@@ -136,7 +143,7 @@ the lines are what to read.
 
 **`layout`** is the PNG the flow drew of your chip. Open it.
 
-`XOR` there is not a process-rule check: it is two tools writing the same layout out as GDS and comparing the results, which has to agree. It buys back some of the confidence you get from having two vendors' tools cross-check each other.
+`XOR` there is not a process-rule check: it is two tools writing the same layout out as GDS and comparing the results, which has to agree. What it catches is a stream-out bug in either writer. It is not two vendors' tools cross-checking a design — both read the same database — so do not read a clean XOR as a second opinion on the layout itself.
 
 **Positive slack** means the design meets the clock in `config.yaml`. Negative means it does not, and the flow does not stop for it — so a run can finish and still be telling you it missed. [What to do about that](docs/guide.md#when-slack-is-negative) is in the guide.
 

@@ -123,7 +123,7 @@ cocotb 自己會 seed Python 的 `random` 並把用的 seed 印出來，所以 C
 
 `led` 從頭到尾沒動過的話，這個測試也會失敗——200 個綠色 cycle 盯著一條常數訊號，什麼都沒證明，而一個會為此回報 PASS 的測試套件，正是這個專案花最多力氣在避免的東西。
 
-它不檢查 reset 的*時序*：刺激只在時脈邊緣之後才動 `rst`，所以非同步 reset 和同步 reset 在這裡看起來一樣。那是靜態時序的問題，`make gds` 已經在報告了。
+它不檢查 reset 的*時序*：刺激只在時脈邊緣之後才動 `rst`，所以非同步 reset 和同步 reset 在這裡看起來一樣。那是靜態時序的問題——recovery 和 removal——而這裡沒有任何東西在報告它：摘要裡那兩列 slack 是 setup 和 hold，是不同的檢查，而且這個流程到底有沒有跑 reset 那兩項，取決於元件庫裡有沒有對應的 arc。把 reset 時序當成「這裡沒有答案」，而不是「答案在別的地方」。
 
 ## 模擬閘級電路，而不只是 RTL
 
@@ -238,3 +238,14 @@ SIGNOFF_SDC_FILE: dir::constraints/signoff.sdc
 任何事。分成兩個而不是一個正是重點：把 place and route 約束得更緊，再用設計真正必須滿足
 的條件去簽核。CI 會斷言釘住的那版 LibreLane 仍然宣告這兩個 key，所以升版不會讓這段話
 悄悄變成錯的。它不會檢查你的檔案有沒有真的被讀進去：那件事只有真的跑一次才知道。
+
+**第二個時脈住在那個檔案裡，不在這一份。** `CLOCK_PORT` 和 `CLOCK_PERIOD` 都是單一值，
+而 c4o-core 在開跑之前會要求這兩個都在，所以雙時脈的設計是在這裡指定其中一個、在自己的
+SDC 裡把兩個都 create 出來——這份檔案裡那一對是那些便利 key 在約束的東西，SDC 才是設計
+真正被簽核的依據。
+
+**Macro 是 LibreLane 的事，這份指南不涵蓋。** 一顆硬 macro——SRAM、PLL、別人做的
+block——是透過 LibreLane 的 `MACROS` 變數進來的，那是一個定義的字典，每一項帶自己的 GDS
+和 LEF view，而且它會連帶把跨 macro 的電源繞線和 placement blockage 一起帶進來。因為
+是直通的，你可以直接從 `config.yaml` 做這件事，這裡什麼都不用改。而這個 repo 能提供的，
+是一個小到可以一次讀完的設計，那是另一個極端。

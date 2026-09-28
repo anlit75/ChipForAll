@@ -126,7 +126,7 @@ cocotb seeds Python's `random` itself and logs the seed it used, so a failure on
 
 The test also fails when `led` never moved at all — 200 green cycles that watched a constant signal proved nothing, and a suite that reports PASS for that is the thing this repo spends most of its effort avoiding.
 
-It does not check reset *timing*: the stimulus moves `rst` just after a clock edge, so an asynchronous reset and a synchronous one look the same here. That question belongs to static timing, which `make gds` already reports.
+It does not check reset *timing*: the stimulus moves `rst` just after a clock edge, so an asynchronous reset and a synchronous one look the same here. That question belongs to static timing — recovery and removal — and nothing here reports it: the two slack rows in the summary are setup and hold, which are different checks, and whether the flow runs the reset ones at all depends on arcs in the cell library. Treat reset timing as unanswered rather than answered elsewhere.
 
 ## Simulating the gates, not just the RTL
 
@@ -250,3 +250,17 @@ over-constrain place and route, then sign the design off against what it
 actually has to meet. CI asserts that the pinned LibreLane still declares both
 keys, so an upgrade cannot quietly make this paragraph wrong. It does not check
 that your file was read: only a run with one in it tells you that.
+
+**A second clock lives in that file, not in this one.** `CLOCK_PORT` and
+`CLOCK_PERIOD` are single-valued and c4o-core requires both before it will start
+the flow, so a design with two clocks names one of them here and creates both in
+its SDC — this file's pair is what the convenience keys constrain, the SDC is
+what the design is actually signed off against.
+
+**Macros are LibreLane's, and this guide does not cover them.** A hard macro — an
+SRAM, a PLL, somebody else's block — goes in through LibreLane's `MACROS`
+variable, a dictionary of definitions each carrying its own GDS and LEF views,
+and it brings power routing over the macro and placement blockages with it. The
+pass-through means you can do it from `config.yaml` without anything here
+changing. What this repository has to offer is a design small enough to read in
+one sitting, which is the opposite end of that.
