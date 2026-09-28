@@ -159,7 +159,11 @@ make gds
 ### 發佈結果網頁
 
 `make site` 把上面那幾行、版圖、電路圖，以及每個 cocotb 測試的結果和 seed 放進同一
-個網頁 `build/site/index.html`。每一塊在你跑過對應的指令之後才會出現。
+個網頁 `build/site/index.html`。跑過 `make gds` 之後，頁面還會列出每一項 signoff 檢查、
+OpenSTA 報出的最差 setup path、面積拆分（flip-flop、邏輯、繞線階段加進來的），以及按
+sequential、combinational、clock 拆開的功耗。功耗用的是 OpenSTA 預設的切換活動率，不是
+你的測試平台的，所以它告訴你功耗花在哪裡，不是真實工作負載的耗電。每一塊在你跑過對應
+的指令之後才會出現。
 
 CI 每次都會產生這個網頁，並從 `main` 發佈到 GitHub Pages，網址是
 `https://<你的帳號>.github.io/<你的-repo>/`。剛從 template 複製出來的 repo 沒有開
