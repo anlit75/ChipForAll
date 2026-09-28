@@ -149,7 +149,7 @@ read. Timing is STA's job, in `make gds`, and the reports that answer for it are
 the per-corner ones above — if you are used to a flow where SDF-annotated
 gate-level simulation is the last timing gate, that gate is not this step.
 
-That cost is why CI runs `make gatesim` on pushes to `main` and on `v*` tags, but not on every pull request.
+That cost is why CI runs `make gatesim` on pushes and on `v*` tags, but not on every pull request.
 
 ## Iterating without re-running the whole flow
 

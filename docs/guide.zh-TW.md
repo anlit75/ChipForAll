@@ -144,7 +144,7 @@ make gatesim   # 模擬它
 序是 STA 的工作，在 `make gds` 裡，負責回答它的是上面那些 per-corner 報告——如果你習
 慣的流程是把 SDF-annotated 閘級模擬當成時序的最後一道關卡，那道關卡不是這一步。
 
-這個代價就是為什麼 CI 只在推送到 `main` 與 `v*` tag 時跑 `make gatesim`，而不是每個 pull request 都跑。
+這個代價就是為什麼 CI 只在推送和 `v*` tag 時跑 `make gatesim`，而不是每個 pull request 都跑。
 
 ## 不重跑整條流程的迭代方式
 
