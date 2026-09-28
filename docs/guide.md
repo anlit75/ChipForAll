@@ -182,7 +182,16 @@ make schematic
 
 Draws `build/schematic.svg` — your design as flops, adders and muxes, carrying the names you gave them. Open it in the browser, or click it in VS Code; it is an SVG, so nothing special is needed to read it.
 
-It is not a picture of the netlist. `make synth` runs a full synthesis and leaves hundreds of technology cells, from which nobody has ever learned anything about their own design. `make schematic` stops earlier, where the circuit still looks like the code it came from.
+It is not a picture of the netlist. `make synth` runs a full synthesis and leaves a hundred generic gates, from which nobody has ever learned anything about their own design. `make schematic` stops earlier, where the circuit still looks like the code it came from.
+
+**Generic gates, not Sky130 ones.** `make synth` maps to Yosys' own cells and no
+further: `build/synthesis.json` for the example holds 94 of them — `$_DFF_PP0_`,
+`$_OR_`, `$_XOR_` and friends — and not one `sky130_` cell, because nothing hands
+Yosys a liberty file here. So this command answers "does it synthesise, and
+roughly how much logic is it", and it cannot answer area or timing. The `198
+standard cells` in `make report` comes from LibreLane's own synthesis inside
+`make gds`, against the real library; it is not this number and the two do not
+compare.
 
 Under a second, so it costs nothing to run after every change — unlike `make gds`.
 
