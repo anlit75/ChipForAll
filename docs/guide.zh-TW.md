@@ -176,7 +176,14 @@ make schematic
 
 畫出 `build/schematic.svg`——你的設計以 flop、加法器、多工器呈現，帶著你取的名字。用瀏覽器開，或在 VS Code 裡點一下都行；它是 SVG，不需要任何特別的東西才能看。
 
-這不是 netlist 的圖。`make synth` 會跑完整合成，留下幾百個技術元件，沒有人能從那張圖看懂自己的設計。`make schematic` 停得更早，停在電路還看得出原始碼樣子的地方。
+這不是 netlist 的圖。`make synth` 會跑完整合成，留下上百個通用邏輯閘，沒有人能從那張圖看懂自己的設計。`make schematic` 停得更早，停在電路還看得出原始碼樣子的地方。
+
+**是通用閘，不是 Sky130 的元件。** `make synth` 只映射到 Yosys 自己的 cell 就停了：範例
+的 `build/synthesis.json` 裡是 94 顆這種 cell——`$_DFF_PP0_`、`$_OR_`、`$_XOR_` 之
+類——一顆 `sky130_` 都沒有，因為這裡沒有人餵 liberty 檔給 Yosys。所以這個指令回答的是
+「它合得起來嗎、大概多少邏輯」，它回答不了面積和時序。`make report` 裡那 `198 standard
+cells` 是 `make gds` 裡 LibreLane 自己對著真實元件庫合成的結果，不是這個數字，兩者也不能
+互相比較。
 
 不到一秒，所以每改一次都可以跑——和 `make gds` 不一樣。
 

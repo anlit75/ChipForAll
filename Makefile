@@ -17,7 +17,10 @@ LIBRELANE_IMAGE := ghcr.io/librelane/librelane:3.0.14
 
 # Extra flags for the LibreLane run. The reason this exists is iteration: a
 # full flow is three minutes, and most of what you change after the first one
-# -- FP_CORE_UTIL, CLOCK_PERIOD, the floorplan -- does not need synthesis redone.
+# -- FP_CORE_UTIL, the floorplan -- does not need synthesis redone. CLOCK_PERIOD
+# is not one of them: the clock is an input to synthesis, so resuming from
+# floorplan measures the old gates under the new period. See docs/guide.md,
+# "Iterating without re-running the whole flow".
 #
 #   make gds LIBRELANE_ARGS="--last-run --from floorplan"
 #
@@ -118,7 +121,7 @@ synth:
 	$(C4O_CMD) synth
 
 # A picture of the RTL, not of the netlist. `make synth` runs a full synthesis
-# and leaves a wall of technology cells; this stops after `proc; opt`, where
+# and leaves a wall of generic gates; this stops after `proc; opt`, where
 # the design still looks like the code you wrote.
 schematic:
 	$(C4O_CMD) schematic
