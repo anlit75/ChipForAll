@@ -40,10 +40,12 @@ What LibreLane does not cover is simulation and verification. That is what this 
 
 *… or none of the above: open it in a GitHub Codespace and everything is already there.*
 
-**On Apple Silicon, expect emulation.** The c4o-core image is built for `amd64`
-only — one runner, no `platforms:` — so Docker runs it through emulation on an
-`arm64` machine. That is slower, by how much nobody here has measured, and the
-project does not test it. A Codespace is `amd64` and sidesteps the question.
+**On Apple Silicon, part of this runs emulated.** The c4o-core image is built for
+`amd64` only — one runner, no `platforms:` — so `lint`, `sim`, `cocotb`, `synth`
+and `gatesim` go through emulation on an `arm64` machine. `make gds` does not:
+the heavy step runs LibreLane's own image, and that one is published for `arm64`
+as well, so it runs native. How much the emulated commands slow down is not
+measured here. A Codespace is `amd64` throughout.
 
 **One prerequisite is not a download: some Verilog.** Not much — enough to read an `always @(posedge clk)` block, a `<=` assignment and a `$fatal`. On [HDLBits](https://hdlbits.01xz.net/) that is the *Verilog Language* section, not the whole site.
 

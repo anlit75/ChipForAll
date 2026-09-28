@@ -40,9 +40,11 @@ LibreLane 沒有涵蓋的是**模擬與驗證**。那才是這個起手式加上
 
 *……或者以上都不需要：用 GitHub Codespace 打開，一切都已經就緒。*
 
-**在 Apple Silicon 上會走模擬。** c4o-core 的映像檔只建 `amd64`——一台 runner、
-沒有 `platforms:`——所以在 `arm64` 機器上 Docker 是透過模擬跑它的。那會比較慢，慢多少
-這裡沒有人量過，這個專案也沒有測它。Codespace 是 `amd64`，可以直接繞開這個問題。
+**在 Apple Silicon 上，有一部分會走模擬。** c4o-core 的映像檔只建 `amd64`——一台
+runner、沒有 `platforms:`——所以在 `arm64` 機器上，`lint`、`sim`、`cocotb`、`synth`
+和 `gatesim` 是透過模擬跑的。`make gds` 不是：最重的那一步跑的是 LibreLane 自己的映像
+檔，而它有出 `arm64`，所以那一步是原生的。被模擬的那幾個會慢多少，這裡沒有量過。
+Codespace 全程都是 `amd64`。
 
 **有一個前置條件不是下載就有的：一點 Verilog。** 不用多——看得懂一個 `always @(posedge clk)` 區塊、一個 `<=` 指定、一個 `$fatal` 就夠。在 [HDLBits](https://hdlbits.01xz.net/) 上大約是 *Verilog Language* 那一段，不是整個網站。
 
