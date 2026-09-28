@@ -59,7 +59,10 @@ cd <your-repo>
 make gds
 ```
 
-*The first run installs the Sky130 PDK (~3GB), then runs synthesis, place & route and the layout. Minutes.*
+*The first run downloads the Sky130 PDK (~3GB) before it starts anything — around
+twenty minutes on a fast link, longer on a slow one. The flow itself is about three
+minutes, and that is what every run after the first one costs. `make pdk` gets the
+download out of the way on its own.*
 
 ### 3. Make it your design
 
@@ -75,6 +78,11 @@ The example is a blinky — a clock divider. To replace it with your own, four t
 Nothing else names the design: the `Makefile` and the CI workflow both read `DESIGN_NAME` from `config.yaml`.
 
 **The last two rows are optional.** Delete `"//COCOTB_TESTS"` or `"//GATE_TESTS"` from `config.yaml` — the key line *and* the indented paths under it — and CI skips that kind of test instead of failing. Keep the key and point it at nothing and CI fails, correctly: you asked for tests that are not there.
+
+**A second Verilog testbench needs one more key.** `"//TEST_FILES"` takes a glob, and
+Icarus elaborates every module nobody instantiates as a root of its own — so the first
+`$finish` would end the whole simulation and the rest would never run. Name the one you
+mean with `"//SIM_TOP"` as soon as more than one file matches.
 
 Get the first row wrong and you hear about it immediately, not three minutes into `make gds`:
 
@@ -92,8 +100,9 @@ Get the first row wrong and you hear about it immediately, not three minutes int
 | `make sim` | Runs the Verilog testbenches with Icarus Verilog. | `build/wave.vcd` |
 | `make cocotb` | Runs the Python (cocotb) testbenches. | `build/cocotb-results.xml` |
 | `make synth` | Synthesises RTL into gates with Yosys. | `build/synthesis.json` |
+| `make pdk` | Installs the Sky130 PDK. `make gds` runs it for you; run it alone to do the 3GB download ahead of time. | `pdks/` |
 | `make schematic` | Draws the circuit as an SVG you can open anywhere. | `build/schematic.svg` |
-| `make gds` | Builds the physical layout with LibreLane. Minutes. | `build/<DESIGN_NAME>.gds` |
+| `make gds` | Builds the physical layout with LibreLane. About three minutes, plus the PDK download on a first run. | `build/<DESIGN_NAME>.gds` |
 | `make gatesim` | Re-runs simulation on the synthesised netlist. Needs `make gds` first. | `Terminal` |
 | `make report` | Area, timing, power and signoff from the last `make gds`. | `Terminal` |
 | `make shell` | A bash shell inside the c4o-core container. | — |

@@ -59,7 +59,8 @@ cd <你的儲存庫>
 make gds
 ```
 
-*第一次執行會安裝 Sky130 PDK（約 3GB），需要幾分鐘：合成、佈局繞線，然後產出版圖。*
+*第一次執行會先把 Sky130 PDK（約 3GB）抓下來才開始動——網路快大約二十分鐘，慢就更久。
+流程本身大約三分鐘，那也是第一次以後每一次的成本。想先把下載做完，單獨跑 `make pdk`。*
 
 ### 3. 換成你自己的設計
 
@@ -75,6 +76,8 @@ make gds
 沒有別的地方寫死設計名稱：`Makefile` 和 CI 工作流都從 `config.yaml` 讀 `DESIGN_NAME`。
 
 **最後兩列是選用的。** 把 `"//COCOTB_TESTS"` 或 `"//GATE_TESTS"` 從 `config.yaml` 刪掉——連 key 那一行**和它下面縮排的路徑**一起刪，只刪 key 會留下一個沒有主人的列表項，YAML 會直接解析失敗——CI 就會跳過那一類測試而不是失敗。但如果把 key 留著卻指向不存在的檔案，CI 還是會失敗，這是對的：你要求了不存在的測試。
+
+**第二個 Verilog 測試平台要多一個 key。** `"//TEST_FILES"` 吃萬用字元，而 Icarus 會把每一個沒有被實例化的模組各自當成一個 root——所以第一個 `$finish` 就會結束整場模擬，其餘的根本沒跑。一旦對到超過一個檔案，就用 `"//SIM_TOP"` 指定你要的那一個。
 
 第一列弄錯的話，你會立刻知道，而不是等到 `make gds` 跑到一半才發現：
 
@@ -92,8 +95,9 @@ make gds
 | `make sim` | 用 Icarus Verilog 跑 Verilog 測試平台。 | `build/wave.vcd` |
 | `make cocotb` | 執行 Python (cocotb) 測試平台。 | `build/cocotb-results.xml` |
 | `make synth` | 用 Yosys 把 RTL 合成成閘級電路。 | `build/synthesis.json` |
+| `make pdk` | 安裝 Sky130 PDK。`make gds` 會自己叫它；單獨跑可以把那 3GB 的下載提前做掉。 | `pdks/` |
 | `make schematic` | 把電路畫成到處都開得了的 SVG。 | `build/schematic.svg` |
-| `make gds` | 用 LibreLane 產生實體版圖。幾分鐘。 | `build/<DESIGN_NAME>.gds` |
+| `make gds` | 用 LibreLane 產生實體版圖。大約三分鐘，第一次還要加上 PDK 下載。 | `build/<DESIGN_NAME>.gds` |
 | `make gatesim` | 對合成後的 netlist 重跑模擬，需先執行 `make gds`。 | `終端機` |
 | `make report` | 顯示上次 `make gds` 的面積、時序、功耗與 signoff。 | `終端機` |
 | `make shell` | 進入 c4o-core 容器的互動式 shell。 | — |
