@@ -170,8 +170,13 @@ nine lines.
 ### Publishing the results page
 
 `make site` puts those lines, the layout image, the schematic and every cocotb
-test with its verdict and seed on one page, `build/site/index.html`. Each part
-shows up once you have run the command behind it.
+test with its verdict and seed on one page, `build/site/index.html`. After
+`make gds` it also shows each signoff check, the worst setup path as OpenSTA
+reports it, an area split (flip-flops, logic, what routing added) and a power
+split by sequential, combinational and clock. The power split uses OpenSTA's
+default switching activity, not your testbench's, so it shows where power goes,
+not what a real workload draws. Each part shows up once you have run the
+command behind it.
 
 CI builds that page on every run and publishes it from `main` to GitHub Pages,
 at `https://<your-user>.github.io/<your-repo>/`. A new copy of this template
