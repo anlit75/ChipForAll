@@ -48,6 +48,16 @@ VERILOG_FILES:
 "//GATE_TESTS":
   - dir::test/gate/*.v
 
+# Signals the results page (`make site`) draws from `make sim`'s VCD, named
+# from the testbench top down. They name tb_blinky, so replacing the testbench
+# means replacing these too: a name the VCD does not declare fails `make site`.
+# Delete the key and its lines to have no waveform instead.
+"//WAVE_SIGNALS":
+  - tb_blinky.clk
+  - tb_blinky.rst
+  - tb_blinky.uut.count
+  - tb_blinky.led
+
 CLOCK_PORT: clk
 CLOCK_PERIOD: 10.0
 

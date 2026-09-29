@@ -228,6 +228,7 @@ Prefer to stay in your own editor? `make shell` drops you into the same image fr
 | `"//SIM_TOP"` | Which testbench module to elaborate. Required once `"//TEST_FILES"` matches more than one file. |
 | `"//COCOTB_TESTS"` | Python testbenches for `make cocotb`. Optional. |
 | `"//GATE_TESTS"` / `"//GATE_TOP"` | Gate-level testbenches for `make gatesim`. Optional. |
+| `"//WAVE_SIGNALS"` | Signals `make site` draws from `make sim`'s VCD, named from the testbench top down (`tb_blinky.uut.count`). A name the VCD does not declare fails `make site`. Optional. |
 | `CLOCK_PORT` / `CLOCK_PERIOD` | The clock to constrain, and its period in ns. |
 | `PNR_SDC_FILE` / `SIGNOFF_SDC_FILE` | Your own timing constraints, when those two keys are not enough — see below. |
 | `FP_SIZING` / `FP_CORE_UTIL` | How the die is sized — see below. |

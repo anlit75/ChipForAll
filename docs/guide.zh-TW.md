@@ -220,6 +220,7 @@ make gds PDK_ROOT=/opt/sky130
 | `"//SIM_TOP"` | 要 elaborate 的測試平台模組。`"//TEST_FILES"` 對到超過一個檔案時必填。 |
 | `"//COCOTB_TESTS"` | 給 `make cocotb` 的 Python 測試平台。選用。 |
 | `"//GATE_TESTS"` / `"//GATE_TOP"` | 給 `make gatesim` 的閘級測試平台。選用。 |
+| `"//WAVE_SIGNALS"` | `make site` 從 `make sim` 的 VCD 畫的訊號，從測試平台頂層往下寫（`tb_blinky.uut.count`）。VCD 裡沒有的名字會讓 `make site` 失敗。選用。 |
 | `CLOCK_PORT` / `CLOCK_PERIOD` | 要約束的時脈，以及它的週期（ns）。 |
 | `PNR_SDC_FILE` / `SIGNOFF_SDC_FILE` | 你自己的時序約束，當上面那兩個 key 不夠用的時候——見下。 |
 | `FP_SIZING` / `FP_CORE_UTIL` | die 怎麼算出來的——見下。 |
