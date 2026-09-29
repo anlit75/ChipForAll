@@ -80,7 +80,7 @@ download out of the way on its own.*
 
 ### 3. Make it your design
 
-The example is a blinky — a clock divider. To replace it with your own, four things have to agree, and nothing else does:
+The example is a blinky — a clock divider. To replace it with your own, five things have to agree, and nothing else does:
 
 | Change | Where |
 |---|---|
@@ -88,10 +88,11 @@ The example is a blinky — a clock divider. To replace it with your own, four t
 | `DESIGN_NAME` | `config.yaml` — must match your top module's name |
 | Your testbenches | `test/`, under `"//TEST_FILES"` and `"//COCOTB_TESTS"` |
 | The gate-level one | `test/gate/`, under `"//GATE_TESTS"` |
+| The waveform's signals | `"//WAVE_SIGNALS"`, named from your testbench's top down |
 
 Nothing else names the design: the `Makefile` and the CI workflow both read `DESIGN_NAME` from `config.yaml`.
 
-**The last two rows are optional.** Delete `"//COCOTB_TESTS"` or `"//GATE_TESTS"` from `config.yaml` — the key line *and* the indented paths under it — and CI skips that kind of test instead of failing. Keep the key and point it at nothing and CI fails, correctly: you asked for tests that are not there.
+**The last three rows are optional.** Delete `"//COCOTB_TESTS"`, `"//GATE_TESTS"` or `"//WAVE_SIGNALS"` from `config.yaml` — the key line *and* the indented paths under it — and CI skips that kind of test instead of failing. Keep the key and point it at nothing and CI fails, correctly: you asked for tests that are not there.
 
 **A second Verilog testbench needs one more key.** `"//TEST_FILES"` takes a glob, and
 Icarus elaborates every module nobody instantiates as a root of its own — so the first
@@ -138,7 +139,7 @@ Get the first row wrong and you hear about it immediately, not three minutes int
   standard cells   198
   setup slack      +4.70 ns  (0 violations)
   hold slack       +0.11 ns  (0 violations)
-  power            0.290 mW
+  power            0.248 mW  (nom_tt_025C_1v80)
   signoff          clean  (Magic DRC, KLayout DRC, LVS, antenna, XOR)
   lint warnings    0
   layout           runs/blinky_run/final/render/blinky.png
@@ -173,7 +174,8 @@ nine lines.
 test with its verdict and seed on one page, `build/site/index.html`. After
 `make gds` it also shows each signoff check, the worst setup path as OpenSTA
 reports it, an area split (flip-flops, logic, what routing added) and a power
-split by sequential, combinational and clock. The power split uses OpenSTA's
+split by sequential, combinational and clock. After `make sim` it draws the
+signals `"//WAVE_SIGNALS"` names as a waveform. The power split uses OpenSTA's
 default switching activity, not your testbench's, so it shows where power goes,
 not what a real workload draws. Each part shows up once you have run the
 command behind it.

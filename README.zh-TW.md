@@ -76,7 +76,7 @@ make gds
 
 ### 3. 換成你自己的設計
 
-範例是一個 blinky——時脈除頻器。要換成你自己的設計，有四個地方必須互相對上，其他都不用動：
+範例是一個 blinky——時脈除頻器。要換成你自己的設計，有五個地方必須互相對上，其他都不用動：
 
 | 要改的 | 在哪裡 |
 |---|---|
@@ -84,10 +84,11 @@ make gds
 | `DESIGN_NAME` | `config.yaml`——必須和你的頂層模組同名 |
 | 你的測試平台 | `test/`，列在 `"//TEST_FILES"` 和 `"//COCOTB_TESTS"` |
 | 閘級測試平台 | `test/gate/`，列在 `"//GATE_TESTS"` |
+| 波形圖的訊號 | `"//WAVE_SIGNALS"`，從你的測試平台頂層往下寫 |
 
 沒有別的地方寫死設計名稱：`Makefile` 和 CI 工作流都從 `config.yaml` 讀 `DESIGN_NAME`。
 
-**最後兩列是選用的。** 把 `"//COCOTB_TESTS"` 或 `"//GATE_TESTS"` 從 `config.yaml` 刪掉——連 key 那一行**和它下面縮排的路徑**一起刪，只刪 key 會留下一個沒有主人的列表項，YAML 會直接解析失敗——CI 就會跳過那一類測試而不是失敗。但如果把 key 留著卻指向不存在的檔案，CI 還是會失敗，這是對的：你要求了不存在的測試。
+**最後三列是選用的。** 把 `"//COCOTB_TESTS"`、`"//GATE_TESTS"` 或 `"//WAVE_SIGNALS"` 從 `config.yaml` 刪掉——連 key 那一行**和它下面縮排的路徑**一起刪，只刪 key 會留下一個沒有主人的列表項，YAML 會直接解析失敗——CI 就會跳過那一類測試而不是失敗。但如果把 key 留著卻指向不存在的檔案，CI 還是會失敗，這是對的：你要求了不存在的測試。
 
 **第二個 Verilog 測試平台要多一個 key。** `"//TEST_FILES"` 吃萬用字元，而 Icarus 會把每一個沒有被實例化的模組各自當成一個 root——所以第一個 `$finish` 就會結束整場模擬，其餘的根本沒跑。一旦對到超過一個檔案，就用 `"//SIM_TOP"` 指定你要的那一個。
 
@@ -131,7 +132,7 @@ make gds
   standard cells   198
   setup slack      +4.70 ns  (0 violations)
   hold slack       +0.11 ns  (0 violations)
-  power            0.290 mW
+  power            0.248 mW  (nom_tt_025C_1v80)
   signoff          clean  (Magic DRC, KLayout DRC, LVS, antenna, XOR)
   lint warnings    0
   layout           runs/blinky_run/final/render/blinky.png
@@ -161,7 +162,8 @@ make gds
 `make site` 把上面那幾行、版圖、電路圖，以及每個 cocotb 測試的結果和 seed 放進同一
 個網頁 `build/site/index.html`。跑過 `make gds` 之後，頁面還會列出每一項 signoff 檢查、
 OpenSTA 報出的最差 setup path、面積拆分（flip-flop、邏輯、繞線階段加進來的），以及按
-sequential、combinational、clock 拆開的功耗。功耗用的是 OpenSTA 預設的切換活動率，不是
+sequential、combinational、clock 拆開的功耗。跑過 `make sim` 之後，還會把
+`"//WAVE_SIGNALS"` 列的訊號畫成波形圖。功耗用的是 OpenSTA 預設的切換活動率，不是
 你的測試平台的，所以它告訴你功耗花在哪裡，不是真實工作負載的耗電。每一塊在你跑過對應
 的指令之後才會出現。
 
