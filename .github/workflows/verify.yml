@@ -238,6 +238,17 @@ jobs:
           fi
           make cocotb
 
+      # The cocotb verdicts as a table on the run's summary page, instead of
+      # only in the log. always() so a failing test is shown too -- that is
+      # when the table is worth opening. Gated on the file, not on the
+      # //COCOTB_TESTS key: a run that crashed before writing it has nothing to
+      # show, and the step above has already gone red for it.
+      - name: cocotb results on the summary page
+        if: always() && hashFiles('build/cocotb-results.xml') != ''
+        uses: test-summary/action@v2
+        with:
+          paths: build/cocotb-results.xml
+
       - name: 3. Logic Synthesis
         run: make synth
 
@@ -414,6 +425,20 @@ jobs:
             exit 0
           fi
           make gatesim
+
+      # What `make report` prints -- area, timing, power, signoff -- on the
+      # run's summary page, so reading them does not mean opening the log or
+      # waiting for Pages. The [INFO] lines are c4o-core saying which files it
+      # read, not results, so they stay in the log.
+      - name: Signoff numbers on the summary page
+        run: |
+          make -s report | tee build/report.txt
+          {
+            echo '## Signoff'
+            echo '```text'
+            grep -v '\[INFO\]' build/report.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       # One page with what `make report` prints, the layout, the schematic and
       # the cocotb verdicts. Built on every run, pull requests included, so a
