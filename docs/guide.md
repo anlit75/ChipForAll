@@ -40,8 +40,8 @@ measured here. A Codespace is `amd64` throughout.
 **One prerequisite is not a download: some Verilog.** Not much — enough to read an `always @(posedge clk)` block, a `<=` assignment and a `$fatal`. On [HDLBits](https://hdlbits.01xz.net/) that is the *Verilog Language* section, not the whole site.
 
 **SystemVerilog is read too.** `logic`, `always_ff` and the synthesisable subset
-work in every command, on c4o-core 2.8.3 and newer, which the pinned `2.9` tag
-gives you. Before that the same file passed `make cocotb` and `make gds` and
+work in every command since c4o-core 2.8.3, which every version this repository
+has pinned since then includes. Before that the same file passed `make cocotb` and `make gds` and
 failed `make sim` and `make synth`. What still does not work is an `interface` as
 a module boundary — yosys parses the declaration and then fails at `hierarchy` —
 so keep interfaces in the testbench, not between synthesisable modules.
@@ -118,7 +118,7 @@ Get the first row wrong and you hear about it immediately, not three minutes int
 Those are the example design's numbers, from one PDK version. Yours will differ;
 the lines are what to read.
 
-**`signoff`** says the thing nothing else says: your layout passes the manufacturability checks. The LibreLane pinned here, 3.0.14, errors on every one of them by default (`ERROR_ON_MAGIC_DRC` and its siblings are all `True`) and `config.yaml` overrides none of them, so a run that reached this line has already passed them. That is that version's default, not a guarantee this repository makes — check it again after an upgrade. `clean` states it, and names which checks it saw. When something is wrong it names that instead: `2 Magic DRC, 1 LVS`.
+**`signoff`** says the thing nothing else says: your layout passes the manufacturability checks. The LibreLane version the `Makefile` pins (`LIBRELANE_IMAGE`) errors on every one of them by default (`ERROR_ON_MAGIC_DRC` and its siblings are all `True`) and `config.yaml` overrides none of them, so a run that reached this line has already passed them. That is that version's default, not a guarantee this repository makes — check it again after an upgrade. `clean` states it, and names which checks it saw. When something is wrong it names that instead: `2 Magic DRC, 1 LVS`.
 
 **`layout`** is the PNG the flow drew of your chip. Open it.
 
@@ -364,7 +364,7 @@ Two things to know:
 make gds PDK_ROOT=/opt/sky130
 ```
 
-Without it, every clone keeps its own copy under `pdks/`. A shared machine, or one where you keep more than one design, pays for those 3GB once instead of once per checkout. It needs c4o-core 2.8.2 or newer, which the pinned `2.8` tag already gives you.
+Without it, every clone keeps its own copy under `pdks/`. A shared machine, or one where you keep more than one design, pays for those 3GB once instead of once per checkout. It needs c4o-core 2.8.2 or newer; the version the `Makefile` pins already is.
 
 Prefer to stay in your own editor? `make shell` drops you into the same image from any terminal.
 

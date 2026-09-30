@@ -39,7 +39,7 @@ Codespace 全程都是 `amd64`。
 **有一個前置條件不是下載就有的：一點 Verilog。** 不用多——看得懂一個 `always @(posedge clk)` 區塊、一個 `<=` 指定、一個 `$fatal` 就夠。在 [HDLBits](https://hdlbits.01xz.net/) 上大約是 *Verilog Language* 那一段，不是整個網站。
 
 **SystemVerilog 也讀得進來。** `logic`、`always_ff` 和可合成的那個子集在每個指令下都
-能用，條件是 c4o-core 2.8.3 或更新——釘住的 `2.9` 標籤就會給你。在那之前，同一個檔案會
+能用，從 c4o-core 2.8.3 開始——這個 repo 之後釘過的每一版都包含它。在那之前，同一個檔案會
 過 `make cocotb` 和 `make gds`，卻掛在 `make sim` 和 `make synth`。仍然不行的是把
 `interface` 當成模組邊界——yosys 讀得懂宣告，然後在 `hierarchy` 階段失敗——所以 interface
 留在測試平台裡，不要放在可合成模組之間。
@@ -112,7 +112,7 @@ Codespace 全程都是 `amd64`。
 
 那是範例設計的數字，出自某一版 PDK。你的會不一樣；要看的是那些欄位。
 
-**`signoff`** 是那一列沒人會說的話：你的版圖通過了可製造性檢查。這裡釘的 LibreLane 3.0.14 預設讓每一項都直接中止流程（`ERROR_ON_MAGIC_DRC` 那一族預設都是 `True`），而 `config.yaml` 沒有覆寫任何一個，所以能跑到這一行就代表都過了。這是那一版的預設行為，不是這個 repo 掛保證的事——升版之後要自己確認一次。`clean` 只是把它講出來，並列出它實際看到哪幾項。有問題的時候它會改成指名道姓：`2 Magic DRC, 1 LVS`。
+**`signoff`** 是那一列沒人會說的話：你的版圖通過了可製造性檢查。`Makefile` 釘的 LibreLane 版本（`LIBRELANE_IMAGE`）預設讓每一項都直接中止流程（`ERROR_ON_MAGIC_DRC` 那一族預設都是 `True`），而 `config.yaml` 沒有覆寫任何一個，所以能跑到這一行就代表都過了。這是那一版的預設行為，不是這個 repo 掛保證的事——升版之後要自己確認一次。`clean` 只是把它講出來，並列出它實際看到哪幾項。有問題的時候它會改成指名道姓：`2 Magic DRC, 1 LVS`。
 
 **`layout`** 是流程幫你的晶片畫的 PNG。打開來看看。
 
@@ -344,7 +344,7 @@ cells` 是 `make gds` 裡 LibreLane 自己對著真實元件庫合成的結果�
 make gds PDK_ROOT=/opt/sky130
 ```
 
-不設它的話，每個 clone 都會在自己的 `pdks/` 底下留一份。共用的機器，或是你手上不只一個設計的時候，那 3GB 就只付一次，而不是每個 checkout 各付一次。這需要 c4o-core 2.8.2 或更新的版本，而釘住的 `2.8` 標籤已經給你了。
+不設它的話，每個 clone 都會在自己的 `pdks/` 底下留一份。共用的機器，或是你手上不只一個設計的時候，那 3GB 就只付一次，而不是每個 checkout 各付一次。這需要 c4o-core 2.8.2 或更新的版本；`Makefile` 釘的版本已經符合。
 
 習慣用自己的編輯器？`make shell` 可以從任何終端機進入同一個映像檔。
 
