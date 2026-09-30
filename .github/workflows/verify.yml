@@ -432,6 +432,9 @@ jobs:
       # read, not results, so they stay in the log.
       - name: Signoff numbers on the summary page
         run: |
+          # A run: step's bash has -e but not pipefail, so without this a
+          # report that failed would pass through tee as a green step.
+          set -o pipefail
           make -s report | tee build/report.txt
           {
             echo '## Signoff'
