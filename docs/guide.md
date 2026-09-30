@@ -1,8 +1,160 @@
 # Guide
 
-Everything after the first run. Start with the [README](../README.md) if you have not run `make gds` yet.
+Everything the [README](../README.md) leaves out: what this is and is not, the prerequisites in detail, making the template your design, reading the numbers, and what comes after the first run.
 
 *[繁體中文](guide.zh-TW.md)*
+
+## What this is, and what it is not
+
+The physical flow — RTL to GDSII — is [LibreLane](https://github.com/librelane/librelane)'s, and `make gds` is a thin wrapper around it. If all you want is a layout, LibreLane runs standalone with `--dockerized` and you do not need this repo.
+
+What LibreLane does not cover is simulation and verification. That is what this starter kit adds, plus the CI and the Dev Container to run it in.
+
+**The tools are open-source equivalents, not the commercial ones.**
+
+| Step | Here | What a commercial flow uses |
+|---|---|---|
+| Lint | Verilator | SpyGlass, Questa Lint |
+| Simulation | Icarus Verilog, driven from Python by cocotb | VCS, Questa, Xcelium |
+| Synthesis | Yosys | Design Compiler, Genus |
+| Place and route | OpenROAD, wrapped by LibreLane | IC Compiler II, Innovus |
+| Static timing | OpenSTA | PrimeTime, Tempus |
+| DRC | Magic, KLayout | Calibre nmDRC, Pegasus |
+| LVS | Netgen | Calibre nmLVS |
+
+The flow shape is the same and the vocabulary transfers; the tools on your CV would not be the ones a job advert lists, so say which you used.
+
+**Looking for a worked verification example?** This repository's tests are a Verilog testbench and two cocotb ones — enough to show what a test that can fail looks like, and not a layered verification environment. [c4o-pyuvm](https://github.com/anlit75/c4o-pyuvm) is that: a pyuvm environment on a real UART — agent, driver, monitor, scoreboard, and a register model generated from SystemRDL — built from this template.
+
+**What you make here is yours to publish.** The process is [Sky130](https://github.com/google/skywater-pdk), the PDK SkyWater released under Apache 2.0, with no NDA attached — so the layout, the area, the timing numbers and the GDS can all go into a repository, a portfolio or a write-up. A foundry PDK under a confidentiality agreement does not allow any of that, which is why people who have one come here for a second set of results they are allowed to show — and why people who have never had one can produce results at all.
+
+## Before you start
+
+**On Apple Silicon, part of this runs emulated.** The c4o-core image is built for
+`amd64` only — one runner, no `platforms:` — so `lint`, `sim`, `cocotb`, `synth`
+and `gatesim` go through emulation on an `arm64` machine. `make gds` does not:
+the heavy step runs LibreLane's own image, and that one is published for `arm64`
+as well, so it runs native. How much the emulated commands slow down is not
+measured here. A Codespace is `amd64` throughout.
+
+**One prerequisite is not a download: some Verilog.** Not much — enough to read an `always @(posedge clk)` block, a `<=` assignment and a `$fatal`. On [HDLBits](https://hdlbits.01xz.net/) that is the *Verilog Language* section, not the whole site.
+
+**SystemVerilog is read too.** `logic`, `always_ff` and the synthesisable subset
+work in every command since c4o-core 2.8.3, which every version this repository
+has pinned since then includes. Before that the same file passed `make cocotb` and `make gds` and
+failed `make sim` and `make synth`. What still does not work is an `interface` as
+a module boundary — yosys parses the declaration and then fails at `hierarchy` —
+so keep interfaces in the testbench, not between synthesisable modules.
+
+You do not need it to start. `make gds` runs the example as it stands and prints real area, timing and power, and `make all` shows you tests passing; that is worth doing first, because it tells you the toolchain works on your machine. What needs Verilog is the step after: changing `src/blinky.v`, judging whether a test that passed proves anything, or writing one of your own. Run it first, learn Verilog, then come back for that.
+
+## Making it your design
+
+The example is a blinky — a clock divider. To replace it with your own, five things have to agree, and nothing else does:
+
+| Change | Where |
+|---|---|
+| Your RTL | `src/`, listed under `VERILOG_FILES` in `config.yaml` |
+| `DESIGN_NAME` | `config.yaml` — must match your top module's name |
+| Your testbenches | `test/`, under `"//TEST_FILES"` and `"//COCOTB_TESTS"` |
+| The gate-level one | `test/gate/`, under `"//GATE_TESTS"` |
+| The waveform's signals | `"//WAVE_SIGNALS"`, named from your testbench's top down |
+
+Nothing else names the design: the `Makefile` and the CI workflow both read `DESIGN_NAME` from `config.yaml`.
+
+**The last three rows are optional.** Delete `"//COCOTB_TESTS"`, `"//GATE_TESTS"` or `"//WAVE_SIGNALS"` from `config.yaml` — the key line *and* the indented paths under it — and CI skips that kind of test instead of failing. Keep the key and point it at nothing and CI fails, correctly: you asked for tests that are not there.
+
+**A second Verilog testbench needs one more key.** `"//TEST_FILES"` takes a glob, and
+Icarus elaborates every module nobody instantiates as a root of its own — so the first
+`$finish` would end the whole simulation and the rest would never run. Name the one you
+mean with `"//SIM_TOP"` as soon as more than one file matches.
+
+Get the first row wrong and you hear about it immediately, not three minutes into `make gds`:
+
+```console
+[ERROR] DESIGN_NAME is 'my_cpu', but no module by that name is declared in
+        VERILOG_FILES. Declared there: blinky.
+```
+
+## Commands
+
+| Command | Description | Output |
+|---|---|---|
+| `make all` | `lint`, `sim`, `cocotb` and `synth` — everything that runs in seconds. | `Terminal` |
+| `make lint` | Checks your Verilog with Verilator. | `Terminal` |
+| `make sim` | Runs the Verilog testbenches with Icarus Verilog. | `build/wave.vcd` |
+| `make cocotb` | Runs the Python (cocotb) testbenches. | `build/cocotb-results.xml` |
+| `make synth` | Synthesises RTL into generic gates with Yosys — no area, no timing, see [Seeing the circuit](#seeing-the-circuit). One fixed script; `make shell` to drive Yosys yourself. | `build/synthesis.json` |
+| `make pdk` | Installs the Sky130 PDK. `make gds` runs it for you; run it alone to do the 3GB download ahead of time. | `pdks/` |
+| `make schematic` | Draws the circuit as an SVG you can open anywhere. | `build/schematic.svg` |
+| `make gds` | Builds the physical layout with LibreLane. About three minutes, plus the PDK download on a first run. | `build/<DESIGN_NAME>.gds` |
+| `make gatesim` | Re-runs simulation on the synthesised netlist. Needs `make gds` first. | `Terminal` |
+| `make report` | Area, timing, power and signoff from the last `make gds`. | `Terminal` |
+| `make site` | Puts `report`, the layout, the schematic and the cocotb results on one page. | `build/site/index.html` |
+| `make shell` | A bash shell inside the c4o-core container. | — |
+| `make clean` | Removes `build/`. Keeps `runs/`, which `report` and `gatesim` read. | — |
+| `make distclean` | Removes `build/` and `runs/`. | — |
+
+`make help` lists them in the terminal.
+
+## Reading the result
+
+`make gds` ends by printing what the flow measured, so you do not have to go looking for it:
+
+```
+  blinky
+
+  die              69.5 x 80.2 um  (5573 um^2)
+  utilization      57.1%
+  standard cells   198
+  setup slack      +4.70 ns  (0 violations)
+  hold slack       +0.11 ns  (0 violations)
+  power            0.248 mW  (nom_tt_025C_1v80)
+  signoff          clean  (Magic DRC, KLayout DRC, LVS, antenna, XOR)
+  lint warnings    0
+  layout           runs/blinky_run/final/render/blinky.png
+```
+
+Those are the example design's numbers, from one PDK version. Yours will differ;
+the lines are what to read.
+
+**`signoff`** says the thing nothing else says: your layout passes the manufacturability checks. The LibreLane version the `Makefile` pins (`LIBRELANE_IMAGE`) errors on every one of them by default (`ERROR_ON_MAGIC_DRC` and its siblings are all `True`) and `config.yaml` overrides none of them, so a run that reached this line has already passed them. That is that version's default, not a guarantee this repository makes — check it again after an upgrade. `clean` states it, and names which checks it saw. When something is wrong it names that instead: `2 Magic DRC, 1 LVS`.
+
+**`layout`** is the PNG the flow drew of your chip. Open it.
+
+`XOR` there is not a process-rule check: it is two tools writing the same layout out as GDS and comparing the results, which has to agree. What it catches is a stream-out bug in either writer. It is not two vendors' tools cross-checking a design — both read the same database — so do not read a clean XOR as a second opinion on the layout itself.
+
+**Positive slack** means the design meets the clock in `config.yaml`. Negative means it does not, and the flow does not stop for it — so a run can finish and still be telling you it missed. [What to do about that](#when-slack-is-negative) is below.
+
+**Those nine lines are a summary, not a signoff report.** They are pulled out of a
+300-key `metrics.json`, so what they leave out matters: what clock uncertainty and
+derating were applied, what the clock tree's skew came to, and which of the nine
+corners (`ss`/`tt`/`ff` against `min`/`nom`/`max` interconnect) that slack came from.
+All of that is LibreLane's defaults — `config.yaml` sets none of it — and all of it
+is under `runs/`, one directory per step. The difference is practical: a `+0.11 ns`
+hold slack is not what a flow where you filled in the OCV derates yourself would
+call passing. For confidence at that level, read the per-corner reports, not these
+nine lines.
+
+`make report` prints all of it again without re-running anything.
+
+## Publishing the results page
+
+`make site` puts those lines, the layout image, the schematic and every cocotb
+test with its verdict and seed on one page, `build/site/index.html`. After
+`make gds` it also shows each signoff check, the worst setup path as OpenSTA
+reports it, an area split (flip-flops, logic, what routing added) and a power
+split by sequential, combinational and clock. After `make sim` it draws the
+signals `"//WAVE_SIGNALS"` names as a waveform. The power split uses OpenSTA's
+default switching activity, not your testbench's, so it shows where power goes,
+not what a real workload draws. Each part shows up once you have run the
+command behind it.
+
+CI builds that page on every run and publishes it from `main` to GitHub Pages,
+at `https://<your-user>.github.io/<your-repo>/`. A new copy of this template
+has Pages off, and no workflow can turn it on for you. Do it once: **Settings →
+Pages → Source: GitHub Actions**. Until then, CI still passes and says in a
+notice that nothing was published.
 
 ## When slack is negative
 
@@ -212,7 +364,7 @@ Two things to know:
 make gds PDK_ROOT=/opt/sky130
 ```
 
-Without it, every clone keeps its own copy under `pdks/`. A shared machine, or one where you keep more than one design, pays for those 3GB once instead of once per checkout. It needs c4o-core 2.8.2 or newer, which the pinned `2.8` tag already gives you.
+Without it, every clone keeps its own copy under `pdks/`. A shared machine, or one where you keep more than one design, pays for those 3GB once instead of once per checkout. It needs c4o-core 2.8.2 or newer; the version the `Makefile` pins already is.
 
 Prefer to stay in your own editor? `make shell` drops you into the same image from any terminal.
 

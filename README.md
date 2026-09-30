@@ -1,147 +1,58 @@
-# ChipForAll (C4O)
+<div align="center">
 
-![CI Status](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml/badge.svg)
-![release Version](https://img.shields.io/github/v/release/anlit75/ChipForAll?label=version)
+# ChipForAll
+
+**Verify your chip design like a professional team — with open-source tools, in one command.**
+
+Simulate your RTL, test it from Python, re-run the tests on the synthesised gates, build a real Sky130 layout, and publish the results as a web page. Nothing to install.
+
+[![CI Status](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml/badge.svg)](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml)
+[![release Version](https://img.shields.io/github/v/release/anlit75/ChipForAll?label=version)](https://github.com/anlit75/ChipForAll/releases)
 [![License](https://img.shields.io/github/license/anlit75/ChipForAll)](LICENSE)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/anlit75/ChipForAll)
 
-*[繁體中文](README.zh-TW.md)*
+[**Live results page**](https://anlit75.github.io/ChipForAll/) · [Quick start](#-quick-start) · [Guide](docs/guide.md) · [繁體中文](README.zh-TW.md)
 
-**A verification and CI starter kit for open-source silicon.** Simulate your RTL, drive it from Python, simulate the gates it synthesises into, and read the signoff numbers — then hand the physical flow to LibreLane. One `make` command each, nothing to install.
+</div>
 
-The example design is Verilog. You do not need Verilog to run the whole flow and read what it measured, but you do to change the design or write a test — [Prerequisites](#prerequisites) is more specific.
+---
 
-## ✨ Features
+## Why ChipForAll
 
-*   **🧪 Testbenches that can actually fail**: `make sim` for Verilog, `make cocotb` for Python. Both exit non-zero when they should — a test that passes on a broken design is worse than no test.
-*   **🔬 Gate-level simulation**: `make gatesim` re-runs your tests against the netlist synthesis actually produced. Latch inference and reset handling sit between your RTL and those gates, and none of it is visible from the RTL.
-*   **📊 Signoff you can read**: `make report` pulls the handful of numbers that matter — area, timing, power, DRC/LVS/antenna — out of a 300-key `metrics.json` nobody opens.
-*   **✅ CI that runs all of it**: a GitHub Actions workflow that lints, simulates, synthesises, builds the GDS and re-simulates the gates, on every push.
-*   **🐳 Nothing to install**: Docker, or a Dev Container / Codespace. `make gds` works in all three.
+Getting a layout out of an open-source flow is solved — [LibreLane](https://github.com/librelane/librelane) does it. Knowing whether that layout is *right* is not. ChipForAll adds the part that is missing: the tests, the checks and the CI around the flow.
 
-### What this is not
+| | |
+|---|---|
+| 🧪 **Tests that can fail** | Verilog and Python (cocotb) testbenches that exit non-zero on a broken design. |
+| 🔬 **Gate-level simulation** | Re-runs your tests on the netlist synthesis produced, where latches and reset bugs hide. |
+| 📊 **Signoff you can read** | Area, timing, power and DRC/LVS in nine lines, not a 300-key JSON. |
+| 🌐 **A results page per commit** | CI publishes tests, signoff, layout and waveform to GitHub Pages. |
+| 🐳 **Nothing to install** | Docker, a Dev Container or a Codespace. Same commands in all three. |
+| 🔓 **Yours to publish** | Sky130 is Apache 2.0, no NDA. Put the GDS in your portfolio. |
 
-The physical flow — RTL to GDSII — is [LibreLane](https://github.com/librelane/librelane)'s, and `make gds` is a thin wrapper around it. If all you want is a layout, LibreLane runs standalone with `--dockerized` and you do not need this repo.
+## 🚀 Quick start
 
-What LibreLane does not cover is simulation and verification. That is what this starter kit adds, plus the CI and the Dev Container to run it in.
+You need Docker, Make and Git — or just [a Codespace](https://github.com/codespaces), which has all three.
 
-**The tools are open-source equivalents, not the commercial ones.**
-
-| Step | Here | What a commercial flow uses |
-|---|---|---|
-| Lint | Verilator | SpyGlass, Questa Lint |
-| Simulation | Icarus Verilog, driven from Python by cocotb | VCS, Questa, Xcelium |
-| Synthesis | Yosys | Design Compiler, Genus |
-| Place and route | OpenROAD, wrapped by LibreLane | IC Compiler II, Innovus |
-| Static timing | OpenSTA | PrimeTime, Tempus |
-| DRC | Magic, KLayout | Calibre nmDRC, Pegasus |
-| LVS | Netgen | Calibre nmLVS |
-
-The flow shape is the same and the vocabulary transfers; the tools on your CV would not be the ones a job advert lists, so say which you used.
-
-**Looking for a worked verification example?** This repository's tests are a Verilog testbench and two cocotb ones — enough to show what a test that can fail looks like, and not a layered verification environment. [c4o-pyuvm](https://github.com/anlit75/c4o-pyuvm) is that: a pyuvm environment on a real UART — agent, driver, monitor, scoreboard, and a register model generated from SystemRDL — built from this template.
-
-**What you make here is yours to publish.** The process is [Sky130](https://github.com/google/skywater-pdk), the PDK SkyWater released under Apache 2.0, with no NDA attached — so the layout, the area, the timing numbers and the GDS can all go into a repository, a portfolio or a write-up. A foundry PDK under a confidentiality agreement does not allow any of that, which is why people who have one come here for a second set of results they are allowed to show — and why people who have never had one can produce results at all.
-
-## 🚀 Quick Start
-
-### Prerequisites
-*   Docker (Desktop or Engine)
-*   Make
-*   Git
-
-*… or none of the above: open it in a GitHub Codespace and everything is already there.*
-
-**On Apple Silicon, part of this runs emulated.** The c4o-core image is built for
-`amd64` only — one runner, no `platforms:` — so `lint`, `sim`, `cocotb`, `synth`
-and `gatesim` go through emulation on an `arm64` machine. `make gds` does not:
-the heavy step runs LibreLane's own image, and that one is published for `arm64`
-as well, so it runs native. How much the emulated commands slow down is not
-measured here. A Codespace is `amd64` throughout.
-
-**One prerequisite is not a download: some Verilog.** Not much — enough to read an `always @(posedge clk)` block, a `<=` assignment and a `$fatal`. On [HDLBits](https://hdlbits.01xz.net/) that is the *Verilog Language* section, not the whole site.
-
-**SystemVerilog is read too.** `logic`, `always_ff` and the synthesisable subset
-work in every command, on c4o-core 2.8.3 and newer, which the pinned `2.9` tag
-gives you. Before that the same file passed `make cocotb` and `make gds` and
-failed `make sim` and `make synth`. What still does not work is an `interface` as
-a module boundary — yosys parses the declaration and then fails at `hierarchy` —
-so keep interfaces in the testbench, not between synthesisable modules.
-
-You do not need it to start. `make gds` runs the example as it stands and prints real area, timing and power, and `make all` shows you tests passing; that is worth doing first, because it tells you the toolchain works on your machine. What needs Verilog is the step after: changing `src/blinky.v`, judging whether a test that passed proves anything, or writing one of your own. Run it first, learn Verilog, then come back for that.
-
-### 1. Make your own copy
-
-This repository is a **GitHub template**. Press **Use this template → Create a new repository**, then clone your copy:
+**1. Make your copy.** Press **Use this template → Create a new repository**, then:
 
 ```bash
-git clone https://github.com/<you>/<your-repo>.git
-cd <your-repo>
+git clone https://github.com/<you>/<your-repo>.git && cd <your-repo>
 ```
 
-### 2. Run the full flow
+**2. Check that the tests pass** (seconds):
+
+```bash
+make all
+```
+
+**3. Build the chip** (about 3 minutes; the first run also downloads the 3 GB PDK, around 20 minutes):
 
 ```bash
 make gds
 ```
 
-*The first run downloads the Sky130 PDK (~3GB) before it starts anything — around
-twenty minutes on a fast link, longer on a slow one. The flow itself is about three
-minutes, and that is what every run after the first one costs. `make pdk` gets the
-download out of the way on its own.*
-
-### 3. Make it your design
-
-The example is a blinky — a clock divider. To replace it with your own, five things have to agree, and nothing else does:
-
-| Change | Where |
-|---|---|
-| Your RTL | `src/`, listed under `VERILOG_FILES` in `config.yaml` |
-| `DESIGN_NAME` | `config.yaml` — must match your top module's name |
-| Your testbenches | `test/`, under `"//TEST_FILES"` and `"//COCOTB_TESTS"` |
-| The gate-level one | `test/gate/`, under `"//GATE_TESTS"` |
-| The waveform's signals | `"//WAVE_SIGNALS"`, named from your testbench's top down |
-
-Nothing else names the design: the `Makefile` and the CI workflow both read `DESIGN_NAME` from `config.yaml`.
-
-**The last three rows are optional.** Delete `"//COCOTB_TESTS"`, `"//GATE_TESTS"` or `"//WAVE_SIGNALS"` from `config.yaml` — the key line *and* the indented paths under it — and CI skips that kind of test instead of failing. Keep the key and point it at nothing and CI fails, correctly: you asked for tests that are not there.
-
-**A second Verilog testbench needs one more key.** `"//TEST_FILES"` takes a glob, and
-Icarus elaborates every module nobody instantiates as a root of its own — so the first
-`$finish` would end the whole simulation and the rest would never run. Name the one you
-mean with `"//SIM_TOP"` as soon as more than one file matches.
-
-Get the first row wrong and you hear about it immediately, not three minutes into `make gds`:
-
-```console
-[ERROR] DESIGN_NAME is 'my_cpu', but no module by that name is declared in
-        VERILOG_FILES. Declared there: blinky.
-```
-
-## 📖 Commands
-
-| Command | Description | Output |
-|---|---|---|
-| `make all` | `lint`, `sim`, `cocotb` and `synth` — everything that runs in seconds. | `Terminal` |
-| `make lint` | Checks your Verilog with Verilator. | `Terminal` |
-| `make sim` | Runs the Verilog testbenches with Icarus Verilog. | `build/wave.vcd` |
-| `make cocotb` | Runs the Python (cocotb) testbenches. | `build/cocotb-results.xml` |
-| `make synth` | Synthesises RTL into generic gates with Yosys — no area, no timing, see the [guide](docs/guide.md#seeing-the-circuit). One fixed script; `make shell` to drive Yosys yourself. | `build/synthesis.json` |
-| `make pdk` | Installs the Sky130 PDK. `make gds` runs it for you; run it alone to do the 3GB download ahead of time. | `pdks/` |
-| `make schematic` | Draws the circuit as an SVG you can open anywhere. | `build/schematic.svg` |
-| `make gds` | Builds the physical layout with LibreLane. About three minutes, plus the PDK download on a first run. | `build/<DESIGN_NAME>.gds` |
-| `make gatesim` | Re-runs simulation on the synthesised netlist. Needs `make gds` first. | `Terminal` |
-| `make report` | Area, timing, power and signoff from the last `make gds`. | `Terminal` |
-| `make site` | Puts `report`, the layout, the schematic and the cocotb results on one page. | `build/site/index.html` |
-| `make shell` | A bash shell inside the c4o-core container. | — |
-| `make clean` | Removes `build/`. Keeps `runs/`, which `report` and `gatesim` read. | — |
-| `make distclean` | Removes `build/` and `runs/`. | — |
-
-`make help` lists them in the terminal.
-
-## 📊 Reading the result
-
-`make gds` ends by printing what the flow measured, so you do not have to go looking for it:
+It ends by telling you what it built:
 
 ```
   blinky
@@ -157,96 +68,71 @@ Get the first row wrong and you hear about it immediately, not three minutes int
   layout           runs/blinky_run/final/render/blinky.png
 ```
 
-Those are the example design's numbers, from one PDK version. Yours will differ;
-the lines are what to read.
+`signoff clean` and positive slack mean the layout passed the manufacturing checks and meets the clock. [How to read each line →](docs/guide.md#reading-the-result)
 
-**`signoff`** says the thing nothing else says: your layout passes the manufacturability checks. The LibreLane pinned here, 3.0.14, errors on every one of them by default (`ERROR_ON_MAGIC_DRC` and its siblings are all `True`) and `config.yaml` overrides none of them, so a run that reached this line has already passed them. That is that version's default, not a guarantee this repository makes — check it again after an upgrade. `clean` states it, and names which checks it saw. When something is wrong it names that instead: `2 Magic DRC, 1 LVS`.
+## 🌐 Your results, online
 
-**`layout`** is the PNG the flow drew of your chip. Open it.
+Every CI run on `main` publishes a results page to `https://<you>.github.io/<your-repo>/`: pass/fail at the top, then tests, signoff checks, the layout (with a 3D viewer), the waveform, timing, area and power.
 
-`XOR` there is not a process-rule check: it is two tools writing the same layout out as GDS and comparing the results, which has to agree. What it catches is a stream-out bug in either writer. It is not two vendors' tools cross-checking a design — both read the same database — so do not read a clean XOR as a second opinion on the layout itself.
+Turn it on once: **Settings → Pages → Source: GitHub Actions**. Build it locally with `make site`. [More →](docs/guide.md#publishing-the-results-page)
 
-**Positive slack** means the design meets the clock in `config.yaml`. Negative means it does not, and the flow does not stop for it — so a run can finish and still be telling you it missed. [What to do about that](docs/guide.md#when-slack-is-negative) is in the guide.
+## 🎮 Commands
 
-**Those nine lines are a summary, not a signoff report.** They are pulled out of a
-300-key `metrics.json`, so what they leave out matters: what clock uncertainty and
-derating were applied, what the clock tree's skew came to, and which of the nine
-corners (`ss`/`tt`/`ff` against `min`/`nom`/`max` interconnect) that slack came from.
-All of that is LibreLane's defaults — `config.yaml` sets none of it — and all of it
-is under `runs/`, one directory per step. The difference is practical: a `+0.11 ns`
-hold slack is not what a flow where you filled in the OCV derates yourself would
-call passing. For confidence at that level, read the per-corner reports, not these
-nine lines.
+| Command | What it does |
+|---|---|
+| `make all` | Lint, simulate, cocotb, synthesise — everything that takes seconds |
+| `make gds` | Full RTL-to-GDSII flow, then the summary above |
+| `make gatesim` | Your tests again, on the gates (after `make gds`) |
+| `make report` | The summary again, without re-running |
+| `make site` | The results page, in `build/site/` |
+| `make shell` | A shell inside the toolchain container |
 
-`make report` prints all of it again without re-running anything.
+`make help` lists them all; the [full table](docs/guide.md#commands) says what each writes.
 
-### Publishing the results page
+## ✍️ Make it your design
 
-`make site` puts those lines, the layout image, the schematic and every cocotb
-test with its verdict and seed on one page, `build/site/index.html`. After
-`make gds` it also shows each signoff check, the worst setup path as OpenSTA
-reports it, an area split (flip-flops, logic, what routing added) and a power
-split by sequential, combinational and clock. After `make sim` it draws the
-signals `"//WAVE_SIGNALS"` names as a waveform. The power split uses OpenSTA's
-default switching activity, not your testbench's, so it shows where power goes,
-not what a real workload draws. Each part shows up once you have run the
-command behind it.
+Put your Verilog in `src/`, your tests in `test/`, and set `DESIGN_NAME` in `config.yaml` to your top module. The `Makefile` and CI read everything else from there. [The five things that must agree →](docs/guide.md#making-it-your-design)
 
-CI builds that page on every run and publishes it from `main` to GitHub Pages,
-at `https://<your-user>.github.io/<your-repo>/`. A new copy of this template
-has Pages off, and no workflow can turn it on for you. Do it once: **Settings →
-Pages → Source: GitHub Actions**. Until then, CI still passes and says in a
-notice that nothing was published.
+## Who it is for
 
-## 📚 Next steps
+- **Students and self-learners** who want a first chip they can show, with tests that prove it works. You will need [some Verilog](docs/guide.md#before-you-start) to change the design.
+- **Engineers under a foundry NDA** who want a second set of results they are allowed to publish.
+- **Anyone learning verification.** For a full UVM-style environment, see [c4o-pyuvm](https://github.com/anlit75/c4o-pyuvm), built from this template.
 
-The [guide](docs/guide.md) covers what comes after the first run:
+**Good to know:** the tools are the open-source equivalents of the commercial ones — Icarus instead of VCS, Yosys instead of Design Compiler, OpenSTA instead of PrimeTime. The flow and vocabulary transfer; the tool names do not. [Full mapping →](docs/guide.md#what-this-is-and-what-it-is-not)
 
-*   [Writing a testbench for your own design](docs/guide.md#writing-a-testbench-for-your-own-design) — the smallest one that can actually fail
-*   [Looking at the waveform](docs/guide.md#when-a-test-fails-look-at-the-waveform) when a test goes red
-*   [Python testbenches](docs/guide.md#writing-testbenches-in-python) with cocotb, [random stimulus against a reference model](docs/guide.md#random-stimulus-and-a-reference-model), and [gate-level simulation](docs/guide.md#simulating-the-gates-not-just-the-rtl)
-*   [Iterating](docs/guide.md#iterating-without-re-running-the-whole-flow) without re-running the whole flow, and [seeing the circuit](docs/guide.md#seeing-the-circuit)
-*   [Working inside the container](docs/guide.md#working-inside-the-container), and the [full configuration reference](docs/guide.md#configuration-reference)
+## 📚 Learn more
 
-## 📂 Project Structure
+- [Guide](docs/guide.md) — prerequisites, writing testbenches, waveforms, gate-level simulation, negative slack, configuration reference
+- [c4o-core](https://github.com/anlit75/c4o-core) — the toolchain engine behind every command
+- [c4o-pyuvm](https://github.com/anlit75/c4o-pyuvm) — a pyuvm verification environment on a real UART
+
+<details>
+<summary>Project structure</summary>
 
 ```text
 .
-├── .devcontainer/     # 🐳 VS Code Dev Container definition
-├── config.yaml        # ⚙️ Design name, clock, floorplan
-├── Makefile           # 🎮 The command center
-├── docs/              # 📚 Everything after the first run
-├── src/               # ✍️ Your Verilog source code
+├── .devcontainer/     # Dev Container definition
+├── config.yaml        # Design name, clock, floorplan
+├── Makefile           # Every command
+├── docs/              # The guide
+├── src/               # Your Verilog
 │   └── blinky.v
-├── test/              # 🧪 Your testbenches
+├── test/              # Your testbenches
 │   ├── tb_blinky.v              # RTL simulation (make sim)
 │   ├── test_blinky_cocotb.py    # Python testbenches (make cocotb)
 │   ├── test_blinky_random.py    # Random stimulus vs a reference model
 │   └── gate/                    # Gate-level simulation (make gatesim)
 │       └── tb_blinky_gl.v
-└── build/             # 📦 Generated artifacts (GDS, logs, netlists)
+└── build/             # Generated: GDS, logs, netlists, results page
 ```
 
-## 📝 Configuration
-
-`config.yaml` is a [LibreLane](https://github.com/librelane/librelane) configuration file — the same file drives simulation and the physical design flow. These are the keys you normally touch:
-
-```yaml
-DESIGN_NAME: my_design
-
-VERILOG_FILES:
-  - dir::src/my_design.v
-
-# Simulation only. LibreLane ignores keys starting with '//'.
-"//TEST_FILES":
-  - dir::test/*.v
-
-CLOCK_PORT: clk
-CLOCK_PERIOD: 10.0
-```
-
-The rest (`PDK`, `FP_SIZING`, `FP_CORE_UTIL`, …) configures the physical design flow; leave it alone until you need it. The die is not something you have to size — `FP_SIZING: relative` grows it to fit your design. The [configuration reference](docs/guide.md#configuration-reference) has the details.
+</details>
 
 ---
 
-Powered by the **[c4o-core](https://github.com/anlit75/c4o-core)** engine.
+<div align="center">
+
+[MIT License](LICENSE) · Powered by [c4o-core](https://github.com/anlit75/c4o-core)
+
+</div>
