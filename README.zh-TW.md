@@ -133,6 +133,6 @@ Verilog 放 `src/`、測試放 `test/`，再把 `config.yaml` 的 `DESIGN_NAME` 
 
 <div align="center">
 
-[MIT License](LICENSE) · 由 [c4o-core](https://github.com/anlit75/c4o-core) 與 [LibreLane](https://github.com/librelane/librelane) 驅動
+[MIT License](LICENSE) · Powered by [c4o-core](https://github.com/anlit75/c4o-core)
 
 </div>

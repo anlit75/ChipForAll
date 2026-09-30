@@ -133,6 +133,6 @@ Put your Verilog in `src/`, your tests in `test/`, and set `DESIGN_NAME` in `con
 
 <div align="center">
 
-[MIT License](LICENSE) · Powered by [c4o-core](https://github.com/anlit75/c4o-core) and [LibreLane](https://github.com/librelane/librelane)
+[MIT License](LICENSE) · Powered by [c4o-core](https://github.com/anlit75/c4o-core)
 
 </div>
