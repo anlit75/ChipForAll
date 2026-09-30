@@ -25,7 +25,19 @@ The physical flow — RTL to GDSII — is [LibreLane](https://github.com/librela
 
 What LibreLane does not cover is simulation and verification. That is what this starter kit adds, plus the CI and the Dev Container to run it in.
 
-**The tools are open-source equivalents, not the commercial ones.** Yosys does the synthesis, LibreLane (OpenROAD underneath) the place and route, Icarus and Verilator the simulation and linting, Magic and KLayout the DRC — where a commercial flow would use Design Compiler, Innovus or IC Compiler, VCS or Questa, and Calibre. The flow shape is the same and the vocabulary transfers; the tools on your CV would not be the ones a job advert lists, so say which you used.
+**The tools are open-source equivalents, not the commercial ones.**
+
+| Step | Here | What a commercial flow uses |
+|---|---|---|
+| Lint | Verilator | SpyGlass, Questa Lint |
+| Simulation | Icarus Verilog, driven from Python by cocotb | VCS, Questa, Xcelium |
+| Synthesis | Yosys | Design Compiler, Genus |
+| Place and route | OpenROAD, wrapped by LibreLane | IC Compiler II, Innovus |
+| Static timing | OpenSTA | PrimeTime, Tempus |
+| DRC | Magic, KLayout | Calibre nmDRC, Pegasus |
+| LVS | Netgen | Calibre nmLVS |
+
+The flow shape is the same and the vocabulary transfers; the tools on your CV would not be the ones a job advert lists, so say which you used.
 
 **Looking for a worked verification example?** This repository's tests are a Verilog testbench and two cocotb ones — enough to show what a test that can fail looks like, and not a layered verification environment. [c4o-pyuvm](https://github.com/anlit75/c4o-pyuvm) is that: a pyuvm environment on a real UART — agent, driver, monitor, scoreboard, and a register model generated from SystemRDL — built from this template.
 

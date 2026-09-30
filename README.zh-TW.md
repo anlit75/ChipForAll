@@ -25,7 +25,19 @@
 
 LibreLane 沒有涵蓋的是**模擬與驗證**。那才是這個起手式加上去的東西，外加跑它們的 CI 和 Dev Container。
 
-**這裡用的是開源的對應工具，不是商用那幾套。** 合成是 Yosys、佈局繞線是 LibreLane（底層 OpenROAD）、模擬和 lint 是 Icarus 和 Verilator、DRC 是 Magic 和 KLayout——商用流程在這些位置放的會是 Design Compiler、Innovus 或 IC Compiler、VCS 或 Questa、以及 Calibre。流程的形狀一樣，詞彙也轉得過去；但你履歷上的工具名稱不會是職缺條列的那幾個，所以要講清楚你用的是哪一套。
+**這裡用的是開源的對應工具，不是商用那幾套。**
+
+| 階段 | 這裡用的 | 商用流程放的 |
+|---|---|---|
+| Lint | Verilator | SpyGlass、Questa Lint |
+| 模擬 | Icarus Verilog，由 cocotb 從 Python 驅動 | VCS、Questa、Xcelium |
+| 合成 | Yosys | Design Compiler、Genus |
+| 佈局繞線 | OpenROAD，由 LibreLane 包裝 | IC Compiler II、Innovus |
+| 靜態時序 | OpenSTA | PrimeTime、Tempus |
+| DRC | Magic、KLayout | Calibre nmDRC、Pegasus |
+| LVS | Netgen | Calibre nmLVS |
+
+流程的形狀一樣，詞彙也轉得過去；但你履歷上的工具名稱不會是職缺條列的那幾個，所以要講清楚你用的是哪一套。
 
 **在找一個完整的驗證範例嗎？** 這個 repo 的測試是一份 Verilog testbench 加兩份 cocotb 的——足以示範「一個會失敗的測試長什麼樣」，但不是一套分層的驗證環境。[c4o-pyuvm](https://github.com/anlit75/c4o-pyuvm) 才是：一個跑在真實 UART 上的 pyuvm 環境，有 agent、driver、monitor、scoreboard，以及從 SystemRDL 生成的暫存器模型，而且是從這個模板建出來的。
 
