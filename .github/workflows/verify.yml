@@ -221,6 +221,35 @@ jobs:
       - name: 2. Simulation
         run: make sim
 
+      # README's quick start has the reader change count[WIDTH-1] to
+      # count[WIDTH-2] in src/blinky.v, run `make all`, and see it stop on a
+      # FATAL line it quotes word for word. Make that edit here and check the
+      # run still fails, and fails with that line. Only while src/blinky.v is
+      # the example the README describes: a copy of this template with its own
+      # design has nothing to break this way, and must not go red for it.
+      - name: The bug the README breaks on purpose is caught
+        run: |
+          if ! grep -qF 'count[WIDTH-1]' src/blinky.v 2>/dev/null; then
+            echo "::notice::src/blinky.v is not the README's example; nothing to break."
+            exit 0
+          fi
+          expected='FATAL: test/tb_blinky.v:58: led held for 4 cycles at cycle 4, expected 8'
+          log="$RUNNER_TEMP/break.log"
+          sed -i 's/count\[WIDTH-1\]/count[WIDTH-2]/' src/blinky.v
+          status=0
+          make all > "$log" 2>&1 || status=$?
+          git checkout -- src/blinky.v
+          cat "$log"
+          if [ "$status" -eq 0 ]; then
+            echo "::error::README says breaking src/blinky.v makes make all fail. It passed."
+            exit 1
+          fi
+          if ! grep -qF "$expected" "$log"; then
+            echo "::error::README quotes '$expected' for the broken src/blinky.v. make all did not print it."
+            exit 1
+          fi
+          echo "  make all failed with the line the README quotes"
+
       # Cheap -- the tests run in well under a second -- so unlike the
       # gate-level step below, this one runs on pull requests too.
       #

@@ -4,7 +4,7 @@
 
 **用開源工具，像專業團隊一樣驗證你的晶片設計——一個指令就好。**
 
-模擬你的 RTL、用 Python 測它、在合成出來的閘級電路上重跑測試、產出真正的 Sky130 版圖，再把結果發佈成一個網頁。什麼都不用裝。
+寫 Verilog，用真的會失敗的測試證明它是對的，每個 commit 都拿到一份真正的晶片版圖和一個結果網頁。所有 EDA 工具都包在一個 Docker 映像檔裡，一個都不用自己裝。
 
 [![CI Status](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml/badge.svg)](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml)
 [![release Version](https://img.shields.io/github/v/release/anlit75/ChipForAll?label=version)](https://github.com/anlit75/ChipForAll/releases)
@@ -27,7 +27,7 @@
 | 🔬 **閘級模擬** | 在合成產出的 netlist 上重跑你的測試——latch 和 reset 的 bug 就藏在那裡。 |
 | 📊 **看得懂的 signoff** | 面積、時序、功耗、DRC/LVS 濃縮成九行，而不是 300 個 key 的 JSON。 |
 | 🌐 **每個 commit 一個結果網頁** | CI 把測試、signoff、版圖和波形發佈到 GitHub Pages。 |
-| 🐳 **什麼都不用裝** | Docker、Dev Container 或 Codespace，三種指令都一樣。 |
+| 🐳 **不用裝任何 EDA 工具** | 全部都在一個 Docker 映像檔裡。從 Docker、Dev Container 或 Codespace 執行，三種環境的指令都一樣。 |
 | 🔓 **成果可以公開** | Sky130 是 Apache 2.0，沒有 NDA。GDS 可以直接放進作品集。 |
 
 ## 🚀 快速開始
@@ -51,6 +51,14 @@ git clone https://github.com/<you>/<your-repo>.git && cd <your-repo>
 ```bash
 make all
 ```
+
+**接著故意把它改壞。** 這一步是 layout 工具做不到的。把 `src/blinky.v` 裡的 `count[WIDTH-1]` 改成 `count[WIDTH-2]`——LED 會快一倍閃爍——再跑一次 `make all`：
+
+```
+FATAL: test/tb_blinky.v:58: led held for 4 cycles at cycle 4, expected 8
+```
+
+測試會指出是哪一行、看到什麼、預期什麼，而且 `make` 回傳非零，所以 CI 也會變紅。用 `git checkout -- src/blinky.v` 還原。[幫你的設計寫這種測試 →](docs/guide.zh-TW.md#幫你自己的設計寫測試平台)
 
 **3. 做出晶片**（約 3 分鐘；第一次還要下載 3 GB 的 PDK，約 20 分鐘）：
 
@@ -112,28 +120,6 @@ Verilog 放 `src/`、測試放 `test/`，再把 `config.yaml` 的 `DESIGN_NAME` 
 - [指南](docs/guide.zh-TW.md)——前置條件、寫測試平台、看波形、閘級模擬、slack 為負時、設定參考
 - [c4o-core](https://github.com/anlit75/c4o-core)——每個指令背後的工具鏈引擎
 - [c4o-pyuvm](https://github.com/anlit75/c4o-pyuvm)——跑在真實 UART 上的 pyuvm 驗證環境
-
-<details>
-<summary>專案架構</summary>
-
-```text
-.
-├── .devcontainer/     # Dev Container 定義
-├── config.yaml        # 設計名稱、時脈、floorplan
-├── Makefile           # 所有指令
-├── docs/              # 指南
-├── src/               # 你的 Verilog
-│   └── blinky.v
-├── test/              # 你的測試平台
-│   ├── tb_blinky.v              # RTL 模擬（make sim）
-│   ├── test_blinky_cocotb.py    # Python 測試平台（make cocotb）
-│   ├── test_blinky_random.py    # 隨機刺激對參考模型
-│   └── gate/                    # 閘級模擬（make gatesim）
-│       └── tb_blinky_gl.v
-└── build/             # 產生物：GDS、log、netlist、結果網頁
-```
-
-</details>
 
 ---
 

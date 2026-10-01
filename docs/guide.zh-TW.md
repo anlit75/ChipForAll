@@ -71,6 +71,26 @@ Codespace 全程都是 `amd64`。
         VERILOG_FILES. Declared there: blinky.
 ```
 
+**檔案放在哪裡。**
+
+```text
+.
+├── .devcontainer/     # Dev Container 定義
+├── config.yaml        # 設計名稱、時脈、floorplan
+├── Makefile           # 所有指令
+├── docs/              # 這份指南
+├── src/               # 你的 Verilog
+│   └── blinky.v
+├── test/              # 你的測試平台
+│   ├── tb_blinky.v              # RTL 模擬（make sim）
+│   ├── test_blinky_cocotb.py    # Python 測試平台（make cocotb）
+│   ├── test_blinky_random.py    # 隨機刺激對參考模型
+│   └── gate/                    # 閘級模擬（make gatesim）
+│       └── tb_blinky_gl.v
+├── build/             # 產生物：GDS、log、netlist、結果網頁
+└── runs/              # make gds 產生：LibreLane 的執行目錄
+```
+
 ## 指令
 
 | 指令 | 說明 | 輸出 |
@@ -112,7 +132,7 @@ Codespace 全程都是 `amd64`。
 
 那是範例設計的數字，出自某一版 PDK。你的會不一樣；要看的是那些欄位。
 
-**`signoff`** 是那一列沒人會說的話：你的版圖通過了可製造性檢查。`Makefile` 釘的 LibreLane 版本（`LIBRELANE_IMAGE`）預設讓每一項都直接中止流程（`ERROR_ON_MAGIC_DRC` 那一族預設都是 `True`），而 `config.yaml` 沒有覆寫任何一個，所以能跑到這一行就代表都過了。這是那一版的預設行為，不是這個 repo 掛保證的事——升版之後要自己確認一次。`clean` 只是把它講出來，並列出它實際看到哪幾項。有問題的時候它會改成指名道姓：`2 Magic DRC, 1 LVS`。
+**`signoff`** 說的是其他列都沒說的事：你的版圖通過了可製造性檢查。`Makefile` 釘的 LibreLane 版本（`LIBRELANE_IMAGE`）預設讓每一項都直接中止流程（`ERROR_ON_MAGIC_DRC` 那一族預設都是 `True`），而 `config.yaml` 沒有覆寫任何一個，所以能跑到這一行就代表都過了。這是那一版的預設行為，不是這個 repo 掛保證的事——升版之後要自己確認一次。`clean` 只是把它講出來，並列出它實際看到哪幾項。有問題的時候它會改成指名道姓：`2 Magic DRC, 1 LVS`。
 
 **`layout`** 是流程幫你的晶片畫的 PNG。打開來看看。
 
