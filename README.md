@@ -4,7 +4,7 @@
 
 **Verify your chip design like a professional team — with open-source tools, in one command.**
 
-Simulate your RTL, test it from Python, re-run the tests on the synthesised gates, build a real Sky130 layout, and publish the results as a web page. Nothing to install.
+Write Verilog, prove it works with tests that can fail, and get a real chip layout and a results page on every commit. Every EDA tool comes in one Docker image — you install none of them.
 
 [![CI Status](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml/badge.svg)](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml)
 [![release Version](https://img.shields.io/github/v/release/anlit75/ChipForAll?label=version)](https://github.com/anlit75/ChipForAll/releases)
@@ -27,12 +27,18 @@ Getting a layout out of an open-source flow is solved — [LibreLane](https://gi
 | 🔬 **Gate-level simulation** | Re-runs your tests on the netlist synthesis produced, where latches and reset bugs hide. |
 | 📊 **Signoff you can read** | Area, timing, power and DRC/LVS in nine lines, not a 300-key JSON. |
 | 🌐 **A results page per commit** | CI publishes tests, signoff, layout and waveform to GitHub Pages. |
-| 🐳 **Nothing to install** | Docker, a Dev Container or a Codespace. Same commands in all three. |
+| 🐳 **No EDA tools to install** | They all ship in one Docker image. Run it from Docker, a Dev Container or a Codespace — the same commands in all three. |
 | 🔓 **Yours to publish** | Sky130 is Apache 2.0, no NDA. Put the GDS in your portfolio. |
 
 ## 🚀 Quick start
 
-You need Docker, Make and Git — or just [a Codespace](https://github.com/codespaces), which has all three.
+You need Docker, Make and Git — or a Codespace, which has all three:
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/anlit75/ChipForAll)
+
+The button always opens the original, `anlit75/ChipForAll` — even in your copy of this README. That is enough to try steps 2 and 3. To keep your work and get your own CI and results page, do step 1 first and open the Codespace from your copy (**Code → Codespaces**). Either way, pick a machine larger than the smallest: `make gds` needs the disk. [Why →](docs/guide.md#working-inside-the-container)
+
+On Apple Silicon it works too; some commands run emulated. [Which ones →](docs/guide.md#before-you-start)
 
 **1. Make your copy.** Press **Use this template → Create a new repository**, then:
 
@@ -40,11 +46,21 @@ You need Docker, Make and Git — or just [a Codespace](https://github.com/codes
 git clone https://github.com/<you>/<your-repo>.git && cd <your-repo>
 ```
 
+In a Codespace the repository is already there; skip the clone.
+
 **2. Check that the tests pass** (seconds):
 
 ```bash
 make all
 ```
+
+**Now break it on purpose.** This is the part a layout tool cannot do for you. In `src/blinky.v`, change `count[WIDTH-1]` to `count[WIDTH-2]` — the LED now blinks twice as fast — and run `make all` again:
+
+```
+FATAL: test/tb_blinky.v:58: led held for 4 cycles at cycle 4, expected 8
+```
+
+The test names the line, what it saw and what it expected, and `make` exits non-zero, so CI goes red too. Undo it with `git checkout -- src/blinky.v`. [Writing tests like this for your design →](docs/guide.md#writing-a-testbench-for-your-own-design)
 
 **3. Build the chip** (about 3 minutes; the first run also downloads the 3 GB PDK, around 20 minutes):
 
@@ -106,28 +122,6 @@ Put your Verilog in `src/`, your tests in `test/`, and set `DESIGN_NAME` in `con
 - [Guide](docs/guide.md) — prerequisites, writing testbenches, waveforms, gate-level simulation, negative slack, configuration reference
 - [c4o-core](https://github.com/anlit75/c4o-core) — the toolchain engine behind every command
 - [c4o-pyuvm](https://github.com/anlit75/c4o-pyuvm) — a pyuvm verification environment on a real UART
-
-<details>
-<summary>Project structure</summary>
-
-```text
-.
-├── .devcontainer/     # Dev Container definition
-├── config.yaml        # Design name, clock, floorplan
-├── Makefile           # Every command
-├── docs/              # The guide
-├── src/               # Your Verilog
-│   └── blinky.v
-├── test/              # Your testbenches
-│   ├── tb_blinky.v              # RTL simulation (make sim)
-│   ├── test_blinky_cocotb.py    # Python testbenches (make cocotb)
-│   ├── test_blinky_random.py    # Random stimulus vs a reference model
-│   └── gate/                    # Gate-level simulation (make gatesim)
-│       └── tb_blinky_gl.v
-└── build/             # Generated: GDS, logs, netlists, results page
-```
-
-</details>
 
 ---
 
