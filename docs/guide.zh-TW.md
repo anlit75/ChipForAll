@@ -159,6 +159,11 @@ sequential、combinational、clock 拆開的功耗。跑過 `make sim` 之後，
 你的測試平台的，所以它告訴你功耗花在哪裡，不是真實工作負載的耗電。每一塊在你跑過對應
 的指令之後才會出現。
 
+這個網頁是照「拿去分享、放進作品集」來排的：版圖在最前面，接著是數字，再來是測試；
+標題下方是你的 `"//DESCRIPTION"`，還有按鈕可以用 3D 開啟晶片、下載 GDS、看原始碼。
+頁首寫著網頁是什麼時候建的、對應哪個 commit，因為 `main` 失敗時不會發佈：網頁會一直
+顯示最後一次通過的結果。
+
 CI 每次都會產生這個網頁，並從 `main` 發佈到 GitHub Pages，網址是
 `https://<你的帳號>.github.io/<你的-repo>/`。剛從 template 複製出來的 repo 沒有開
 Pages，而且沒有任何 workflow 能替你打開。做一次就好：**Settings → Pages → Source:
@@ -380,6 +385,7 @@ make gds PDK_ROOT=/opt/sky130
 | `"//SIM_TOP"` | 要 elaborate 的測試平台模組。`"//TEST_FILES"` 對到超過一個檔案時必填。 |
 | `"//COCOTB_TESTS"` | 給 `make cocotb` 的 Python 測試平台。選用。 |
 | `"//GATE_TESTS"` / `"//GATE_TOP"` | 給 `make gatesim` 的閘級測試平台。選用。 |
+| `"//DESCRIPTION"` | 結果網頁標題下方、以及分享連結預覽裡的一句話：你的設計是什麼。選用。 |
 | `"//WAVE_SIGNALS"` | `make site` 從 `make sim` 的 VCD 畫的訊號，從測試平台頂層往下寫（`tb_blinky.uut.count`）。VCD 裡沒有的名字會讓 `make site` 失敗。選用。 |
 | `CLOCK_PORT` / `CLOCK_PERIOD` | 要約束的時脈，以及它的週期（ns）。 |
 | `PNR_SDC_FILE` / `SIGNOFF_SDC_FILE` | 你自己的時序約束，當上面那兩個 key 不夠用的時候——見下。 |

@@ -88,7 +88,7 @@ make gds
 
 ## 🌐 結果直接上線
 
-`main` 上每次 CI 都會把結果網頁發佈到 `https://<you>.github.io/<your-repo>/`：最上面是通過與否，接著是測試、signoff 檢查、版圖（附 3D 檢視器）、波形、時序、面積和功耗。
+`main` 上每次 CI 都會把結果網頁發佈到 `https://<you>.github.io/<your-repo>/`：最前面是你的設計版圖（可以用 3D 開啟、下載 GDS），接著是判定、測試，然後是 signoff、波形、時序、面積和功耗。頁面上會寫建置時間和對應的 commit。
 
 只要開一次：**Settings → Pages → Source: GitHub Actions**。本機用 `make site` 產生。[更多 →](docs/guide.zh-TW.md#發佈結果網頁)
 

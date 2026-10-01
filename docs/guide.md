@@ -170,6 +170,13 @@ default switching activity, not your testbench's, so it shows where power goes,
 not what a real workload draws. Each part shows up once you have run the
 command behind it.
 
+The page is laid out to be shared, as a portfolio piece: the layout first, then
+the numbers, then the tests, with your `"//DESCRIPTION"` under the title and
+buttons to open the chip in 3D, download the GDS and view the source. The
+heading says when the page was built and which commit it shows, because a
+failing `main` is not published: the page keeps showing the last run that
+passed.
+
 CI builds that page on every run and publishes it from `main` to GitHub Pages,
 at `https://<your-user>.github.io/<your-repo>/`. A new copy of this template
 has Pages off, and no workflow can turn it on for you. Do it once: **Settings →
@@ -400,6 +407,7 @@ Prefer to stay in your own editor? `make shell` drops you into the same image fr
 | `"//SIM_TOP"` | Which testbench module to elaborate. Required once `"//TEST_FILES"` matches more than one file. |
 | `"//COCOTB_TESTS"` | Python testbenches for `make cocotb`. Optional. |
 | `"//GATE_TESTS"` / `"//GATE_TOP"` | Gate-level testbenches for `make gatesim`. Optional. |
+| `"//DESCRIPTION"` | One line under the results page's title and in its link preview: what your design is. Optional. |
 | `"//WAVE_SIGNALS"` | Signals `make site` draws from `make sim`'s VCD, named from the testbench top down (`tb_blinky.uut.count`). A name the VCD does not declare fails `make site`. Optional. |
 | `CLOCK_PORT` / `CLOCK_PERIOD` | The clock to constrain, and its period in ns. |
 | `PNR_SDC_FILE` / `SIGNOFF_SDC_FILE` | Your own timing constraints, when those two keys are not enough — see below. |
