@@ -88,7 +88,7 @@ It ends by telling you what it built:
 
 ## 🌐 Your results, online
 
-Every CI run on `main` publishes a results page to `https://<you>.github.io/<your-repo>/`: pass/fail at the top, then tests, signoff checks, the layout (with a 3D viewer), the waveform, timing, area and power.
+Every CI run on `main` publishes a results page to `https://<you>.github.io/<your-repo>/`: your design's layout first (open it in 3D, download the GDS), the verdicts, the tests, then signoff, waveform, timing, area and power. It says when it was built and from which commit.
 
 Turn it on once: **Settings → Pages → Source: GitHub Actions**. Build it locally with `make site`. [More →](docs/guide.md#publishing-the-results-page)
 

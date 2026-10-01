@@ -48,6 +48,11 @@ VERILOG_FILES:
 "//GATE_TESTS":
   - dir::test/gate/*.v
 
+# One line under the title of the results page (`make site`) and in its link
+# preview when the page is shared. Say what your design is; this one describes
+# the example, so replace it along with src/blinky.v.
+"//DESCRIPTION": "A clock divider that blinks an LED: the ChipForAll example, from RTL to GDS."
+
 # Signals the results page (`make site`) draws from `make sim`'s VCD, named
 # from the testbench top down. They name tb_blinky, so replacing the testbench
 # means replacing these too: a name the VCD does not declare fails `make site`.
