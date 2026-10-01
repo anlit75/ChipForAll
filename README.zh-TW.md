@@ -107,7 +107,7 @@ make gds
 
 ## ✍️ 換成你的設計
 
-Verilog 放 `src/`、測試放 `test/`，再把 `config.yaml` 的 `DESIGN_NAME` 設成你的頂層模組。`Makefile` 和 CI 其他都從那裡讀。[必須一致的五件事 →](docs/guide.zh-TW.md#換成你自己的設計)
+刪掉 blinky 的檔案，Verilog 放 `src/`、測試放 `test/`，在 `config.yaml` 列出它們，並把 `DESIGN_NAME` 設成你的頂層模組。`Makefile` 和 CI 其他都從那裡讀。[必須一致的五件事 →](docs/guide.zh-TW.md#換成你自己的設計)
 
 ## 適合誰
 

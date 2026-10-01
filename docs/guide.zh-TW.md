@@ -60,6 +60,12 @@ Codespace 全程都是 `amd64`。
 
 沒有別的地方寫死設計名稱：`Makefile` 和 CI 工作流都從 `config.yaml` 讀 `DESIGN_NAME`。
 
+第一次換設計時，還有三件事常讓人卡住：
+
+*   **刪掉被你取代的 blinky 檔案**——`src/blinky.v`、`test/tb_blinky.v`、`test/test_blinky_*.py`、`test/gate/tb_blinky_gl.v`——或把它們從 `config.yaml` 移除。`src/**/*.v` 這類萬用字元會把還留著的檔案一起抓進來。
+*   **每個 RTL 檔第一行寫 `` `timescale 1ns/1ps ``。** 少了它 `make sim` 照樣通過，因為 Verilog 測試平台自己有宣告；但 `make cocotb` 會失敗，訊息是 `Unable to accurately represent 10(ns)`。
+*   **改寫 `config.yaml` 的 `"//DESCRIPTION"`**，不然你的結果網頁會說它是一個讓 LED 閃爍的時脈除頻器。`"//WAVE_SIGNALS"` 也一樣：要改成你測試平台裡的訊號，否則 `make site` 會停在第一個 VCD 裡沒有的名稱。
+
 **最後三列是選用的。** 把 `"//COCOTB_TESTS"`、`"//GATE_TESTS"` 或 `"//WAVE_SIGNALS"` 從 `config.yaml` 刪掉——連 key 那一行**和它下面縮排的路徑**一起刪，只刪 key 會留下一個沒有主人的列表項，YAML 會直接解析失敗——CI 就會跳過那一類測試而不是失敗。但如果把 key 留著卻指向不存在的檔案，CI 還是會失敗，這是對的：你要求了不存在的測試。
 
 **第二個 Verilog 測試平台要多一個 key。** `"//TEST_FILES"` 吃萬用字元，而 Icarus 會把每一個沒有被實例化的模組各自當成一個 root——所以第一個 `$finish` 就會結束整場模擬，其餘的根本沒跑。一旦對到超過一個檔案，就用 `"//SIM_TOP"` 指定你要的那一個。
@@ -257,6 +263,29 @@ endmodule
 make cocotb
 ```
 
+最小、會驅動時脈並檢查一件事的測試檔長這樣。注意 `tick`：`RisingEdge` 是在時脈邊緣**當下**恢復執行，此時 non-blocking assignment 還沒生效，緊接著讀到的是上一個 cycle 的值——和 Verilog 裡要 `#1` 是同一個坑。所以每次過邊緣後都再等一個 `Timer`：
+
+```python
+import cocotb
+from cocotb.clock import Clock
+from cocotb.triggers import RisingEdge, Timer
+
+async def tick(dut):
+    await RisingEdge(dut.clk)
+    await Timer(1, units="ns")     # 等 non-blocking assignment 生效
+
+@cocotb.test()
+async def result_is_high_after_reset(dut):
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    dut.rst.value = 1
+    await tick(dut)
+    dut.rst.value = 0
+    await tick(dut)
+    assert dut.result.value == 1, f"result should be high, got {dut.result.value}"
+```
+
+把檔案列在 `"//COCOTB_TESTS"`，並且讓你的 RTL 宣告 `` `timescale ``（見[換成你自己的設計](#換成你自己的設計)）：`10, units="ns"` 的時脈需要它。
+
 `test/test_blinky_cocotb.py` 這個範例展示的是 Python 在這裡明顯佔優的一件事：直接寫入設計**內部**的訊號。
 
 ```python
@@ -266,8 +295,6 @@ assert dut.led.value == 1
 ```
 
 用這個方式驗證「led 就是計數器最高位元」只需要四個 cycle。Verilog testbench 要做到同一件事，只能覆寫 `WIDTH`（閘級 testbench 做不到），或是老實跑完 2^25 個 cycle。
-
-Verilog 那個邊緣的坑在這裡一樣成立：`RisingEdge` 是在時脈邊緣**當下**恢復執行，此時 non-blocking assignment 還沒生效，所以檔案裡每次讀值前都再等一個 `Timer`。
 
 ## 隨機刺激與參考模型
 

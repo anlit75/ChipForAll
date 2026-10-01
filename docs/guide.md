@@ -62,6 +62,12 @@ The example is a blinky — a clock divider. To replace it with your own, five t
 
 Nothing else names the design: the `Makefile` and the CI workflow both read `DESIGN_NAME` from `config.yaml`.
 
+Three more things trip up a first design:
+
+*   **Delete the blinky files you replace** — `src/blinky.v`, `test/tb_blinky.v`, `test/test_blinky_*.py`, `test/gate/tb_blinky_gl.v` — or remove them from `config.yaml`. A glob like `src/**/*.v` picks up whatever is still there.
+*   **Start every RTL file with `` `timescale 1ns/1ps ``.** Without it `make sim` still passes, because the Verilog testbench declares its own, but `make cocotb` fails with `Unable to accurately represent 10(ns)`.
+*   **Rewrite `"//DESCRIPTION"`** in `config.yaml`, or your results page says it is a clock divider that blinks an LED. Same for `"//WAVE_SIGNALS"`: name the signals of your testbench, or `make site` stops at the first one the VCD does not declare.
+
 **The last three rows are optional.** Delete `"//COCOTB_TESTS"`, `"//GATE_TESTS"` or `"//WAVE_SIGNALS"` from `config.yaml` — the key line *and* the indented paths under it — and CI skips that kind of test instead of failing. Keep the key and point it at nothing and CI fails, correctly: you asked for tests that are not there.
 
 **A second Verilog testbench needs one more key.** `"//TEST_FILES"` takes a glob, and
@@ -274,6 +280,29 @@ That is the whole method, and it works on any design, not just this one. Break o
 make cocotb
 ```
 
+The smallest test file that drives a clock and checks something looks like this. Note `tick`: `RisingEdge` resumes *at* the edge, before the non-blocking assignment lands, so a read straight after it sees the previous cycle's value — the same gotcha as `#1` in Verilog. Wait a `Timer` after the edge, every time:
+
+```python
+import cocotb
+from cocotb.clock import Clock
+from cocotb.triggers import RisingEdge, Timer
+
+async def tick(dut):
+    await RisingEdge(dut.clk)
+    await Timer(1, units="ns")     # let the non-blocking assignment land
+
+@cocotb.test()
+async def result_is_high_after_reset(dut):
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    dut.rst.value = 1
+    await tick(dut)
+    dut.rst.value = 0
+    await tick(dut)
+    assert dut.result.value == 1, f"result should be high, got {dut.result.value}"
+```
+
+List the file under `"//COCOTB_TESTS"`, and give your RTL a `` `timescale `` (see [Making it your design](#making-it-your-design)): the `10, units="ns"` clock needs one.
+
 The example in `test/test_blinky_cocotb.py` leans on the one thing Python is plainly better at here: writing to a signal *inside* the design.
 
 ```python
@@ -283,8 +312,6 @@ assert dut.led.value == 1
 ```
 
 Checking that `led` is the counter's top bit costs four cycles that way. A Verilog testbench gets there only by overriding `WIDTH` — which the gate-level testbench cannot do — or by running 2^25 cycles.
-
-The same edge gotcha as in Verilog applies: `RisingEdge` resumes *at* the edge, before the non-blocking assignment lands, so every read in that file waits a further `Timer` first.
 
 ## Random stimulus and a reference model
 
