@@ -107,7 +107,7 @@ Turn it on once: **Settings → Pages → Source: GitHub Actions**. Build it loc
 
 ## ✍️ Make it your design
 
-Put your Verilog in `src/`, your tests in `test/`, and set `DESIGN_NAME` in `config.yaml` to your top module. The `Makefile` and CI read everything else from there. [The five things that must agree →](docs/guide.md#making-it-your-design)
+Delete the blinky files, put your Verilog in `src/` and your tests in `test/`, and list them in `config.yaml` along with `DESIGN_NAME`, your top module. The `Makefile` and CI read everything else from there. [The five things that must agree →](docs/guide.md#making-it-your-design)
 
 ## Who it is for
 
