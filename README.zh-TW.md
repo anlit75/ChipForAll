@@ -36,7 +36,9 @@
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/anlit75/ChipForAll)
 
-這個按鈕開的是本 repo，拿來試第 2、3 步就夠了。想保留成果、擁有自己的 CI 和結果網頁，就先做第 1 步，再從你的副本開 Codespace（**Code → Codespaces**）。不論哪一種，機型都要選比最小規格大的：`make gds` 需要磁碟空間。[原因 →](docs/guide.zh-TW.md#在容器內開發)
+這個按鈕開的永遠是原始的 `anlit75/ChipForAll`——就算是在你副本裡的這份 README 也一樣。拿來試第 2、3 步就夠了。想保留成果、擁有自己的 CI 和結果網頁，就先做第 1 步，再從你的副本開 Codespace（**Code → Codespaces**）。不論哪一種，機型都要選比最小規格大的：`make gds` 需要磁碟空間。[原因 →](docs/guide.zh-TW.md#在容器內開發)
+
+Apple Silicon 也能用，只是有些指令會走模擬。[是哪些 →](docs/guide.zh-TW.md#開始之前)
 
 **1. 做一份自己的副本。** 按 **Use this template → Create a new repository**，然後：
 
