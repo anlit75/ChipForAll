@@ -32,13 +32,19 @@
 
 ## 🚀 快速開始
 
-你需要 Docker、Make、Git——或者直接開一個 [Codespace](https://github.com/codespaces)，三樣都有了。
+你需要 Docker、Make、Git——或者開一個 Codespace，三樣都有了：
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/anlit75/ChipForAll)
+
+這個按鈕開的是本 repo，拿來試第 2、3 步就夠了。想保留成果、擁有自己的 CI 和結果網頁，就先做第 1 步，再從你的副本開 Codespace（**Code → Codespaces**）。不論哪一種，機型都要選比最小規格大的：`make gds` 需要磁碟空間。[原因 →](docs/guide.zh-TW.md#在容器內開發)
 
 **1. 做一份自己的副本。** 按 **Use this template → Create a new repository**，然後：
 
 ```bash
 git clone https://github.com/<you>/<your-repo>.git && cd <your-repo>
 ```
+
+在 Codespace 裡 repo 已經在了，不用 clone。
 
 **2. 確認測試通過**（幾秒鐘）：
 
