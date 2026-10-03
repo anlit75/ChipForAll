@@ -2,9 +2,9 @@
 
 # ChipForAll
 
-**Verify your chip design like a professional team — with open-source tools, in one command.**
+**Verify your chip design as a professional team does. Use open-source tools and one command.**
 
-Write Verilog, prove it works with tests that can fail, and get a real chip layout and a results page on every commit. Every EDA tool comes in one Docker image — you install none of them.
+Write Verilog. Prove that it works with tests that can fail. Get a real chip layout and a results page on every commit. One Docker image contains every EDA tool, and you install none of them.
 
 [![CI Status](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml/badge.svg)](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml)
 [![release Version](https://img.shields.io/github/v/release/anlit75/ChipForAll?label=version)](https://github.com/anlit75/ChipForAll/releases)
@@ -19,34 +19,34 @@ Write Verilog, prove it works with tests that can fail, and get a real chip layo
 
 ## Why ChipForAll
 
-Getting a layout out of an open-source flow is solved — [LibreLane](https://github.com/librelane/librelane) does it. Knowing whether that layout is *right* is not. ChipForAll adds the part that is missing: the tests, the checks and the CI around the flow.
+An open-source flow can already make a layout: [LibreLane](https://github.com/librelane/librelane) does it. To know whether that layout is *correct* is a different problem, and it is not solved. ChipForAll adds the missing part: the tests, the checks and the CI around the flow.
 
 | | |
 |---|---|
-| 🧪 **Tests that can fail** | Verilog and Python (cocotb) testbenches that exit non-zero on a broken design. |
-| 🔬 **Gate-level simulation** | Re-runs your tests on the netlist synthesis produced, where latches and reset bugs hide. |
-| 📊 **Signoff you can read** | Area, timing, power and DRC/LVS in nine lines, not a 300-key JSON. |
+| 🧪 **Tests that can fail** | Verilog and Python (cocotb) testbenches exit non-zero when the design is broken. |
+| 🔬 **Gate-level simulation** | Runs your tests again on the netlist that synthesis made. Latch bugs and reset bugs hide there. |
+| 📊 **Signoff you can read** | Nine lines show area, timing, power and DRC/LVS. You do not need to read a 300-key JSON. |
 | 🌐 **A results page per commit** | CI publishes tests, signoff, layout and waveform to GitHub Pages. |
-| 🐳 **No EDA tools to install** | They all ship in one Docker image. Run it from Docker, a Dev Container or a Codespace — the same commands in all three. |
-| 🔓 **Yours to publish** | Sky130 is Apache 2.0, no NDA. Put the GDS in your portfolio. |
+| 🐳 **No EDA tools to install** | One Docker image contains them all. Run it from Docker, a Dev Container or a Codespace. The commands are the same in all three. |
+| 🔓 **Yours to publish** | Sky130 is Apache 2.0 and has no NDA. Put the GDS in your portfolio. |
 
 ## 🚀 Quick start
 
-You need Docker, Make and Git — or a Codespace, which has all three:
+You need Docker, Make and Git. A Codespace has all three:
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/anlit75/ChipForAll)
 
-The button always opens the original, `anlit75/ChipForAll` — even in your copy of this README. That is enough to try steps 2 and 3. To keep your work and get your own CI and results page, do step 1 first and open the Codespace from your copy (**Code → Codespaces**). Either way, pick a machine larger than the smallest: `make gds` needs the disk. [Why →](docs/guide.md#working-inside-the-container)
+The button always opens the original repository, `anlit75/ChipForAll`, even from your copy of this README. That is enough to try steps 2 and 3. To keep your work and get your own CI and results page, do step 1 first. Then open the Codespace from your copy (**Code → Codespaces**). In both cases, select a machine larger than the smallest one, because `make gds` needs the disk space. [Why →](docs/guide.md#working-inside-the-container)
 
-On Apple Silicon it works too; some commands run emulated. [Which ones →](docs/guide.md#before-you-start)
+Apple Silicon works too, but some commands run emulated. [Which ones →](docs/guide.md#before-you-start)
 
-**1. Make your copy.** Press **Use this template → Create a new repository**, then:
+**1. Make your copy.** Press **Use this template → Create a new repository**. Then clone it:
 
 ```bash
 git clone https://github.com/<you>/<your-repo>.git && cd <your-repo>
 ```
 
-In a Codespace the repository is already there; skip the clone.
+In a Codespace the repository is already there. Skip the clone.
 
 **2. Check that the tests pass** (seconds):
 
@@ -54,21 +54,21 @@ In a Codespace the repository is already there; skip the clone.
 make all
 ```
 
-**Now break it on purpose.** This is the part a layout tool cannot do for you. In `src/blinky.v`, change `count[WIDTH-1]` to `count[WIDTH-2]` — the LED now blinks twice as fast — and run `make all` again:
+**Now break it on purpose.** A layout tool cannot do this part for you. In `src/blinky.v`, change `count[WIDTH-1]` to `count[WIDTH-2]`. The LED now blinks twice as fast. Run `make all` again:
 
 ```
 FATAL: test/tb_blinky.v:58: led held for 4 cycles at cycle 4, expected 8
 ```
 
-The test names the line, what it saw and what it expected, and `make` exits non-zero, so CI goes red too. Undo it with `git checkout -- src/blinky.v`. [Writing tests like this for your design →](docs/guide.md#writing-a-testbench-for-your-own-design)
+The test gives the line, the value it saw and the value it expected. `make` exits non-zero, so CI also fails. Undo the change with `git checkout -- src/blinky.v`. [Writing tests like this for your design →](docs/guide.md#writing-a-testbench-for-your-own-design)
 
-**3. Build the chip** (about 3 minutes; the first run also downloads the 3 GB PDK, around 20 minutes):
+**3. Build the chip** (about 3 minutes, and about 20 minutes more on a first run for the 3 GB PDK download):
 
 ```bash
 make gds
 ```
 
-It ends by telling you what it built:
+At the end, it tells you what it built:
 
 ```
   blinky
@@ -84,44 +84,44 @@ It ends by telling you what it built:
   layout           runs/blinky_run/final/render/blinky.png
 ```
 
-`signoff clean` and positive slack mean the layout passed the manufacturing checks and meets the clock. [How to read each line →](docs/guide.md#reading-the-result)
+`signoff clean` and positive slack tell you that the layout passed the manufacturing checks and meets the clock. [How to read each line →](docs/guide.md#reading-the-result)
 
 ## 🌐 Your results, online
 
-Every CI run on `main` publishes a results page to `https://<you>.github.io/<your-repo>/`: your design's layout first (open it in 3D, download the GDS), the verdicts, the tests, then signoff, waveform, timing, area and power. It says when it was built and from which commit.
+Each CI run on `main` publishes a results page to `https://<you>.github.io/<your-repo>/`. The page shows the layout of your design first, and you can open it in 3D or download the GDS. Next are the verdicts and the tests, then signoff, waveform, timing, area and power. The page gives the time of the build and the commit.
 
-Turn it on once: **Settings → Pages → Source: GitHub Actions**. Build it locally with `make site`. [More →](docs/guide.md#publishing-the-results-page)
+Turn it on once: **Settings → Pages → Source: GitHub Actions**. Build the page locally with `make site`. [More →](docs/guide.md#publishing-the-results-page)
 
 ## 🎮 Commands
 
 | Command | What it does |
 |---|---|
-| `make all` | Lint, simulate, cocotb, synthesise — everything that takes seconds |
+| `make all` | Lint, simulation, cocotb and synthesis: all the steps that take seconds |
 | `make gds` | Full RTL-to-GDSII flow, then the summary above |
 | `make gatesim` | Your tests again, on the gates (after `make gds`) |
-| `make report` | The summary again, without re-running |
+| `make report` | The summary again, with no new run |
 | `make site` | The results page, in `build/site/` |
 | `make shell` | A shell inside the toolchain container |
 
-`make help` lists them all; the [full table](docs/guide.md#commands) says what each writes.
+`make help` lists all the commands. The [full table](docs/guide.md#commands) shows what each command writes.
 
 ## ✍️ Make it your design
 
-Delete the blinky files, put your Verilog in `src/` and your tests in `test/`, and list them in `config.yaml` along with `DESIGN_NAME`, your top module. The `Makefile` and CI read everything else from there. [The five things that must agree →](docs/guide.md#making-it-your-design)
+Delete the blinky files. Put your Verilog in `src/` and your tests in `test/`. List them in `config.yaml`, and set `DESIGN_NAME` to your top module. The `Makefile` and CI read all other data from `config.yaml`. [The five things that must agree →](docs/guide.md#making-it-your-design)
 
 ## Who it is for
 
-- **Students and self-learners** who want a first chip they can show, with tests that prove it works. You will need [some Verilog](docs/guide.md#before-you-start) to change the design.
-- **Engineers under a foundry NDA** who want a second set of results they are allowed to publish.
+- **Students and self-learners** who want a first chip to show, with tests that prove it works. You need [some Verilog](docs/guide.md#before-you-start) to change the design.
+- **Engineers under a foundry NDA** who want a second set of results that they can publish.
 - **Anyone learning verification.** For a full UVM-style environment, see [c4o-pyuvm](https://github.com/anlit75/c4o-pyuvm), built from this template.
 
-**Good to know:** the tools are the open-source equivalents of the commercial ones — Icarus instead of VCS, Yosys instead of Design Compiler, OpenSTA instead of PrimeTime. The flow and vocabulary transfer; the tool names do not. [Full mapping →](docs/guide.md#what-this-is-and-what-it-is-not)
+**Good to know:** the tools are the open-source equivalents of the commercial tools. Icarus replaces VCS, Yosys replaces Design Compiler, and OpenSTA replaces PrimeTime. The flow and the vocabulary transfer. The tool names do not. [Full mapping →](docs/guide.md#what-this-is-and-what-it-is-not)
 
 ## 📚 Learn more
 
-- [Guide](docs/guide.md) — prerequisites, writing testbenches, waveforms, gate-level simulation, negative slack, configuration reference
-- [c4o-core](https://github.com/anlit75/c4o-core) — the toolchain engine behind every command
-- [c4o-pyuvm](https://github.com/anlit75/c4o-pyuvm) — a pyuvm verification environment on a real UART
+- [Guide](docs/guide.md): prerequisites, writing testbenches, waveforms, gate-level simulation, negative slack, configuration reference
+- [c4o-core](https://github.com/anlit75/c4o-core): the toolchain engine behind every command
+- [c4o-pyuvm](https://github.com/anlit75/c4o-pyuvm): a pyuvm verification environment on a real UART
 
 ---
 
