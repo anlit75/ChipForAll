@@ -22,19 +22,21 @@ LibreLane does not do simulation and verification. This starter kit adds them, t
 | DRC | Magic, KLayout | Calibre nmDRC, Pegasus |
 | LVS | Netgen | Calibre nmLVS |
 
-The shape of the flow is the same, and the vocabulary transfers. But a job advert lists the commercial tools, so say on your CV which tools you used.
+The shape of the flow is the same, and the vocabulary transfers. But the tools on your CV are not the tools that a job advert lists, so say which tools you used.
 
-**Looking for a worked verification example?** The tests in this repository are one Verilog testbench and two cocotb testbenches. They show what a test that can fail looks like. They are not a layered verification environment. [c4o-pyuvm](https://github.com/anlit75/c4o-pyuvm) is one: a pyuvm environment on a real UART, built from this template. It has an agent, a driver, a monitor, a scoreboard, and a register model generated from SystemRDL.
+**Looking for a worked verification example?** The tests in this repository are one Verilog testbench and two cocotb testbenches. They are enough to show what a test that can fail looks like. They are not a layered verification environment. [c4o-pyuvm](https://github.com/anlit75/c4o-pyuvm) is one: a pyuvm environment on a real UART, built from this template. It has an agent, a driver, a monitor, a scoreboard, and a register model generated from SystemRDL.
 
-**What you make here is yours to publish.** The process is [Sky130](https://github.com/google/skywater-pdk), the PDK that SkyWater released under Apache 2.0, with no NDA. You can put the layout, the area, the timing numbers and the GDS into a repository, a portfolio or a write-up. A foundry PDK under a confidentiality agreement permits none of that. Thus people who have such a PDK come here for a second set of results that they can show. People who never had one can get results for the first time.
+**What you make here is yours to publish.** The process is [Sky130](https://github.com/google/skywater-pdk), the PDK that SkyWater released under Apache 2.0, with no NDA. So you can put the layout, the area, the timing numbers and the GDS into a repository, a portfolio or a write-up. A foundry PDK under a confidentiality agreement permits none of that. So people who have such a PDK come here for a second set of results that they can show. It is also why people who never had one can produce results at all.
 
 ## Before you start
 
-**On Apple Silicon, part of this runs emulated.** The c4o-core image is built for `amd64` only (one runner, no `platforms:`). Thus `lint`, `sim`, `cocotb`, `synth` and `gatesim` run through emulation on an `arm64` machine. `make gds` does not. Its heavy step runs LibreLane's own image, which is also published for `arm64`, so that step runs native. This guide has no measurement of how much slower the emulated commands are. A Codespace is `amd64` throughout.
+**On Apple Silicon, part of this runs emulated.** The c4o-core image is built for `amd64` only (one runner, no `platforms:`). So `lint`, `sim`, `cocotb`, `synth` and `gatesim` run through emulation on an `arm64` machine. `make gds` does not. Its heavy step runs LibreLane's own image, which is also published for `arm64`, so that step runs native.
 
-**One prerequisite is not a download: some Verilog.** You do not need much. You must be able to read an `always @(posedge clk)` block, a `<=` assignment and a `$fatal`. On [HDLBits](https://hdlbits.01xz.net/), that is the *Verilog Language* section, not the full site.
+This guide has no measurement of how much slower the emulated commands are. A Codespace is `amd64` throughout.
 
-**SystemVerilog is read too.** `logic`, `always_ff` and the synthesisable subset work in every command since c4o-core 2.8.3. Every version that this repository has pinned since then includes that change. Before 2.8.3, the same file passed `make cocotb` and `make gds` but failed `make sim` and `make synth`. An `interface` as a module boundary still does not work: yosys parses the declaration and then fails at `hierarchy`. Keep interfaces in the testbench, not between synthesisable modules.
+**One prerequisite is not a download: some Verilog.** You do not need much. It is enough to read an `always @(posedge clk)` block, a `<=` assignment and a `$fatal`. On [HDLBits](https://hdlbits.01xz.net/), that is the *Verilog Language* section, not the full site.
+
+**SystemVerilog is read too.** `logic`, `always_ff` and the synthesisable subset work in every command since c4o-core 2.8.3. Every version that this repository has pinned since then includes this support. Before 2.8.3, the same file passed `make cocotb` and `make gds` but failed `make sim` and `make synth`. An `interface` as a module boundary still does not work: yosys parses the declaration and then fails at `hierarchy`. Keep interfaces in the testbench, not between synthesisable modules.
 
 You do not need Verilog to start. `make gds` runs the example unchanged and prints real area, timing and power. `make all` shows you tests that pass. Do these first, because they tell you that the toolchain works on your machine. You need Verilog for the next step: to change `src/blinky.v`, to judge whether a passed test proves something, or to write your own test. Run the example first, learn Verilog, then come back for that step.
 
@@ -60,7 +62,7 @@ Three more things cause problems in a first design:
 
 **The last three rows are optional.** You can delete `"//COCOTB_TESTS"`, `"//GATE_TESTS"` or `"//WAVE_SIGNALS"` from `config.yaml`. Delete the key line *and* the indented paths below it. CI then skips that type of test and does not fail. If you keep the key but it matches no files, CI fails. That is correct: you asked for tests that are not there.
 
-**A second Verilog testbench needs one more key.** `"//TEST_FILES"` accepts a glob. Icarus elaborates every module that no other module instantiates as a separate root. Thus the first `$finish` stops the full simulation, and the other testbenches never run. When more than one file matches, name the testbench that you want with `"//SIM_TOP"`.
+**A second Verilog testbench needs one more key.** `"//TEST_FILES"` accepts a glob. Icarus makes a separate root from every module that no other module instantiates. With more than one testbench, the first `$finish` then stops the full simulation, and the other testbenches never run. When more than one file matches, name the testbench that you want with `"//SIM_TOP"`.
 
 If the first row is wrong, you get an error immediately, not three minutes into `make gds`:
 
@@ -128,9 +130,9 @@ If the first row is wrong, you get an error immediately, not three minutes into 
   layout           runs/blinky_run/final/render/blinky.png
 ```
 
-Those are the numbers of the example design, from one PDK version. Your numbers will be different. Learn which lines to read.
+Those are the numbers of the example design, from one PDK version. Your numbers will be different, but the lines to read are the same.
 
-**`signoff`** tells you something that no other line does: your layout passes the manufacturability checks. The `Makefile` pins a LibreLane version (`LIBRELANE_IMAGE`). By default, that version stops with an error on each of these checks (`ERROR_ON_MAGIC_DRC` and the related variables are all `True`). `config.yaml` overrides none of them. Thus a run that got to this line has already passed the checks.
+**`signoff`** tells you something that no other line does: your layout passes the manufacturability checks. The `Makefile` pins a LibreLane version (`LIBRELANE_IMAGE`). By default, that version stops with an error on each of these checks (`ERROR_ON_MAGIC_DRC` and the related variables are all `True`). `config.yaml` overrides none of them. So a run that got to this line has already passed the checks.
 
 That is the default of that version, not a guarantee from this repository, so check it again after an upgrade. `clean` states the result and names the checks that it saw. When a check fails, the line names the failures: `2 Magic DRC, 1 LVS`.
 
@@ -142,7 +144,7 @@ That is the default of that version, not a guarantee from this repository, so ch
 
 **Those nine lines are a summary, not a signoff report.** They come from a `metrics.json` with 300 keys, so what they omit is important. They do not show the clock uncertainty and the derating that were applied, or the skew of the clock tree. They do not show which of the nine corners (`ss`/`tt`/`ff` against `min`/`nom`/`max` interconnect) gave that slack. All of these are LibreLane defaults, because `config.yaml` sets none of them. All of them are under `runs/`, with one directory for each step.
 
-The difference is practical. A flow in which you set the OCV derates yourself would not accept a `+0.11 ns` hold slack as a pass. For that level of confidence, read the per-corner reports, not these nine lines.
+The difference between a summary and a signoff report is practical. A flow in which you set the OCV derates yourself would not accept a `+0.11 ns` hold slack as a pass. For that level of confidence, read the per-corner reports, not these nine lines.
 
 `make report` prints the summary again and runs nothing again.
 
@@ -150,11 +152,11 @@ The difference is practical. A flow in which you set the OCV derates yourself wo
 
 `make site` builds one page, `build/site/index.html`. The page contains those lines, the layout image, the schematic, and every cocotb test with its verdict and seed. After `make gds`, the page also shows each signoff check and the worst setup path as OpenSTA reports it. It also shows an area split (flip-flops, logic, what routing added) and a power split (sequential, combinational, clock). After `make sim`, it draws the signals that `"//WAVE_SIGNALS"` names as a waveform.
 
-The power split uses the default switching activity of OpenSTA, not the activity of your testbench. Thus it shows where the power goes, not what a real workload draws. Each part appears after you run its command.
+The power split uses the default switching activity of OpenSTA, not the activity of your testbench. It shows where the power goes, not what a real workload draws. Each part appears after you run its command.
 
-The page is made to share, as a portfolio piece. The layout is first, then the numbers, then the tests. Your `"//DESCRIPTION"` is below the title. Buttons let you open the chip in 3D, download the GDS and view the source. The heading gives the build time and the commit that the page shows. This is necessary because CI does not publish a failing `main`: the page continues to show the last run that passed.
+The page is made to share, as a portfolio piece. The layout is first, then the numbers, then the tests. Your `"//DESCRIPTION"` is below the title. Buttons let you open the chip in 3D, download the GDS and view the source. The heading gives the build time and the commit that the page shows. The heading gives them because CI does not publish a failing `main`: the page continues to show the last run that passed.
 
-CI builds that page on every run. From `main`, it publishes the page to GitHub Pages at `https://<your-user>.github.io/<your-repo>/`. A new copy of this template has Pages off, and no workflow can turn it on for you. Turn it on one time: **Settings → Pages → Source: GitHub Actions**. Until you do, CI still passes and gives a notice that it published nothing.
+CI builds that page on every run. From `main`, it publishes the page to GitHub Pages at `https://<your-user>.github.io/<your-repo>/`. A new copy of this template has Pages off, and no workflow can turn it on for you. Turn it on once: **Settings → Pages → Source: GitHub Actions**. Until you do, CI still passes and gives a notice that it published nothing.
 
 ## When slack is negative
 
@@ -162,7 +164,7 @@ Negative slack means that the design does not meet the clock in `config.yaml`. Y
 
 Both answers change the design or its constraints. The physical answers are placement density, clock tree targets, resizer margins and routing effort. They belong to LibreLane and they are real, but this guide does not cover them. `config.yaml` sets none of those keys, and the [configuration reference](#configuration-reference) stops where LibreLane's own variables start. If you came here to practise manual timing closure, read LibreLane's documentation for that part.
 
-A third answer is the constraint itself. Possibly the path that fails must not be timed. Possibly the input delay that the flow assumed is not the delay that your board gives. No design change corrects these problems. An SDC file does, and the [configuration reference](#configuration-reference) tells you how to supply one.
+A third answer is the constraint itself. The path that fails is possibly one that the flow should not time. Or the input delay that the flow assumed is not the delay that your board gives. In those cases, no design change corrects the problem. An SDC file does, and the [configuration reference](#configuration-reference) tells you how to supply one.
 
 To see *what* is slow, read the timing report that the flow already wrote:
 
@@ -177,7 +179,7 @@ cat runs/*/*-openroad-stapostpnr/*ff_*/checks.rpt    # hold
 ls -d runs/*/*-openroad-stapostpnr/*/                # everything that ran
 ```
 
-Each of those globs matches more than one file. One run of this design made nine corner directories: three PVT points (`ss`, `tt`, `ff`) for each of three interconnect corners (`min`, `nom`, `max`). Thus `cat` joins three reports and does not tell you which is the worst. Find the worst one yourself, as you do with a summary.
+Each of those globs matches more than one file. One run of this design made nine corner directories: three PVT points (`ss`, `tt`, `ff`) for each of three interconnect corners (`min`, `nom`, `max`). So `cat` joins three reports and does not tell you which is the worst. Find the worst one yourself, as you would from a summary.
 
 In each report, the worst path shows every gate along it and the delay of each gate. That shows you where the time went.
 
@@ -220,20 +222,20 @@ endmodule
 Three things do the work:
 
 *   **`$fatal` makes a broken design a failed CI run.** `$display` prints and continues, and the simulator exits 0 in both cases. A test that reports a failure but does not fail is decoration. `$fatal` exits non-zero, and `make sim` and the workflow read that exit code.
-*   **`#1` after the edge.** `@(posedge clk)` resumes *at* the edge, before non-blocking assignments take effect. A read at that point sees the value of the previous cycle. Relative checks still pass, so this error is easy to miss.
+*   **`#1` after the edge.** `@(posedge clk)` resumes *at* the edge, before non-blocking assignments take effect. A read at that point sees the value of the previous cycle. Relative checks still pass with that old value, so this error is easy to miss.
 *   **You supply `$dumpfile`/`$dumpvars`.** The tool does not. Without them you have no waveform to examine when the assertion above fails.
 
 Try it. Change `src/blinky.v` so that the design is wrong, run `make sim`, and see it fail. If you have never seen a testbench fail, you do not know that it works.
 
 That is the full method, and it works on any design. Break one thing and run the tests. Make sure that the test you aimed at fails and gives a message that you can act on. Then run `git checkout -- src/blinky.v` and break the next thing.
 
-You do not learn that "the tests pass". You learn which test catches which mistake. You also learn where no test catches anything: that is the test you have not written. This is the only answer to "does my test really check the design", because a test that cannot fail tells you nothing.
+You do not learn that "the tests pass". You learn which test catches which mistake. You also learn where no test catches anything: that is the test you have not written. This method is the only answer to "does my test really check the design", because a test that cannot fail tells you nothing.
 
 ## When a test fails: look at the waveform
 
-`make sim` writes `build/wave.vcd`, which contains every signal on every cycle. Your testbench must have the two `$dumpfile`/`$dumpvars` lines from the skeleton above. Open the file with GTKWave, or with the **WaveTrace** extension that the Dev Container installs (click the `.vcd` file). A failed assertion tells you *that* the design is wrong. The waveform shows you *why*.
+`make sim` writes `build/wave.vcd`, which contains every signal on every cycle. It does this only if your testbench has the two `$dumpfile`/`$dumpvars` lines from the skeleton above. Open the file with GTKWave, or with the **WaveTrace** extension that the Dev Container installs (click the `.vcd` file). A failed assertion tells you *that* the design is wrong. The waveform shows you *why*.
 
-`*.vcd` is in `.gitignore`. CI keeps the copy from each run in the `chipforall-build-artifacts` upload for five days. Thus you can still examine a test that fails only on CI.
+`*.vcd` is in `.gitignore`. CI keeps the copy from each run in the `chipforall-build-artifacts` upload for five days. So you can still examine a test that fails only on CI.
 
 ## Writing testbenches in Python
 
@@ -278,12 +280,12 @@ With that write, the check that `led` is the top bit of the counter takes four c
 
 ## Random stimulus and a reference model
 
-`test/test_blinky_random.py` is the other half of verification. A directed test asserts at moments that a person chose. This test builds a model of what the design must do. It compares the design with the model on every cycle, with stimulus that nobody wrote out.
+`test/test_blinky_random.py` is the other half of verification. A directed test asserts at moments that a person chose. This test builds a model of what the design should do. It compares the design with the model on every cycle, with stimulus that nobody wrote out.
 
 It has three parts of about ten lines each:
 
 *   **The model** is `BlinkyModel`: the behaviour of blinky, written a second time in Python. It is deliberately not a transcription of the RTL. A model that copies the mistakes of the design agrees with it everywhere and can never catch a mistake.
-*   **The stimulus** is random starting counts and random reset pulses. Two of the five windows are at places where `led` changes, so a run cannot watch a signal that never moves.
+*   **The stimulus** is random starting counts and random reset pulses. Two of the five windows are deliberately at places where `led` changes, so a run cannot watch a signal that never moves.
 *   **The scoreboard** compares `led` with the model after every clock. A failure gives the cycle, both values and the starting count.
 
 ```bash
@@ -291,7 +293,7 @@ make cocotb                   # a new seed each run
 make cocotb SEED=1789965785   # replay one exactly
 ```
 
-cocotb seeds Python's `random` and logs the seed that it used. Thus you can reproduce a CI failure on your machine from the log line.
+cocotb seeds Python's `random` and logs the seed that it used. You can then reproduce a CI failure on your machine from the log line.
 
 The test also fails when `led` never moved. 200 passed cycles that watched a constant signal prove nothing. A suite that reports PASS for that is what this repository works hardest to prevent.
 
@@ -314,13 +316,15 @@ make gds       # produces the netlist
 make gatesim   # simulates it
 ```
 
-It needs its own testbench in `test/gate/`, because synthesis resolves parameters. `test/tb_blinky.v` makes the design smaller by setting `WIDTH` to 4. A netlist has no `WIDTH` to set: it is fixed at the 26 that `src/blinky.v` declares. Thus `test/gate/tb_blinky_gl.v` drives the real pins and watches `led` for a full divider period. That is all 2^26 cycles, which takes a few minutes.
+It needs its own testbench in `test/gate/`, because synthesis resolves parameters. `test/tb_blinky.v` makes the design smaller by setting `WIDTH` to 4. A netlist has no `WIDTH` to set: it is fixed at the 26 that `src/blinky.v` declares. So `test/gate/tb_blinky_gl.v` drives the real pins and watches `led` for a full divider period. That is all 2^26 cycles, which takes a few minutes.
 
-Synthesis removes more than parameters. It also removes internal names. The cocotb test above writes to `dut.count` to skip 2^25 cycles, but a netlist has no `count` to write to. Anything that reaches inside the design works on the RTL and stops working at this step. To show you that is one purpose of this step.
+Synthesis removes more than parameters. It also removes internal names. The cocotb test above writes to `dut.count` to skip 2^25 cycles, but a netlist has no `count` to write to. Anything that reaches inside the design works on the RTL and stops working at this step. This step exists partly to show you that.
 
-**This is a functional check, not a timing check.** Nothing here back-annotates an SDF. Thus the cells switch with zero delay, and the run cannot see a race that occurs only at real delays. It does see everything that synthesis decided: inferred latches, the implementation of reset, and the reading of an ambiguous `always` block. Timing is the job of STA, in `make gds`, and the per-corner reports above give the answer. In some flows, gate-level simulation with SDF annotation is the last timing gate. This step is not that gate.
+**This is a functional check, not a timing check.** Nothing here back-annotates an SDF. The cells switch with zero delay, so the run cannot see a race that occurs only at real delays. It does see everything that synthesis decided: inferred latches, the implementation of reset, and the reading of an ambiguous `always` block.
 
-Because of that cost, CI runs `make gatesim` on pushes and on `v*` tags, but not on every pull request.
+Timing is the job of STA, in `make gds`, and the per-corner reports above give the answer. In some flows, gate-level simulation with SDF annotation is the last timing gate. This step is not that gate.
+
+Because `make gatesim` takes minutes, CI runs it on pushes and on `v*` tags, but not on every pull request.
 
 ## Iterating without re-running the whole flow
 
@@ -332,7 +336,7 @@ make gds LIBRELANE_ARGS="--last-run --from floorplan"
 
 That command reads the previous run from `runs/`. For this reason `make clean` keeps that directory, and only `make distclean` removes it.
 
-**`CLOCK_PERIOD` is not one of them.** The clock is an input to synthesis, which sizes cells and inserts buffers for it. If you resume from floorplan, the flow measures the gates from the *old* period with the new period. Timing can close that way and tell you nothing about the design that you would really get. A clock change needs a clean `make gds`. [When slack is negative](#when-slack-is-negative) tells you to run that, and this is the reason.
+**`CLOCK_PERIOD` is not one of them.** The clock is an input to synthesis, which sizes cells and inserts buffers for it. So if you resume from floorplan, the flow measures the gates that the *old* period produced against the new period. Timing can easily close that way and tell you nothing about the design that you would really get. A clock change needs a clean `make gds`. [When slack is negative](#when-slack-is-negative) tells you to run that, and this is the reason.
 
 ## Seeing the circuit
 
@@ -344,7 +348,9 @@ This command draws `build/schematic.svg`: your design as flops, adders and muxes
 
 It is not a picture of the netlist. `make synth` runs a full synthesis and gives a hundred generic gates, which teach nobody anything about their design. `make schematic` stops earlier, where the circuit still looks like its source code.
 
-**Generic gates, not Sky130 gates.** `make synth` maps to Yosys' own cells and stops there. For the example, `build/synthesis.json` contains 94 of them (`$_DFF_PP0_`, `$_OR_`, `$_XOR_` and others) and no `sky130_` cell, because nothing gives Yosys a liberty file here. Thus this command answers "does it synthesise, and approximately how much logic is it". It cannot answer area or timing. The `198 standard cells` in `make report` comes from LibreLane's own synthesis inside `make gds`, with the real library. It is a different number, and you cannot compare the two.
+**Generic gates, not Sky130 gates.** `make synth` maps to Yosys' own cells and stops there. For the example, `build/synthesis.json` contains 94 of them (`$_DFF_PP0_`, `$_OR_`, `$_XOR_` and others) and no `sky130_` cell, because nothing gives Yosys a liberty file here. This command answers "does it synthesise, and approximately how much logic is it". It cannot answer area or timing.
+
+The `198 standard cells` in `make report` comes from LibreLane's own synthesis inside `make gds`, with the real library. It is a different number, and you cannot compare the two.
 
 This takes less than a second, so you can run it after every change, unlike `make gds`.
 
@@ -352,22 +358,22 @@ This takes less than a second, so you can run it after every change, unlike `mak
 
 The repository includes a [Dev Container](https://containers.dev/). Open it in GitHub Codespaces, or in VS Code with *Reopen in Container*. You get the same image that CI uses, with the Verilog extensions installed. The `Makefile` detects that it is inside the container. It then calls the tools directly and does not start a nested container.
 
-`make gds` also works here, because the container has its own Docker daemon for the LibreLane sidecar. If `make gds` says that it cannot find a daemon, rebuild the Dev Container.
+`make gds` also works here, because the container has its own Docker daemon for the LibreLane sidecar. If `make gds` says that it cannot find a daemon, rebuild the Dev Container. That is what the message asks for.
 
 Two things to know:
 
-*   **It runs as `root`.** On a Linux host, the files that it writes into `build/` are then owned by `root`, so `make clean` from your host can need `sudo`. If it runs as a normal user, Codespaces breaks.
-*   **Monitor the disk in a Codespace.** The inner daemon has its own image store. Thus it pulls the LibreLane image again and does not share it with the host. The Sky130 PDK adds 3GB more. On the smallest Codespace machine, that is most of the disk. Select a larger machine, or run `make gds` from your own host.
+*   **It runs as `root`.** On a Linux host, the files that it writes into `build/` are then owned by `root`, so `make clean` from your host can need `sudo`. It cannot run as a normal user, because that breaks Codespaces.
+*   **Monitor the disk in a Codespace.** The inner daemon has its own image store. It pulls the LibreLane image again and does not share it with the host. The Sky130 PDK adds 3GB more. On the smallest Codespace machine, that is most of the disk. Select a larger machine, or run `make gds` from your own host.
 
-**One PDK can serve several checkouts.** The Sky130 install is 3GB and is always the same. `PDK_ROOT` points both halves at one directory: the install, and the LibreLane sidecar that reads it.
+**One PDK can serve several checkouts.** The Sky130 install is 3GB and is always the same. `PDK_ROOT` points the install, and the LibreLane sidecar that reads it, at one directory.
 
 ```bash
 make gds PDK_ROOT=/opt/sky130
 ```
 
-Without it, every clone keeps its own copy under `pdks/`. With it, a shared machine, or a machine with more than one design, stores those 3GB only one time. This needs c4o-core 2.8.2 or newer, and the version that the `Makefile` pins is new enough.
+Without it, every clone keeps its own copy under `pdks/`. With it, a shared machine, or a machine with more than one design, stores those 3GB only once. This needs c4o-core 2.8.2 or newer, and the version that the `Makefile` pins is new enough.
 
-Do you prefer your own editor? `make shell` opens the same image from any terminal.
+Prefer to stay in your own editor? `make shell` opens the same image from any terminal.
 
 ## Configuration reference
 
@@ -388,13 +394,13 @@ Do you prefer your own editor? `make shell` opens the same image from any termin
 | `FP_SIZING` / `FP_CORE_UTIL` | How the die is sized. See below. |
 | `PDK` / `STD_CELL_LIBRARY` | Sky130 and its standard cells. Do not change them. |
 
-**The die sizes itself.** `FP_SIZING: relative` makes the floorplan from `FP_CORE_UTIL`. That key is how full the core must be, as a percentage: the 40 here means 40%. Thus a larger design gets a larger die and not a "does not fit" error. Decrease it if routing is tight. Increase it for a smaller chip.
+**The die sizes itself.** `FP_SIZING: relative` makes the floorplan from `FP_CORE_UTIL`. That key is how full the core should be, as a percentage: the 40 here means 40%. A larger design then gets a larger die and not a "does not fit" error. Decrease `FP_CORE_UTIL` if routing is tight. Increase it for a smaller chip.
 
 A fixed die is still available. Set `FP_SIZING: absolute` and add `DIE_AREA: [0, 0, w, h]`. Do not keep `DIE_AREA` in the file with relative sizing. The flow no longer reads it, but the GDS stream-out still draws the chip boundary from it. Signoff then fails on a boundary that nothing else used.
 
 All other keys in the file belong to LibreLane. See [its documentation](https://librelane.readthedocs.io/) for the full list. See the [c4o-core README](https://github.com/anlit75/c4o-core) for what this engine reads.
 
-**Keys that this reference does not list still work.** Nothing filters `config.yaml`. c4o-core checks that the few keys it needs are present and sensible. `make gds` then gives the full file to LibreLane unchanged. Thus you can add `PL_TARGET_DENSITY`, `CTS_*`, `GRT_*` and the other LibreLane variables directly, and they take effect. This reference covers the keys that this repository has a reason to set, not all the keys that you are permitted to set.
+**Keys that this reference does not list still work.** Nothing filters `config.yaml`. c4o-core checks that the few keys it needs are present and sensible. `make gds` then gives the full file to LibreLane unchanged. You can add `PL_TARGET_DENSITY`, `CTS_*`, `GRT_*` and the other LibreLane variables directly, and they take effect. This reference covers the keys that this repository has a reason to set, not all the keys that you are permitted to set.
 
 **Two keys are the full timing constraint, and an SDC file can replace them.** This repository constrains only `CLOCK_PORT` and `CLOCK_PERIOD`. A static timing tool needs more: input and output delay, transition and fanout limits, clock uncertainty, and every exception. All of that comes from LibreLane's defaults. The defaults are sufficient for a design with one clock and no false paths, and far from sufficient for any other design. Write the constraints yourself and name the file:
 
@@ -405,6 +411,6 @@ SIGNOFF_SDC_FILE: dir::constraints/signoff.sdc
 
 Both are LibreLane's own path variables, so they arrive through the pass-through above and need nothing from c4o-core. There are two keys for a reason. You can over-constrain place and route, then sign off the design against what it must really meet. CI asserts that the pinned LibreLane still declares both keys, so an upgrade cannot silently make this paragraph wrong. CI does not check that the flow read your file. Only a run that uses the file tells you that.
 
-**A second clock goes in that file, not in this one.** `CLOCK_PORT` and `CLOCK_PERIOD` each have one value, and c4o-core requires both before it starts the flow. Thus a design with two clocks names one of them here and creates both in its SDC. The convenience keys constrain only the pair in this file. The design is signed off against the SDC.
+**A second clock goes in that file, not in this one.** `CLOCK_PORT` and `CLOCK_PERIOD` each have one value, and c4o-core requires both before it starts the flow. A design with two clocks names one of them here and creates both in its SDC. The convenience keys constrain only the pair in this file. The design is signed off against the SDC.
 
 **Macros belong to LibreLane, and this guide does not cover them.** A hard macro (an SRAM, a PLL, a block from another person) goes in through LibreLane's `MACROS` variable. That variable is a dictionary of definitions, each with its own GDS and LEF views. A macro also brings power routing over the macro and placement blockages. Because of the pass-through, you can do this from `config.yaml` with no change here. This repository offers a design small enough to read in one sitting, which is the opposite of that.
