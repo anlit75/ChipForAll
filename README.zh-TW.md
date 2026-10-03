@@ -62,7 +62,7 @@ FATAL: test/tb_blinky.v:58: led held for 4 cycles at cycle 4, expected 8
 
 測試會指出是哪一行、看到什麼值、預期什麼值。`make` 回傳非零，所以 CI 也會失敗。用 `git checkout -- src/blinky.v` 還原。[幫你的設計寫這種測試 →](docs/guide.zh-TW.md#幫你自己的設計寫測試平台)
 
-**3. 做出晶片**（約 3 分鐘。第一次還要下載 3 GB 的 PDK，另外約 20 分鐘）：
+**3. 做出版圖**（約 3 分鐘。第一次還要下載 3 GB 的 PDK，另外約 20 分鐘）：
 
 ```bash
 make gds
@@ -84,7 +84,7 @@ make gds
   layout           runs/blinky_run/final/render/blinky.png
 ```
 
-`signoff clean` 加上正的 slack，代表版圖通過了製造檢查，也滿足時脈。[每一行怎麼讀 →](docs/guide.zh-TW.md#看懂執行結果)
+`signoff clean` 加上正的 slack，代表版圖通過了製造檢查，也滿足時脈。流程到這個 GDS 檔為止：下線製造不在這個 repo 的範圍內。[每一行怎麼讀 →](docs/guide.zh-TW.md#看懂執行結果)
 
 ## 🌐 結果直接上線
 

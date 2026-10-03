@@ -62,7 +62,7 @@ FATAL: test/tb_blinky.v:58: led held for 4 cycles at cycle 4, expected 8
 
 The test gives the line, the value it saw and the value it expected. `make` exits non-zero, so CI also fails. Undo the change with `git checkout -- src/blinky.v`. [Writing tests like this for your design →](docs/guide.md#writing-a-testbench-for-your-own-design)
 
-**3. Build the chip** (about 3 minutes, and about 20 minutes more on a first run for the 3 GB PDK download):
+**3. Build the layout** (about 3 minutes, and about 20 minutes more on a first run for the 3 GB PDK download):
 
 ```bash
 make gds
@@ -84,7 +84,7 @@ At the end, it tells you what it built:
   layout           runs/blinky_run/final/render/blinky.png
 ```
 
-`signoff clean` and positive slack tell you that the layout passed the manufacturing checks and meets the clock. [How to read each line →](docs/guide.md#reading-the-result)
+`signoff clean` and positive slack tell you that the layout passed the manufacturing checks and meets the clock. The flow stops at this GDS file: fabrication is not part of this repository. [How to read each line →](docs/guide.md#reading-the-result)
 
 ## 🌐 Your results, online
 
