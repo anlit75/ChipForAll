@@ -424,3 +424,5 @@ Both are LibreLane's own path variables, so they arrive through the pass-through
 **A second clock goes in that file, not in this one.** `CLOCK_PORT` and `CLOCK_PERIOD` each have one value, and c4o-core requires both before it starts the flow. A design with two clocks names one of them here and creates both in its SDC. The convenience keys constrain only the pair in this file. The design is signed off against the SDC.
 
 **Macros belong to LibreLane, and this guide does not cover them.** A hard macro (an SRAM, a PLL, a block from another person) goes in through LibreLane's `MACROS` variable. That variable is a dictionary of definitions, each with its own GDS and LEF views. A macro also brings power routing over the macro and placement blockages. Because of the pass-through, you can do this from `config.yaml` with no change here. This repository offers a design small enough to read in one sitting, which is the opposite of that.
+
+<!-- docs-only check -->
