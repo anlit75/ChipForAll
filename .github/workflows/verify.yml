@@ -18,6 +18,41 @@ on:
   workflow_dispatch:
 
 jobs:
+  # A pull request that changes only what the push trigger above ignores --
+  # Markdown, LICENSE, .gitignore -- does not run the flow. No step below reads
+  # any of those files, so three and a half minutes of it could not change a
+  # verdict.
+  #
+  # Decided in a job because of the trap described above: with paths-ignore the
+  # required check never reports, and here it reports as skipped, which a
+  # required check accepts. Everything is unchecked on such a pull request; a
+  # pull request that touches one other file runs all of it.
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      code: ${{ steps.files.outputs.code }}
+    steps:
+      - name: Does this change anything the flow reads?
+        id: files
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" != pull_request ]; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          files=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/${{ github.event.pull_request.number }}/files" --jq '.[].filename')
+          echo "$files"
+          other=$(grep -vxE '.*\.md|LICENSE|\.gitignore' <<<"$files" || true)
+          if [ -n "$files" ] && [ -z "$other" ]; then
+            echo "::notice::Docs only: the flow is not run for this pull request."
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          fi
+
   # The Dev Container is the "zero install" promise, and nothing else here
   # exercises it -- the job below runs on the host, against the plain image.
   # So a devcontainer.json change could only be caught by opening a Codespace
@@ -30,6 +65,8 @@ jobs:
   # a 3GB PDK and twenty minutes -- and it cannot speak for Codespaces, whose
   # remote server is a different thing again.
   devcontainer:
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -48,6 +85,10 @@ jobs:
             make lint
 
   full-flow:
+    needs: changes
+    # Runs unless the job above said no. If that job fails, its output is
+    # empty and this still runs: a broken decision must not look like a pass.
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -57,17 +98,14 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      # --- PERFORMANCE OPTIMIZATION ---
-      # Cache the ~3GB Sky130 PDK to save CI time and bandwidth.
-      # Volare will automatically skip downloading if the target hash exists in this cached directory.
-      - name: Cache Sky130 PDK
-        id: cache-pdk
-        uses: actions/cache@v5
-        with:
-          path: pdks
-          key: sky130-pdk-${{ runner.os }}-v1
-          restore-keys: |
-            sky130-pdk-${{ runner.os }}-
+      # The LibreLane image is 1.5GB and its pull is the longest single thing a
+      # pull request waits for. Nothing it needs comes from the steps before
+      # `make gds`, so start it now and let it run under them. The step before
+      # `make gds` waits for it.
+      - name: Start pulling the LibreLane image
+        run: |
+          image=$(grep -E '^LIBRELANE_IMAGE :=' Makefile | sed 's/.*:= *//')
+          nohup docker pull "$image" > "$RUNNER_TEMP/librelane-pull.log" 2>&1 &
 
       # c4o-core's version tag is repeated three times because nothing here
       # reads it from a single source: the Makefile drives `make gds`, this
@@ -129,6 +167,31 @@ jobs:
 
       - name: Pull c4o-core Image
         run: docker pull ghcr.io/anlit75/c4o-core:2.15
+
+      # The PDK is a third of a gigabyte to download and the same every time,
+      # so it is cached -- keyed on the version c4o-core installs, read out of
+      # the image. A key that did not name the version was restored on every
+      # run and then not used: it held what an older c4o-core had installed,
+      # `make pdk` downloaded the PDK again beside it, and a hit on the key
+      # meant the new one was never saved. No restore-keys, for the same
+      # reason: a near match is a PDK this image does not want.
+      - name: Which PDK version does this c4o-core install?
+        id: pdk
+        run: |
+          image=$(grep -E '^C4O_IMAGE :=' Makefile | sed 's/.*:= *//')
+          version=$(docker run --rm --entrypoint grep "$image"             -oE 'commit_hash = "[0-9a-f]{40}"' /opt/c4o-core/scripts/entrypoint.py             | grep -oE '[0-9a-f]{40}' || true)
+          if [ "$(wc -w <<<"$version")" -ne 1 ]; then
+            echo "::error::Could not read one PDK version out of the c4o-core image (found: '$version'). The cache key is built from it."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Sky130 PDK
+        id: cache-pdk
+        uses: actions/cache@v5
+        with:
+          path: pdks
+          key: sky130-pdk-${{ runner.os }}-${{ steps.pdk.outputs.version }}
 
       # The devcontainer runs as a named user so that files it creates on a
       # Linux host stay owned by the host user. That user comes from the base
@@ -288,6 +351,14 @@ jobs:
           make schematic
           ls -lh build/schematic.svg
           grep -qF "<svg" build/schematic.svg || { echo "not an SVG"; exit 1; }
+
+      # A second pull of the same image waits for the one started at the top
+      # of the job, and does the pull itself if that one failed -- so a failed
+      # background pull is an error here, not a silent retry inside `make gds`.
+      - name: The LibreLane image is here
+        run: |
+          image=$(grep -E '^LIBRELANE_IMAGE :=' Makefile | sed 's/.*:= *//')
+          docker pull "$image" || { cat "$RUNNER_TEMP/librelane-pull.log"; exit 1; }
 
       - name: 4. Physical Design (GDSII)
         # This step will automatically trigger 'make pdk' first
