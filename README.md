@@ -36,7 +36,7 @@ You need Docker, Make and Git. A Codespace has all three:
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/anlit75/ChipForAll)
 
-The button always opens the original repository, `anlit75/ChipForAll`, even from your copy of this README. That is enough for steps 2 and 3. To keep your work and get your own CI and results page, do step 1 first. Then open the Codespace from your copy (**Code → Codespaces**). In both cases, select a machine larger than the smallest one, because `make gds` needs the disk space. [Why →](docs/guide.md#working-inside-the-container)
+The button always opens the original repository, `anlit75/ChipForAll`, even from your copy of this README. That is enough to try steps 2 and 3. To keep your work and get your own CI and results page, do step 1 first. Then open the Codespace from your copy (**Code → Codespaces**). In both cases, select a machine larger than the smallest one, because `make gds` needs the disk space. [Why →](docs/guide.md#working-inside-the-container)
 
 Apple Silicon works too, but some commands run emulated. [Which ones →](docs/guide.md#before-you-start)
 

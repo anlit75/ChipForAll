@@ -62,7 +62,7 @@ Three more things cause problems in a first design:
 
 **The last three rows are optional.** You can delete `"//COCOTB_TESTS"`, `"//GATE_TESTS"` or `"//WAVE_SIGNALS"` from `config.yaml`. Delete the key line *and* the indented paths below it. CI then skips that type of test and does not fail. If you keep the key but it matches no files, CI fails. That is correct: you asked for tests that are not there.
 
-**A second Verilog testbench needs one more key.** `"//TEST_FILES"` accepts a glob. Icarus makes a separate root from every module that no other module instantiates. With more than one testbench, the first `$finish` then stops the full simulation, and the other testbenches never run. When more than one file matches, name the testbench that you want with `"//SIM_TOP"`.
+**A second Verilog testbench needs one more key.** `"//TEST_FILES"` accepts a glob. Icarus elaborates every module that no other module instantiates, and each one becomes a separate root. With more than one testbench, the first `$finish` then stops the full simulation, and the other testbenches never run. When more than one file matches, name the testbench that you want with `"//SIM_TOP"`.
 
 If the first row is wrong, you get an error immediately, not three minutes into `make gds`:
 
@@ -146,7 +146,7 @@ That is the default of that version, not a guarantee from this repository, so ch
 
 The difference between a summary and a signoff report is practical. A flow in which you set the OCV derates yourself would not accept a `+0.11 ns` hold slack as a pass. For that level of confidence, read the per-corner reports, not these nine lines.
 
-`make report` prints the summary again and runs nothing again.
+`make report` prints the summary again. It does not run the flow again.
 
 ## Publishing the results page
 
@@ -154,7 +154,7 @@ The difference between a summary and a signoff report is practical. A flow in wh
 
 The power split uses the default switching activity of OpenSTA, not the activity of your testbench. It shows where the power goes, not what a real workload draws. Each part appears after you run its command.
 
-The page is made to share, as a portfolio piece. The layout is first, then the numbers, then the tests. Your `"//DESCRIPTION"` is below the title. Buttons let you open the chip in 3D, download the GDS and view the source. The heading gives the build time and the commit that the page shows. The heading gives them because CI does not publish a failing `main`: the page continues to show the last run that passed.
+The page is designed for sharing, as a portfolio piece. The layout is first, then the numbers, then the tests. Your `"//DESCRIPTION"` is below the title. Buttons let you open the chip in 3D, download the GDS and view the source. The heading gives the build time and the commit that the page shows. The heading gives them because CI does not publish a failing `main`: the page continues to show the last run that passed.
 
 CI builds that page on every run. From `main`, it publishes the page to GitHub Pages at `https://<your-user>.github.io/<your-repo>/`. A new copy of this template has Pages off, and no workflow can turn it on for you. Turn it on once: **Settings → Pages → Source: GitHub Actions**. Until you do, CI still passes and gives a notice that it published nothing.
 
@@ -164,7 +164,7 @@ Negative slack means that the design does not meet the clock in `config.yaml`. Y
 
 Both answers change the design or its constraints. The physical answers are placement density, clock tree targets, resizer margins and routing effort. They belong to LibreLane and they are real, but this guide does not cover them. `config.yaml` sets none of those keys, and the [configuration reference](#configuration-reference) stops where LibreLane's own variables start. If you came here to practise manual timing closure, read LibreLane's documentation for that part.
 
-A third answer is the constraint itself. The path that fails is possibly one that the flow should not time. Or the input delay that the flow assumed is not the delay that your board gives. In those cases, no design change corrects the problem. An SDC file does, and the [configuration reference](#configuration-reference) tells you how to supply one.
+A third answer is the constraint itself. Maybe the flow should not time the path that fails. Or the input delay that the flow assumed is not the delay that your board gives. In those cases, no design change corrects the problem. An SDC file does, and the [configuration reference](#configuration-reference) tells you how to supply one.
 
 To see *what* is slow, read the timing report that the flow already wrote:
 
@@ -346,7 +346,7 @@ make schematic
 
 This command draws `build/schematic.svg`: your design as flops, adders and muxes, with the names that you gave them. Open it in the browser or click it in VS Code. It is an SVG, so you need no special tool to read it.
 
-It is not a picture of the netlist. `make synth` runs a full synthesis and gives a hundred generic gates, which teach nobody anything about their design. `make schematic` stops earlier, where the circuit still looks like its source code.
+It is not a picture of the netlist. `make synth` runs a full synthesis and gives a hundred generic gates, and nobody learns anything about their design from those gates. `make schematic` stops earlier, where the circuit still looks like its source code.
 
 **Generic gates, not Sky130 gates.** `make synth` maps to Yosys' own cells and stops there. For the example, `build/synthesis.json` contains 94 of them (`$_DFF_PP0_`, `$_OR_`, `$_XOR_` and others) and no `sky130_` cell, because nothing gives Yosys a liberty file here. This command answers "does it synthesise, and approximately how much logic is it". It cannot answer area or timing.
 
@@ -362,7 +362,7 @@ The repository includes a [Dev Container](https://containers.dev/). Open it in G
 
 Two things to know:
 
-*   **It runs as `root`.** On a Linux host, the files that it writes into `build/` are then owned by `root`, so `make clean` from your host can need `sudo`. It cannot run as a normal user, because that breaks Codespaces.
+*   **It runs as `root`.** On a Linux host, the files that it writes into `build/` are then owned by `root`, so `make clean` from your host can need `sudo`. Running as a normal user breaks Codespaces.
 *   **Monitor the disk in a Codespace.** The inner daemon has its own image store. It pulls the LibreLane image again and does not share it with the host. The Sky130 PDK adds 3GB more. On the smallest Codespace machine, that is most of the disk. Select a larger machine, or run `make gds` from your own host.
 
 **One PDK can serve several checkouts.** The Sky130 install is 3GB and is always the same. `PDK_ROOT` points the install, and the LibreLane sidecar that reads it, at one directory.
@@ -377,7 +377,7 @@ Prefer to stay in your own editor? `make shell` opens the same image from any te
 
 ## Configuration reference
 
-`config.yaml` is a [LibreLane](https://github.com/librelane/librelane) configuration file. Keys that LibreLane does not own have a `//` prefix. LibreLane ignores those keys fully, so one file stays valid for both tools.
+`config.yaml` is a [LibreLane](https://github.com/librelane/librelane) configuration file. Keys that LibreLane does not own have a `//` prefix. LibreLane ignores those keys completely, so one file stays valid for both tools.
 
 | Key | What it does |
 |---|---|
