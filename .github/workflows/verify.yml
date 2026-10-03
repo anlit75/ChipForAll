@@ -502,38 +502,39 @@ jobs:
       # docs/guide.md, "Iterating without re-running the whole flow", gives one
       # command for resuming from floorplan. Nothing ran the command it used to
       # give, and it had stopped working three separate ways with every other
-      # step here green. So run it, and check the two things that paragraph
-      # promises: synthesis is not redone, and the run directory is left with
-      # one of each step -- which is what the report globs in the guide and the
-      # steps above rely on.
+      # step here green. So run it, and check what that section says: the
+      # resume needs the state file it names, synthesis is not redone, and the
+      # resumed steps are added after the old ones.
       #
-      # Last among the flow steps, so a failure here does not hide theirs.
+      # Last among the flow steps, so a failure here does not hide theirs, and
+      # so the steps above read a run directory with one of each step.
       - name: Resuming from floorplan works, as the guide says it does
         run: |
           shopt -s nullglob
           netlists=(runs/*/*-yosys-synthesis/*.nl.v)
-          if [ ${#netlists[@]} -ne 1 ]; then
-            echo "::error::Expected one synthesised netlist under runs/ before resuming, found ${#netlists[@]}."
+          states=(runs/*/*-openroad-floorplan/state_in.json)
+          if [ ${#netlists[@]} -ne 1 ] || [ ${#states[@]} -ne 1 ]; then
+            echo "::error::Expected one synthesis step and one floorplan step under runs/ before resuming, found ${#netlists[@]} and ${#states[@]}. make gds did not start from an empty run."
             exit 1
           fi
           before=$(stat -c %Y "${netlists[0]}")
 
-          make gds FROM=OpenROAD.Floorplan
+          make gds LIBRELANE_ARGS="--from OpenROAD.Floorplan --with-initial-state ${states[0]}"
 
           after=$(stat -c %Y "${netlists[0]}")
-          if [ "$before" != "$after" ]; then
-            echo "::error::The guide says make gds FROM=OpenROAD.Floorplan does not redo synthesis. ${netlists[0]} was rewritten."
+          synth=(runs/*/*-yosys-synthesis)
+          if [ "$before" != "$after" ] || [ ${#synth[@]} -ne 1 ]; then
+            echo "::error::The guide says resuming from floorplan does not redo synthesis. It was redone:"
+            ls -ld --time-style=full-iso "${synth[@]}" "${netlists[0]}"
             exit 1
           fi
-          for step in yosys-synthesis openroad-floorplan openroad-stapostpnr; do
-            dirs=(runs/*/*-"$step")
-            if [ ${#dirs[@]} -ne 1 ]; then
-              echo "::error::The guide says a resumed run has one of each step. Found ${#dirs[@]} '$step' directories:"
-              printf '  %s\n' "${dirs[@]}"
-              exit 1
-            fi
-          done
-          echo "  resumed from floorplan: synthesis kept, one of each step"
+          floorplans=(runs/*/*-openroad-floorplan)
+          if [ ${#floorplans[@]} -ne 2 ]; then
+            echo "::error::The guide says the resumed steps are added after the old ones. Expected two floorplan directories, found ${#floorplans[@]}:"
+            printf '  %s\n' "${floorplans[@]}"
+            exit 1
+          fi
+          echo "  resumed from floorplan: synthesis kept, resumed steps added after the old ones"
 
       # Only main is published, and only when the repository has Pages set to
       # "GitHub Actions". A copy of this template starts with Pages off, and

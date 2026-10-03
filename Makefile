@@ -22,39 +22,31 @@ LIBRELANE_ARGS ?=
 DESIGN_NAME := $(shell grep -E '^DESIGN_NAME:' config.yaml | sed -e 's/^DESIGN_NAME:[[:space:]]*//' -e 's/["'"'"']//g')
 PWD := $(shell pwd)
 
-# Where LibreLane keeps the run. One fixed tag, so every `make gds` leaves one
-# run here and `report`, `gatesim` and the globs in docs/guide.md read that one.
-RUN_DIR := runs/$(DESIGN_NAME)_run
-
-# Iteration: most of what you change after the first flow -- FP_CORE_UTIL, the
-# floorplan -- does not need synthesis redone.
+# A full run starts empty: --overwrite removes the previous run. LibreLane's
+# default is to append to a run that exists, so a second `make gds` used to
+# leave two of every step directory under the same tag.
 #
-#   make gds FROM=OpenROAD.Floorplan
+# Not when LIBRELANE_ARGS names a step to start from. That is LibreLane's own
+# resume, and it needs the previous run to still be there:
 #
-# keeps the steps before floorplan and runs the rest again. FROM takes any step
-# id of the LibreLane flow; the step directories under runs/ are named after
-# them. Which step is safe depends on what you changed: CLOCK_PERIOD is an input
-# to synthesis, so resuming from floorplan after changing it measures the old
+#   make gds LIBRELANE_ARGS="--from OpenROAD.Floorplan --with-initial-state <file>"
+#
+# where <file> is the state_in.json in that step's directory of the last run,
+# runs/<tag>/13-openroad-floorplan/state_in.json for the example. The resumed
+# steps are appended after the old ones, numbered on from the last.
+#
+# Most of what you change after the first flow -- FP_CORE_UTIL, the floorplan --
+# does not need synthesis redone. CLOCK_PERIOD is not one of those changes: the
+# clock is an input to synthesis, so resuming from floorplan measures the old
 # gates under the new period. See docs/guide.md, "Iterating without re-running
 # the whole flow".
 #
-# Without FROM the run starts empty: --overwrite removes the previous one.
-# LibreLane's default is to append to a run that exists, so a second `make gds`
-# used to leave two of every step directory under the same tag.
-#
-# With FROM the named step and every step after it are deleted first, and
-# LibreLane is handed the state that step was given last time (its
-# state_in.json, saved before the delete). Both halves are needed, and both
-# were measured on LibreLane 3.0.14: without --with-initial-state it loads the
-# state of the finished design and CTS crashes on it, and without the delete
-# the resumed steps are appended after the old ones. --last-run is not an
-# option here at all: it and --run-tag are mutually exclusive.
-FROM ?=
-RESUME_STATE := $(RUN_DIR)/resume_state.json
-ifeq ($(FROM),)
-	LIBRELANE_RUN = --overwrite
-else
-	LIBRELANE_RUN = --from $(FROM) --with-initial-state $(RESUME_STATE)
+# Measured on LibreLane 3.0.14: --last-run cannot be used here, because it and
+# --run-tag are mutually exclusive; the step is 'OpenROAD.Floorplan', not
+# 'floorplan'; and without --with-initial-state LibreLane starts from the state
+# of the finished design, and CTS crashes on it.
+ifeq ($(filter --from --from=% -F --only --only=%,$(LIBRELANE_ARGS)),)
+	LIBRELANE_OVERWRITE := --overwrite
 endif
 
 # Where the Sky130 PDK lives on the host. One copy is 3GB and every checkout
@@ -129,7 +121,8 @@ help:
 	@echo "  make distclean - Remove build/ and runs/"
 	@echo ""
 	@echo "  Re-run part of the flow after the first full one:"
-	@echo "    make gds FROM=OpenROAD.Floorplan"
+	@echo "    make gds LIBRELANE_ARGS=\"--from OpenROAD.Floorplan --with-initial-state <state_in.json>\""
+	@echo "    (see docs/guide.md, Iterating without re-running the whole flow)"
 
 # --- Logic Delegated to c4o-core ---
 
@@ -201,13 +194,6 @@ gds:
 	$(C4O_CMD) check
 
 	$(MAKE) pdk
-ifneq ($(FROM),)
-	@# The step's directory is LibreLane's ordinal plus its id in lower case
-	@# with dots as hyphens. Exactly one must match, or there is nothing sound
-	@# to resume: none means no run yet or a wrong id, and two means a run that
-	@# an older Makefile appended to. Checked before anything is deleted.
-	@set -e; 	slug=$$(printf '%s' '$(FROM)' | tr 'A-Z.' 'a-z-'); 	hit=$$(ls -d $(RUN_DIR)/[0-9]*-* 2>/dev/null | grep -E "/[0-9]+-$$slug\$$" || true); 	if [ "$$(printf '%s' "$$hit" | grep -c .)" -ne 1 ]; then 		echo "❌ [ERROR] FROM=$(FROM): the last run in $(RUN_DIR) has no such step."; 		echo "👉 FROM takes a LibreLane step id, for example OpenROAD.Floorplan."; 		echo "👉 Run 'make gds' without FROM first if there is no run yet. Its steps:"; 		ls $(RUN_DIR) 2>/dev/null | grep -E '^[0-9]+-' | sort -V | sed 's/^/     /'; 		exit 1; 	fi; 	first=$${hit##*/}; first=$${first%%-*}; 	cp "$$hit/state_in.json" $(RESUME_STATE); 	echo "🟢 Keeping the steps before $${hit##*/}, removing the rest..."; 	for d in $(RUN_DIR)/[0-9]*-*; do 		n=$${d##*/}; n=$${n%%-*}; 		if [ "$$n" -ge "$$first" ]; then rm -rf "$$d"; fi; 	done; 	rm -rf $(RUN_DIR)/final
-endif
 	@echo "🟢 Running LibreLane..."
 	mkdir -p build
 	docker run --rm \
@@ -218,11 +204,11 @@ endif
 		-u $(shell id -u):$(shell id -g) \
 		$(LIBRELANE_IMAGE) \
 		python3 -m librelane --manual-pdk --pdk-root /pdks \
-			$(LIBRELANE_RUN) $(LIBRELANE_ARGS) \
+			$(LIBRELANE_OVERWRITE) $(LIBRELANE_ARGS) \
 			--run-tag $(DESIGN_NAME)_run config.yaml
 	@echo "🟢 Post-processing..."
 	# Copy the final GDS to the build folder
-	cp $(RUN_DIR)/final/gds/$(DESIGN_NAME).gds build/$(DESIGN_NAME).gds
+	cp runs/$(DESIGN_NAME)_run/final/gds/$(DESIGN_NAME).gds build/$(DESIGN_NAME).gds
 	# runs/ stays where LibreLane put it. Moving it into build/ used to look
 	# tidier, and it silently broke resuming: LibreLane looks for the run under
 	# runs/, and there was never one there. c4o-core's report and gatesim

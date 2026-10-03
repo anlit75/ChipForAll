@@ -328,19 +328,23 @@ make gatesim   # 模擬它
 
 ## 不重跑整條流程的迭代方式
 
-floorplan 相關的參數（`FP_CORE_UTIL`、die 的大小、擺放）不需要重做合成。從 floorplan 恢復上次的執行：
+floorplan 相關的參數（`FP_CORE_UTIL`、die 的大小、擺放）不需要重做合成。用 LibreLane 自己的旗標，從 floorplan 恢復上次的執行：
 
 ```bash
-make gds FROM=OpenROAD.Floorplan
+make gds LIBRELANE_ARGS="--from OpenROAD.Floorplan --with-initial-state runs/blinky_run/13-openroad-floorplan/state_in.json"
 ```
 
-這個指令讀的是 `runs/` 裡上一次的執行結果。它保留 floorplan 之前的步驟，刪掉 floorplan 之後的步驟，再把那些步驟重跑一次。所以 `make clean` 會保留 `runs/`，只有 `make distclean` 會清掉它。
+`--from` 接的是 LibreLane 的 step id。`--with-initial-state` 接的是那個步驟在上次執行收到的狀態：那個步驟目錄裡的 `state_in.json`。沒有這個檔案，LibreLane 會從已經做完的設計開始，流程會失敗。`runs/<tag>/` 裡的目錄名稱就是小寫的 step id，所以你可以從任何一個步驟恢復。
 
-`FROM` 可以是 LibreLane 流程裡任何一個 step id，不只是 floorplan。`runs/<tag>/` 裡的步驟目錄就是用步驟名稱命名的：`13-openroad-floorplan` 是 `OpenROAD.Floorplan`，`35-openroad-cts` 是 `OpenROAD.CTS`。你必須知道你的修改影響哪些步驟。排在 `FROM` 之前的步驟不會重跑，所以看不到你的修改。
+這個指令讀的是 `runs/` 裡上一次的執行結果。所以 `make clean` 會保留 `runs/`，只有 `make distclean` 會清掉它。
 
-不加 `FROM` 的 `make gds` 是完整執行。它會先刪掉上一次的執行，所以 `runs/` 裡永遠只有一次執行。
+LibreLane 會把恢復後重跑的步驟接在舊步驟後面，編號接著往下排。恢復之後，每個重跑過的步驟在執行目錄裡會有兩個目錄，這份指南裡的 glob 兩個都會對到。編號比較大的那個是新的。
 
-**`CLOCK_PERIOD` 不在裡面。** 時脈是合成的輸入，合成會依它挑元件尺寸、插 buffer。從 floorplan 恢復的話，流程量到的是「**舊**週期合成出來的閘，在新週期下的時序」。這樣時序可能會收，但它對「你實際會拿到的那個設計」什麼都沒說。改時脈就要完整重跑 `make gds`，不加 `FROM`。[slack 為負值的時候](#slack-為負值的時候)那節叫你這樣做，原因就在這裡。
+不加 `--from` 的 `make gds` 是完整執行。它會先刪掉上一次的執行。
+
+你必須知道你的修改影響哪些步驟。排在 `--from` 之前的步驟不會重跑，所以看不到你的修改。
+
+**`CLOCK_PERIOD` 不在裡面。** 時脈是合成的輸入，合成會依它挑元件尺寸、插 buffer。從 floorplan 恢復的話，流程量到的是「**舊**週期合成出來的閘，在新週期下的時序」。這樣時序可能會收，但它對「你實際會拿到的那個設計」什麼都沒說。改時脈就要完整重跑 `make gds`，不加 `--from`。[slack 為負值的時候](#slack-為負值的時候)那節叫你這樣做，原因就在這裡。
 
 ## 看看電路長什麼樣
 
