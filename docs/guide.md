@@ -56,11 +56,11 @@ No other file names the design. The `Makefile` and the CI workflow both read `DE
 
 Three more things cause problems in a first design:
 
-*   **Delete the blinky files that you replace**: `src/blinky.v`, `test/tb_blinky.v`, `test/test_blinky_*.py`, `test/gate/tb_blinky_gl.v`. As an alternative, remove them from `config.yaml`. The test keys use globs such as `test/*.v`, so a blinky test file that is still in `test/` is still picked up. `VERILOG_FILES` names each file, so replace `src/blinky.v` there by name.
+*   **Delete the blinky files that you replace**: `src/blinky.v`, `test/tb_blinky.v`, `test/test_blinky_*.py`, `test/gate/tb_blinky_gl.v`. As an alternative, remove them from `config.yaml`. The test keys use globs such as `test/*.v`, so a blinky test file that is still in `test/` is still included. `VERILOG_FILES` names each file, so replace `src/blinky.v` there by name.
 *   **Start every RTL file with `` `timescale 1ns/1ps ``.** Without it, `make sim` still passes, because the Verilog testbench declares its own. But `make cocotb` fails with `Unable to accurately represent 10(ns)`.
 *   **Rewrite `"//DESCRIPTION"`** in `config.yaml`. If you do not, your results page says that the design is a clock divider that blinks an LED. Also change `"//WAVE_SIGNALS"` to the signals of your testbench. If you do not, `make site` stops at the first signal that the VCD does not declare.
 
-**Three of those keys are optional.** You can delete `"//COCOTB_TESTS"`, `"//GATE_TESTS"` or `"//WAVE_SIGNALS"` from `config.yaml`. Delete the key line *and* the indented paths below it. If you delete only the key line, the paths below it join the key above, or the file does not parse. CI then skips that type of test and does not fail. If you keep the key but it matches no files, CI fails. That is correct: you asked for tests that are not there.
+**Three of those keys are optional.** You can delete `"//COCOTB_TESTS"`, `"//GATE_TESTS"` or `"//WAVE_SIGNALS"` from `config.yaml`. Delete the key line *and* the indented paths below it. CI then skips that type of test and does not fail. If you delete only the key line, the paths below it join the key above, or the file does not parse. If you keep the key but it matches no files, CI fails. That is correct: you asked for tests that are not there.
 
 **A second Verilog testbench needs one more key.** `"//TEST_FILES"` accepts a glob. Icarus elaborates every module that no other module instantiates, and each one becomes a separate root. With more than one testbench, the first `$finish` then stops the full simulation, and the other testbenches never run. When more than one file matches, name the testbench that you want with `"//SIM_TOP"`.
 

@@ -56,11 +56,11 @@ LibreLane 不做**模擬與驗證**。這個起手式加上去的就是這兩樣
 
 第一次換設計時，還有三件事常造成問題：
 
-*   **刪掉被你取代的 blinky 檔案**：`src/blinky.v`、`test/tb_blinky.v`、`test/test_blinky_*.py`、`test/gate/tb_blinky_gl.v`。也可以改成把它們從 `config.yaml` 移除。測試用的 key 吃萬用字元，例如 `test/*.v`，所以還留在 `test/` 的 blinky 測試檔仍然會被抓進來。`VERILOG_FILES` 要逐一列出檔名，所以要在那裡用檔名取代 `src/blinky.v`。
+*   **刪掉被你取代的 blinky 檔案**：`src/blinky.v`、`test/tb_blinky.v`、`test/test_blinky_*.py`、`test/gate/tb_blinky_gl.v`。也可以改成把它們從 `config.yaml` 移除。測試用的 key 接受萬用字元，例如 `test/*.v`，所以還留在 `test/` 的 blinky 測試檔仍然會被包含進來。`VERILOG_FILES` 要逐一列出檔名，所以要在那裡用檔名取代 `src/blinky.v`。
 *   **每個 RTL 檔第一行寫 `` `timescale 1ns/1ps ``。** 少了它，`make sim` 照樣通過，因為 Verilog 測試平台自己有宣告。但 `make cocotb` 會失敗，訊息是 `Unable to accurately represent 10(ns)`。
 *   **改寫 `config.yaml` 的 `"//DESCRIPTION"`。** 不改的話，你的結果網頁會說這個設計是一個讓 LED 閃爍的時脈除頻器。`"//WAVE_SIGNALS"` 也要改成你測試平台裡的訊號。不改的話，`make site` 會停在第一個 VCD 裡沒有的訊號。
 
-**其中三個 key 是選用的。** 你可以把 `"//COCOTB_TESTS"`、`"//GATE_TESTS"` 或 `"//WAVE_SIGNALS"` 從 `config.yaml` 刪掉。key 那一行**和它下面縮排的路徑**要一起刪。如果只刪 key 那一行，它下面的路徑會併入上面的 key，不然就是檔案無法解析。刪掉之後，CI 會跳過那一類測試，不會失敗。如果把 key 留著卻對不到任何檔案，CI 會失敗。這是對的：你要求了不存在的測試。
+**其中三個 key 是選用的。** 你可以把 `"//COCOTB_TESTS"`、`"//GATE_TESTS"` 或 `"//WAVE_SIGNALS"` 從 `config.yaml` 刪掉。key 那一行**和它下面縮排的路徑**要一起刪。刪掉之後，CI 會跳過那一類測試，不會失敗。如果只刪 key 那一行，它下面的路徑會併入上面的 key，不然就是檔案無法解析。如果把 key 留著卻對不到任何檔案，CI 會失敗。這是對的：你要求了不存在的測試。
 
 **第二個 Verilog 測試平台要多一個 key。** `"//TEST_FILES"` 接受萬用字元。Icarus 會把每一個沒有被其他模組實例化的模組各自當成一個 root。所以第一個 `$finish` 就會結束整場模擬，其餘的測試平台根本沒跑。一旦對到超過一個檔案，就用 `"//SIM_TOP"` 指定你要的那一個測試平台。
 
