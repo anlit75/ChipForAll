@@ -328,15 +328,17 @@ Because `make gatesim` takes minutes, CI runs it on pushes and on `v*` tags, but
 
 ## Iterating without re-running the whole flow
 
-Floorplan parameters (`FP_CORE_UTIL`, the die, the placement) do not need a new synthesis. Give LibreLane the flags that resume the last run:
+Floorplan parameters (`FP_CORE_UTIL`, the die, the placement) do not need a new synthesis. Resume the last run from floorplan:
 
 ```bash
-make gds LIBRELANE_ARGS="--last-run --from floorplan"
+make gds FROM=floorplan
 ```
 
-That command reads the previous run from `runs/`. For this reason `make clean` keeps that directory, and only `make distclean` removes it.
+That command reads the previous run from `runs/`. It keeps the steps before floorplan, deletes the steps from floorplan on, and runs those again. For this reason `make clean` keeps `runs/`, and only `make distclean` removes it.
 
-**`CLOCK_PERIOD` is not one of them.** The clock is an input to synthesis, which sizes cells and inserts buffers for it. So if you resume from floorplan, the flow measures the gates that the *old* period produced against the new period. Timing can easily close that way and tell you nothing about the design that you would really get. A clock change needs a clean `make gds`. [When slack is negative](#when-slack-is-negative) tells you to run that, and this is the reason.
+`make gds` without `FROM` is a full run. It deletes the previous run first, so `runs/` always holds one run.
+
+**`CLOCK_PERIOD` is not one of them.** The clock is an input to synthesis, which sizes cells and inserts buffers for it. So if you resume from floorplan, the flow measures the gates that the *old* period produced against the new period. Timing can easily close that way and tell you nothing about the design that you would really get. A clock change needs a full `make gds`, without `FROM`. [When slack is negative](#when-slack-is-negative) tells you to run that, and this is the reason.
 
 ## Seeing the circuit
 

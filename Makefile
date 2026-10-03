@@ -17,19 +17,45 @@
 C4O_IMAGE := ghcr.io/anlit75/c4o-core:2.15
 LIBRELANE_IMAGE := ghcr.io/librelane/librelane:3.0.14
 
-# Extra flags for the LibreLane run. The reason this exists is iteration: a
-# full flow is three minutes, and most of what you change after the first one
-# -- FP_CORE_UTIL, the floorplan -- does not need synthesis redone. CLOCK_PERIOD
-# is not one of them: the clock is an input to synthesis, so resuming from
-# floorplan measures the old gates under the new period. See docs/guide.md,
-# "Iterating without re-running the whole flow".
-#
-#   make gds LIBRELANE_ARGS="--last-run --from floorplan"
-#
-# --last-run is why runs/ is left where LibreLane put it; see the gds target.
+# Extra flags for the LibreLane run, passed through as they are.
 LIBRELANE_ARGS ?=
 DESIGN_NAME := $(shell grep -E '^DESIGN_NAME:' config.yaml | sed -e 's/^DESIGN_NAME:[[:space:]]*//' -e 's/["'"'"']//g')
 PWD := $(shell pwd)
+
+# Where LibreLane keeps the run. One fixed tag, so every `make gds` leaves one
+# run here and `report`, `gatesim` and the globs in docs/guide.md read that one.
+RUN_DIR := runs/$(DESIGN_NAME)_run
+
+# Iteration: most of what you change after the first flow -- FP_CORE_UTIL, the
+# floorplan -- does not need synthesis redone.
+#
+#   make gds FROM=floorplan
+#
+# keeps the steps before floorplan and runs the rest again. CLOCK_PERIOD is not
+# one of those changes: the clock is an input to synthesis, so resuming from
+# floorplan measures the old gates under the new period. See docs/guide.md,
+# "Iterating without re-running the whole flow".
+#
+# Without FROM the run starts empty: --overwrite removes the previous one.
+# LibreLane's default is to append to a run that exists, so a second `make gds`
+# used to leave two of every step directory under the same tag.
+#
+# With FROM the steps from floorplan on are deleted first, and LibreLane is
+# handed the state the last remaining step wrote. Both halves are needed, and
+# both were measured on LibreLane 3.0.14: without --with-initial-state it loads
+# the state of the finished design and CTS crashes on it, and without the
+# delete the resumed steps are appended after the old ones. --last-run is not
+# an option here at all -- it and --run-tag are mutually exclusive -- and the
+# step is 'OpenROAD.Floorplan', not 'floorplan'.
+FROM ?=
+ifeq ($(FROM),)
+	LIBRELANE_RUN = --overwrite
+else ifeq ($(FROM),floorplan)
+	LIBRELANE_RUN = --from OpenROAD.Floorplan \
+		--with-initial-state $$(ls -d $(RUN_DIR)/[0-9]*-* | sort -V | tail -n 1)/state_out.json
+else
+    $(error FROM=$(FROM) is not supported. The one resume point is FROM=floorplan)
+endif
 
 # Where the Sky130 PDK lives on the host. One copy is 3GB and every checkout
 # needs the same one, so a machine with several -- a lab, a teaching account --
@@ -103,7 +129,7 @@ help:
 	@echo "  make distclean - Remove build/ and runs/"
 	@echo ""
 	@echo "  Re-run part of the flow after the first full one:"
-	@echo "    make gds LIBRELANE_ARGS=\"--last-run --from floorplan\""
+	@echo "    make gds FROM=floorplan"
 
 # --- Logic Delegated to c4o-core ---
 
@@ -175,6 +201,24 @@ gds:
 	$(C4O_CMD) check
 
 	$(MAKE) pdk
+ifeq ($(FROM),floorplan)
+	@# Exactly one floorplan step, or there is nothing sound to resume: none
+	@# means no run yet, two means a run that an older Makefile appended to.
+	@set -e; \
+	fp=$$(ls -d $(RUN_DIR)/[0-9]*-openroad-floorplan 2>/dev/null || true); \
+	if [ "$$(printf '%s' "$$fp" | grep -c .)" -ne 1 ]; then \
+		echo "❌ [ERROR] FROM=floorplan needs one finished run in $(RUN_DIR)."; \
+		echo "👉 Run 'make gds' without FROM first."; \
+		exit 1; \
+	fi; \
+	first=$${fp##*/}; first=$${first%%-*}; \
+	echo "🟢 Keeping the steps before $${fp##*/}, removing the rest..."; \
+	for d in $(RUN_DIR)/[0-9]*-*; do \
+		n=$${d##*/}; n=$${n%%-*}; \
+		if [ "$$n" -ge "$$first" ]; then rm -rf "$$d"; fi; \
+	done; \
+	rm -rf $(RUN_DIR)/final
+endif
 	@echo "🟢 Running LibreLane..."
 	mkdir -p build
 	docker run --rm \
@@ -185,15 +229,15 @@ gds:
 		-u $(shell id -u):$(shell id -g) \
 		$(LIBRELANE_IMAGE) \
 		python3 -m librelane --manual-pdk --pdk-root /pdks \
-			$(LIBRELANE_ARGS) \
+			$(LIBRELANE_RUN) $(LIBRELANE_ARGS) \
 			--run-tag $(DESIGN_NAME)_run config.yaml
 	@echo "🟢 Post-processing..."
 	# Copy the final GDS to the build folder
-	cp runs/$(DESIGN_NAME)_run/final/gds/$(DESIGN_NAME).gds build/$(DESIGN_NAME).gds
+	cp $(RUN_DIR)/final/gds/$(DESIGN_NAME).gds build/$(DESIGN_NAME).gds
 	# runs/ stays where LibreLane put it. Moving it into build/ used to look
-	# tidier, and it silently broke --last-run: LibreLane looks for a previous
-	# run in runs/, and there was never one there. c4o-core's report and
-	# gatesim already search both locations, so nothing else cared.
+	# tidier, and it silently broke resuming: LibreLane looks for the run under
+	# runs/, and there was never one there. c4o-core's report and gatesim
+	# already search both locations, so nothing else cared.
 
 	@# The flow just measured area, timing and power. Show them rather than
 	@# leaving them in a 300-key metrics.json under runs/.

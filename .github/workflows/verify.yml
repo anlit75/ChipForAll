@@ -499,6 +499,42 @@ jobs:
           grep -qF "/commit/$GITHUB_SHA" build/site/index.html \
             || { echo "::error::The results page does not link commit $GITHUB_SHA. make site has to pass GITHUB_* into the container."; exit 1; }
 
+      # docs/guide.md, "Iterating without re-running the whole flow", gives one
+      # command for resuming from floorplan. Nothing ran the command it used to
+      # give, and it had stopped working three separate ways with every other
+      # step here green. So run it, and check the two things that paragraph
+      # promises: synthesis is not redone, and the run directory is left with
+      # one of each step -- which is what the report globs in the guide and the
+      # steps above rely on.
+      #
+      # Last among the flow steps, so a failure here does not hide theirs.
+      - name: Resuming from floorplan works, as the guide says it does
+        run: |
+          shopt -s nullglob
+          netlists=(runs/*/*-yosys-synthesis/*.nl.v)
+          if [ ${#netlists[@]} -ne 1 ]; then
+            echo "::error::Expected one synthesised netlist under runs/ before resuming, found ${#netlists[@]}."
+            exit 1
+          fi
+          before=$(stat -c %Y "${netlists[0]}")
+
+          make gds FROM=floorplan
+
+          after=$(stat -c %Y "${netlists[0]}")
+          if [ "$before" != "$after" ]; then
+            echo "::error::The guide says make gds FROM=floorplan does not redo synthesis. ${netlists[0]} was rewritten."
+            exit 1
+          fi
+          for step in yosys-synthesis openroad-floorplan openroad-stapostpnr; do
+            dirs=(runs/*/*-"$step")
+            if [ ${#dirs[@]} -ne 1 ]; then
+              echo "::error::The guide says a resumed run has one of each step. Found ${#dirs[@]} '$step' directories:"
+              printf '  %s\n' "${dirs[@]}"
+              exit 1
+            fi
+          done
+          echo "  resumed from floorplan: synthesis kept, one of each step"
+
       # Only main is published, and only when the repository has Pages set to
       # "GitHub Actions". A copy of this template starts with Pages off, and
       # turning it on is a setting no workflow token can change -- so off is

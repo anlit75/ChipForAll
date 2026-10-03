@@ -328,15 +328,17 @@ make gatesim   # 模擬它
 
 ## 不重跑整條流程的迭代方式
 
-floorplan 相關的參數（`FP_CORE_UTIL`、die 的大小、擺放）不需要重做合成。把恢復上次執行的旗標傳給 LibreLane：
+floorplan 相關的參數（`FP_CORE_UTIL`、die 的大小、擺放）不需要重做合成。從 floorplan 恢復上次的執行：
 
 ```bash
-make gds LIBRELANE_ARGS="--last-run --from floorplan"
+make gds FROM=floorplan
 ```
 
-這個指令讀的是 `runs/` 裡上一次的執行結果。所以 `make clean` 會保留那個目錄，只有 `make distclean` 會清掉它。
+這個指令讀的是 `runs/` 裡上一次的執行結果。它保留 floorplan 之前的步驟，刪掉 floorplan 之後的步驟，再把那些步驟重跑一次。所以 `make clean` 會保留 `runs/`，只有 `make distclean` 會清掉它。
 
-**`CLOCK_PERIOD` 不在裡面。** 時脈是合成的輸入，合成會依它挑元件尺寸、插 buffer。從 floorplan 恢復的話，流程量到的是「**舊**週期合成出來的閘，在新週期下的時序」。這樣時序可能會收，但它對「你實際會拿到的那個設計」什麼都沒說。改時脈就要乾淨重跑 `make gds`。[slack 為負值的時候](#slack-為負值的時候)那節叫你這樣做，原因就在這裡。
+不加 `FROM` 的 `make gds` 是完整執行。它會先刪掉上一次的執行，所以 `runs/` 裡永遠只有一次執行。
+
+**`CLOCK_PERIOD` 不在裡面。** 時脈是合成的輸入，合成會依它挑元件尺寸、插 buffer。從 floorplan 恢復的話，流程量到的是「**舊**週期合成出來的閘，在新週期下的時序」。這樣時序可能會收，但它對「你實際會拿到的那個設計」什麼都沒說。改時脈就要完整重跑 `make gds`，不加 `FROM`。[slack 為負值的時候](#slack-為負值的時候)那節叫你這樣做，原因就在這裡。
 
 ## 看看電路長什麼樣
 
