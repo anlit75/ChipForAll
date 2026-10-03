@@ -328,15 +328,23 @@ Because `make gatesim` takes minutes, CI runs it on pushes and on `v*` tags, but
 
 ## Iterating without re-running the whole flow
 
-Floorplan parameters (`FP_CORE_UTIL`, the die, the placement) do not need a new synthesis. Give LibreLane the flags that resume the last run:
+Floorplan parameters (`FP_CORE_UTIL`, the die, the placement) do not need a new synthesis. Resume the last run from floorplan with LibreLane's own flags:
 
 ```bash
-make gds LIBRELANE_ARGS="--last-run --from floorplan"
+make gds LIBRELANE_ARGS="--from OpenROAD.Floorplan --with-initial-state runs/blinky_run/13-openroad-floorplan/state_in.json"
 ```
 
-That command reads the previous run from `runs/`. For this reason `make clean` keeps that directory, and only `make distclean` removes it.
+`--from` takes the id of a LibreLane step. `--with-initial-state` takes the state that the step received in the last run: the `state_in.json` in the directory of that step. Without that file, LibreLane starts from the finished design, and the flow fails. The directory names in `runs/<tag>/` are the step ids in lower case, so you can resume from any step.
 
-**`CLOCK_PERIOD` is not one of them.** The clock is an input to synthesis, which sizes cells and inserts buffers for it. So if you resume from floorplan, the flow measures the gates that the *old* period produced against the new period. Timing can easily close that way and tell you nothing about the design that you would really get. A clock change needs a clean `make gds`. [When slack is negative](#when-slack-is-negative) tells you to run that, and this is the reason.
+That command reads the previous run from `runs/`. For this reason `make clean` keeps `runs/`, and only `make distclean` removes it.
+
+LibreLane adds the resumed steps after the old steps and continues the numbers. After a resume, the run directory has two directories for each resumed step, and the globs in this guide match both. The directory with the larger number is the new one.
+
+`make gds` without `--from` is a full run. It deletes the previous run first.
+
+You must know which steps your change affects. A step that is before your `--from` step does not run again, so it does not see the change.
+
+**`CLOCK_PERIOD` is not one of them.** The clock is an input to synthesis, which sizes cells and inserts buffers for it. So if you resume from floorplan, the flow measures the gates that the *old* period produced against the new period. Timing can easily close that way and tell you nothing about the design that you would really get. A clock change needs a full `make gds`, without `--from`. [When slack is negative](#when-slack-is-negative) tells you to run that, and this is the reason.
 
 ## Seeing the circuit
 
