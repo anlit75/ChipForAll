@@ -2,7 +2,7 @@
 
 # ChipForAll
 
-**Verify your chip design as a professional team does. Use open-source tools and one command.**
+**A template for chip designs that prove they work. Open-source tools, one command.**
 
 Write Verilog. Prove that it works with tests that can fail. Get a real chip layout and a results page on every commit. One Docker image contains every EDA tool, and you install none of them.
 
