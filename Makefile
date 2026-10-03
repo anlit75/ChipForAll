@@ -29,32 +29,32 @@ RUN_DIR := runs/$(DESIGN_NAME)_run
 # Iteration: most of what you change after the first flow -- FP_CORE_UTIL, the
 # floorplan -- does not need synthesis redone.
 #
-#   make gds FROM=floorplan
+#   make gds FROM=OpenROAD.Floorplan
 #
-# keeps the steps before floorplan and runs the rest again. CLOCK_PERIOD is not
-# one of those changes: the clock is an input to synthesis, so resuming from
-# floorplan measures the old gates under the new period. See docs/guide.md,
-# "Iterating without re-running the whole flow".
+# keeps the steps before floorplan and runs the rest again. FROM takes any step
+# id of the LibreLane flow; the step directories under runs/ are named after
+# them. Which step is safe depends on what you changed: CLOCK_PERIOD is an input
+# to synthesis, so resuming from floorplan after changing it measures the old
+# gates under the new period. See docs/guide.md, "Iterating without re-running
+# the whole flow".
 #
 # Without FROM the run starts empty: --overwrite removes the previous one.
 # LibreLane's default is to append to a run that exists, so a second `make gds`
 # used to leave two of every step directory under the same tag.
 #
-# With FROM the steps from floorplan on are deleted first, and LibreLane is
-# handed the state the last remaining step wrote. Both halves are needed, and
-# both were measured on LibreLane 3.0.14: without --with-initial-state it loads
-# the state of the finished design and CTS crashes on it, and without the
-# delete the resumed steps are appended after the old ones. --last-run is not
-# an option here at all -- it and --run-tag are mutually exclusive -- and the
-# step is 'OpenROAD.Floorplan', not 'floorplan'.
+# With FROM the named step and every step after it are deleted first, and
+# LibreLane is handed the state that step was given last time (its
+# state_in.json, saved before the delete). Both halves are needed, and both
+# were measured on LibreLane 3.0.14: without --with-initial-state it loads the
+# state of the finished design and CTS crashes on it, and without the delete
+# the resumed steps are appended after the old ones. --last-run is not an
+# option here at all: it and --run-tag are mutually exclusive.
 FROM ?=
+RESUME_STATE := $(RUN_DIR)/resume_state.json
 ifeq ($(FROM),)
 	LIBRELANE_RUN = --overwrite
-else ifeq ($(FROM),floorplan)
-	LIBRELANE_RUN = --from OpenROAD.Floorplan \
-		--with-initial-state $$(ls -d $(RUN_DIR)/[0-9]*-* | sort -V | tail -n 1)/state_out.json
 else
-    $(error FROM=$(FROM) is not supported. The one resume point is FROM=floorplan)
+	LIBRELANE_RUN = --from $(FROM) --with-initial-state $(RESUME_STATE)
 endif
 
 # Where the Sky130 PDK lives on the host. One copy is 3GB and every checkout
@@ -129,7 +129,7 @@ help:
 	@echo "  make distclean - Remove build/ and runs/"
 	@echo ""
 	@echo "  Re-run part of the flow after the first full one:"
-	@echo "    make gds FROM=floorplan"
+	@echo "    make gds FROM=OpenROAD.Floorplan"
 
 # --- Logic Delegated to c4o-core ---
 
@@ -201,23 +201,12 @@ gds:
 	$(C4O_CMD) check
 
 	$(MAKE) pdk
-ifeq ($(FROM),floorplan)
-	@# Exactly one floorplan step, or there is nothing sound to resume: none
-	@# means no run yet, two means a run that an older Makefile appended to.
-	@set -e; \
-	fp=$$(ls -d $(RUN_DIR)/[0-9]*-openroad-floorplan 2>/dev/null || true); \
-	if [ "$$(printf '%s' "$$fp" | grep -c .)" -ne 1 ]; then \
-		echo "❌ [ERROR] FROM=floorplan needs one finished run in $(RUN_DIR)."; \
-		echo "👉 Run 'make gds' without FROM first."; \
-		exit 1; \
-	fi; \
-	first=$${fp##*/}; first=$${first%%-*}; \
-	echo "🟢 Keeping the steps before $${fp##*/}, removing the rest..."; \
-	for d in $(RUN_DIR)/[0-9]*-*; do \
-		n=$${d##*/}; n=$${n%%-*}; \
-		if [ "$$n" -ge "$$first" ]; then rm -rf "$$d"; fi; \
-	done; \
-	rm -rf $(RUN_DIR)/final
+ifneq ($(FROM),)
+	@# The step's directory is LibreLane's ordinal plus its id in lower case
+	@# with dots as hyphens. Exactly one must match, or there is nothing sound
+	@# to resume: none means no run yet or a wrong id, and two means a run that
+	@# an older Makefile appended to. Checked before anything is deleted.
+	@set -e; 	slug=$$(printf '%s' '$(FROM)' | tr 'A-Z.' 'a-z-'); 	hit=$$(ls -d $(RUN_DIR)/[0-9]*-* 2>/dev/null | grep -E "/[0-9]+-$$slug\$$" || true); 	if [ "$$(printf '%s' "$$hit" | grep -c .)" -ne 1 ]; then 		echo "❌ [ERROR] FROM=$(FROM): the last run in $(RUN_DIR) has no such step."; 		echo "👉 FROM takes a LibreLane step id, for example OpenROAD.Floorplan."; 		echo "👉 Run 'make gds' without FROM first if there is no run yet. Its steps:"; 		ls $(RUN_DIR) 2>/dev/null | grep -E '^[0-9]+-' | sort -V | sed 's/^/     /'; 		exit 1; 	fi; 	first=$${hit##*/}; first=$${first%%-*}; 	cp "$$hit/state_in.json" $(RESUME_STATE); 	echo "🟢 Keeping the steps before $${hit##*/}, removing the rest..."; 	for d in $(RUN_DIR)/[0-9]*-*; do 		n=$${d##*/}; n=$${n%%-*}; 		if [ "$$n" -ge "$$first" ]; then rm -rf "$$d"; fi; 	done; 	rm -rf $(RUN_DIR)/final
 endif
 	@echo "🟢 Running LibreLane..."
 	mkdir -p build

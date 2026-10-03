@@ -518,11 +518,11 @@ jobs:
           fi
           before=$(stat -c %Y "${netlists[0]}")
 
-          make gds FROM=floorplan
+          make gds FROM=OpenROAD.Floorplan
 
           after=$(stat -c %Y "${netlists[0]}")
           if [ "$before" != "$after" ]; then
-            echo "::error::The guide says make gds FROM=floorplan does not redo synthesis. ${netlists[0]} was rewritten."
+            echo "::error::The guide says make gds FROM=OpenROAD.Floorplan does not redo synthesis. ${netlists[0]} was rewritten."
             exit 1
           fi
           for step in yosys-synthesis openroad-floorplan openroad-stapostpnr; do

@@ -331,10 +331,12 @@ Because `make gatesim` takes minutes, CI runs it on pushes and on `v*` tags, but
 Floorplan parameters (`FP_CORE_UTIL`, the die, the placement) do not need a new synthesis. Resume the last run from floorplan:
 
 ```bash
-make gds FROM=floorplan
+make gds FROM=OpenROAD.Floorplan
 ```
 
 That command reads the previous run from `runs/`. It keeps the steps before floorplan, deletes the steps from floorplan on, and runs those again. For this reason `make clean` keeps `runs/`, and only `make distclean` removes it.
+
+`FROM` takes any step id of the LibreLane flow, not only floorplan. The step directories in `runs/<tag>/` have the names of the steps: `13-openroad-floorplan` is `OpenROAD.Floorplan`, and `35-openroad-cts` is `OpenROAD.CTS`. You must know which steps your change affects. A step that is before your `FROM` step does not run again, so it does not see the change.
 
 `make gds` without `FROM` is a full run. It deletes the previous run first, so `runs/` always holds one run.
 

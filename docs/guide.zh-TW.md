@@ -331,10 +331,12 @@ make gatesim   # 模擬它
 floorplan 相關的參數（`FP_CORE_UTIL`、die 的大小、擺放）不需要重做合成。從 floorplan 恢復上次的執行：
 
 ```bash
-make gds FROM=floorplan
+make gds FROM=OpenROAD.Floorplan
 ```
 
 這個指令讀的是 `runs/` 裡上一次的執行結果。它保留 floorplan 之前的步驟，刪掉 floorplan 之後的步驟，再把那些步驟重跑一次。所以 `make clean` 會保留 `runs/`，只有 `make distclean` 會清掉它。
+
+`FROM` 可以是 LibreLane 流程裡任何一個 step id，不只是 floorplan。`runs/<tag>/` 裡的步驟目錄就是用步驟名稱命名的：`13-openroad-floorplan` 是 `OpenROAD.Floorplan`，`35-openroad-cts` 是 `OpenROAD.CTS`。你必須知道你的修改影響哪些步驟。排在 `FROM` 之前的步驟不會重跑，所以看不到你的修改。
 
 不加 `FROM` 的 `make gds` 是完整執行。它會先刪掉上一次的執行，所以 `runs/` 裡永遠只有一次執行。
 
