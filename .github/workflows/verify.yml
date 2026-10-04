@@ -233,7 +233,7 @@ jobs:
             -u "$(id -u):$(id -g)" "$image" sim
           echo "  sim accepted always_ff and logic"
 
-      # Lint, the Verilog testbench, the Python (cocotb) testbenches when
+      # Lint, the Verilog testbench and the Python (cocotb) testbenches when
       # config.yaml asks for them, synthesis and the schematic.
       - name: Fast checks
         uses: anlit75/c4o-core/actions/checks@v2
@@ -241,10 +241,14 @@ jobs:
       # Template only.
       # README's quick start has the reader change count[WIDTH-1] to
       # count[WIDTH-2] in src/blinky.v, run `make all`, and see it stop on a
-      # FATAL line it quotes word for word. Make that edit here and check the
-      # run still fails, and fails with that line. Only while src/blinky.v is
-      # the example the README describes: a copy of this template with its own
-      # design has nothing to break this way, and must not go red for it.
+      # line it quotes word for word. Make that edit here and check the run
+      # still fails, and fails with that line. The line is read from README.md,
+      # so the two cannot drift apart. Only while src/blinky.v is the example
+      # the README describes: a copy of this template with its own design has
+      # nothing to break this way, and must not go red for it.
+      #
+      # The broken run rewrites build/ with its own cocotb verdict and
+      # waveform, which the results page reads. build/ is put back afterwards.
       - name: The bug the README breaks on purpose is caught
         if: env.IS_TEMPLATE == 'true'
         run: |
@@ -252,12 +256,20 @@ jobs:
             echo "::notice::src/blinky.v is not the README's example; nothing to break."
             exit 0
           fi
-          expected='FATAL: test/tb_blinky.v:58: led held for 4 cycles at cycle 4, expected 8'
+          expected=$(grep -m1 -F '[ERROR] cocotb tests failed:' README.md || true)
+          if [ -z "$expected" ]; then
+            echo "::error::README.md quotes no '[ERROR] cocotb tests failed:' line for the broken src/blinky.v."
+            exit 1
+          fi
           log="$RUNNER_TEMP/break.log"
+          rm -rf "$RUNNER_TEMP/build.kept"
+          cp -a build "$RUNNER_TEMP/build.kept"
           sed -i 's/count\[WIDTH-1\]/count[WIDTH-2]/' src/blinky.v
           status=0
           make all > "$log" 2>&1 || status=$?
           git checkout -- src/blinky.v
+          rm -rf build
+          cp -a "$RUNNER_TEMP/build.kept" build
           cat "$log"
           if [ "$status" -eq 0 ]; then
             echo "::error::README says breaking src/blinky.v makes make all fail. It passed."

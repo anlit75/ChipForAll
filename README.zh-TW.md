@@ -57,10 +57,10 @@ make all
 **接著故意把它改壞。** 這一步是版圖工具做不到的。把 `src/blinky.v` 裡的 `count[WIDTH-1]` 改成 `count[WIDTH-2]`。LED 的閃爍會快一倍。再跑一次 `make all`：
 
 ```
-FATAL: test/tb_blinky.v:58: led held for 4 cycles at cycle 4, expected 8
+[ERROR] cocotb tests failed: led_rises_half_a_period_after_reset, led_toggles_with_a_full_period, reset_in_the_middle_restarts_the_count, random_resets_match_the_model
 ```
 
-測試會指出是哪一行、看到什麼值、預期什麼值。`make` 回傳非零，所以 CI 也會失敗。用 `git checkout -- src/blinky.v` 還原。[幫你的設計寫這種測試 →](docs/guide.zh-TW.md#幫你自己的設計寫測試平台)
+最後一行指出哪些測試失敗。它上面，每個失敗的測試會印出自己的訊息。`make` 回傳非零，所以 CI 也會失敗。用 `git checkout -- src/blinky.v` 還原。[幫你的設計寫這種測試 →](docs/guide.zh-TW.md#幫你自己的設計寫測試平台)
 
 **3. 做出版圖**（約 3 分鐘。第一次還要下載 3 GB 的 PDK，另外約 20 分鐘）：
 
@@ -73,12 +73,12 @@ make gds
 ```
   blinky
 
-  die              69.5 x 80.2 um  (5573 um^2)
-  utilization      57.1%
-  standard cells   198
-  setup slack      +4.70 ns  (0 violations)
+  die              56.375 x 67.095 um  (3782.48 um^2)
+  utilization      56.6%
+  standard cells   113
+  setup slack      +5.52 ns  (0 violations)
   hold slack       +0.11 ns  (0 violations)
-  power            0.248 mW  (nom_tt_025C_1v80)
+  power            0.143 mW  (nom_tt_025C_1v80)
   signoff          clean  (Magic DRC, KLayout DRC, LVS, antenna, XOR)
   lint warnings    0
   layout           runs/blinky_run/final/render/blinky.png
@@ -96,7 +96,7 @@ make gds
 
 | 指令 | 做什麼 |
 |---|---|
-| `make all` | Lint、模擬、cocotb、合成：幾秒內跑完的所有步驟 |
+| `make all` | Lint、你的測試、合成：幾秒內跑完的所有步驟 |
 | `make gds` | 完整 RTL 到 GDSII 流程，最後印出上面的摘要 |
 | `make gatesim` | 在閘級電路上重跑你的測試（`make gds` 之後） |
 | `make report` | 不重跑，再印一次摘要 |
@@ -107,7 +107,7 @@ make gds
 
 ## ✍️ 換成你的設計
 
-刪掉 blinky 的檔案。Verilog 放 `src/`，測試放 `test/`。在 `config.yaml` 列出它們，並把 `DESIGN_NAME` 設成你的頂層模組。其他資料 `Makefile` 和 CI 都從那個檔案讀。[必須一致的五件事 →](docs/guide.zh-TW.md#換成你自己的設計)
+刪掉 blinky 的檔案。Verilog 放 `src/`，測試放 `test/`。在 `config.yaml` 列出它們，並把 `DESIGN_NAME` 設成你的頂層模組。其他資料 `Makefile` 和 CI 都從那個檔案讀。[必須一致的四件事 →](docs/guide.zh-TW.md#換成你自己的設計)
 
 ## 適合誰
 

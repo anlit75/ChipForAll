@@ -31,37 +31,27 @@ VERILOG_FILES:
 #
 # Globs do work on the '//' keys, here and below: they are c4o-core's, and only
 # LibreLane's own keys are held to literal paths.
-"//TEST_FILES":
-  - dir::test/*.v
-
-# Python testbenches, run by `make cocotb`. An alternative to TEST_FILES above,
-# not a replacement: same simulator underneath, driven from Python instead of
-# Verilog. See test/test_blinky_cocotb.py.
+#
+# Python testbenches, run by `make cocotb` on the RTL and again by `make
+# gatesim` on the netlist the GDS flow produced. They touch only the ports, so
+# the same files work on both. See test/test_blinky_cocotb.py.
 "//COCOTB_TESTS":
   - dir::test/*.py
-
-# Gate-level simulation, run by `make gatesim` against the netlist the GDS flow
-# produced. It lives in its own directory because the glob above is what `make
-# sim` runs, and the two testbenches are not interchangeable: synthesis resolves
-# parameters, so the gate-level one cannot shrink the design the way the RTL one
-# does. See test/gate/tb_blinky_gl.v.
-"//GATE_TESTS":
-  - dir::test/gate/*.v
 
 # One line under the title of the results page (`make site`) and in its link
 # preview when the page is shared. Say what your design is; this one describes
 # the example, so replace it along with src/blinky.v.
 "//DESCRIPTION": "A clock divider that blinks an LED: the ChipForAll example, from RTL to GDS."
 
-# Signals the results page (`make site`) draws from `make sim`'s VCD, named
-# from the testbench top down. They name tb_blinky, so replacing the testbench
-# means replacing these too: a name the VCD does not declare fails `make site`.
-# Delete the key and its lines to have no waveform instead.
+# Signals the results page (`make site`) draws from the VCD of `make cocotb`.
+# The names start at the design top, blinky, because the cocotb run dumps them.
+# A name the VCD does not declare fails `make site`. Delete the key and its
+# lines to have no waveform instead.
 "//WAVE_SIGNALS":
-  - tb_blinky.clk
-  - tb_blinky.rst
-  - tb_blinky.uut.count
-  - tb_blinky.led
+  - blinky.clk
+  - blinky.rst
+  - blinky.count
+  - blinky.led
 
 CLOCK_PORT: clk
 CLOCK_PERIOD: 10.0

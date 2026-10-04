@@ -57,10 +57,10 @@ make all
 **Now break it on purpose.** A layout tool cannot do this part for you. In `src/blinky.v`, change `count[WIDTH-1]` to `count[WIDTH-2]`. The LED now blinks twice as fast. Run `make all` again:
 
 ```
-FATAL: test/tb_blinky.v:58: led held for 4 cycles at cycle 4, expected 8
+[ERROR] cocotb tests failed: led_rises_half_a_period_after_reset, led_toggles_with_a_full_period, reset_in_the_middle_restarts_the_count, random_resets_match_the_model
 ```
 
-The test gives the line, the value it saw and the value it expected. `make` exits non-zero, so CI also fails. Undo the change with `git checkout -- src/blinky.v`. [Writing tests like this for your design →](docs/guide.md#writing-a-testbench-for-your-own-design)
+The last line names the failing tests. Above it, each failing test prints its message. `make` exits non-zero, so CI also fails. Undo the change with `git checkout -- src/blinky.v`. [Writing tests like this for your design →](docs/guide.md#writing-a-testbench-for-your-own-design)
 
 **3. Build the layout** (about 3 minutes, and about 20 minutes more on a first run for the 3 GB PDK download):
 
@@ -73,12 +73,12 @@ At the end, it tells you what it built:
 ```
   blinky
 
-  die              69.5 x 80.2 um  (5573 um^2)
-  utilization      57.1%
-  standard cells   198
-  setup slack      +4.70 ns  (0 violations)
+  die              56.375 x 67.095 um  (3782.48 um^2)
+  utilization      56.6%
+  standard cells   113
+  setup slack      +5.52 ns  (0 violations)
   hold slack       +0.11 ns  (0 violations)
-  power            0.248 mW  (nom_tt_025C_1v80)
+  power            0.143 mW  (nom_tt_025C_1v80)
   signoff          clean  (Magic DRC, KLayout DRC, LVS, antenna, XOR)
   lint warnings    0
   layout           runs/blinky_run/final/render/blinky.png
@@ -96,7 +96,7 @@ Turn it on once: **Settings → Pages → Source: GitHub Actions**. Build the pa
 
 | Command | What it does |
 |---|---|
-| `make all` | Lint, simulation, cocotb and synthesis: all the steps that take seconds |
+| `make all` | Lint, your tests and synthesis: all the steps that take seconds |
 | `make gds` | Full RTL-to-GDSII flow, then the summary above |
 | `make gatesim` | Your tests again, on the gates (after `make gds`) |
 | `make report` | The summary again, with no new run |
@@ -107,7 +107,7 @@ Turn it on once: **Settings → Pages → Source: GitHub Actions**. Build the pa
 
 ## ✍️ Make it your design
 
-Delete the blinky files. Put your Verilog in `src/` and your tests in `test/`. List them in `config.yaml`, and set `DESIGN_NAME` to your top module. The `Makefile` and CI read all other data from `config.yaml`. [The five things that must agree →](docs/guide.md#making-it-your-design)
+Delete the blinky files. Put your Verilog in `src/` and your tests in `test/`. List them in `config.yaml`, and set `DESIGN_NAME` to your top module. The `Makefile` and CI read all other data from `config.yaml`. [The four things that must agree →](docs/guide.md#making-it-your-design)
 
 ## Who it is for
 

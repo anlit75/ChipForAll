@@ -24,17 +24,17 @@ LibreLane 不做**模擬與驗證**。這個起手式加上去的就是這兩樣
 
 流程的形狀一樣，詞彙也轉得過去。但職缺條列的是商用工具，所以履歷上要講清楚你用的是哪一套。
 
-**在找一個完整的驗證範例嗎？** 這個 repo 的測試是一份 Verilog 測試平台加兩份 cocotb 測試平台。它們足以示範「一個會失敗的測試長什麼樣」。它們不是一套分層的驗證環境。[c4o-pyuvm](https://github.com/anlit75/c4o-pyuvm) 才是：一個跑在真實 UART 上的 pyuvm 環境，從這個模板建出來。它有 agent、driver、monitor、scoreboard，以及從 SystemRDL 生成的暫存器模型。
+**在找一個完整的驗證範例嗎？** 這個 repo 的測試是兩份 cocotb 測試平台。它們足以示範「一個會失敗的測試長什麼樣」。它們不是一套分層的驗證環境。[c4o-pyuvm](https://github.com/anlit75/c4o-pyuvm) 才是：一個跑在真實 UART 上的 pyuvm 環境，從這個模板建出來。它有 agent、driver、monitor、scoreboard，以及從 SystemRDL 生成的暫存器模型。
 
 **這裡做出來的東西你可以公開。** 製程是 [Sky130](https://github.com/google/skywater-pdk)，SkyWater 用 Apache 2.0 開放出來的 PDK，沒有 NDA。版圖、面積、時序數字和 GDS 全都能放進 GitHub、作品集或文章裡。foundry 在保密條款下給的 PDK 不允許這些事。所以有那種 PDK 的人會來這裡做第二份可以公開的結果。從來沒有過那種 PDK 的人，也是在這裡才有結果可做。
 
 ## 開始之前
 
-**在 Apple Silicon 上，有一部分會走模擬。** c4o-core 的映像檔只建 `amd64`（一台 runner、沒有 `platforms:`）。所以在 `arm64` 機器上，`lint`、`sim`、`cocotb`、`synth` 和 `gatesim` 是透過模擬跑的。`make gds` 不是。它最重的那一步跑的是 LibreLane 自己的映像檔，而那個映像檔有出 `arm64`，所以那一步是原生的。
+**在 Apple Silicon 上，有一部分會走模擬。** c4o-core 的映像檔只建 `amd64`（一台 runner、沒有 `platforms:`）。所以在 `arm64` 機器上，`lint`、`cocotb`、`gatesim` 和 `synth` 是透過模擬跑的。加了 Verilog 測試平台之後，`sim` 也是。`make gds` 不是。它最重的那一步跑的是 LibreLane 自己的映像檔，而那個映像檔有出 `arm64`，所以那一步是原生的。
 
 被模擬的那幾個指令會慢多少，這裡沒有量過。Codespace 全程都是 `amd64`。
 
-**有一個前置條件不是下載就有的：一點 Verilog。** 不用多。看得懂一個 `always @(posedge clk)` 區塊、一個 `<=` 指定和一個 `$fatal` 就夠。在 [HDLBits](https://hdlbits.01xz.net/) 上大約是 *Verilog Language* 那一段，不是整個網站。
+**有一個前置條件不是下載就有的：一點 Verilog。** 不用多。看得懂一個 `always @(posedge clk)` 區塊和一個 `<=` 指定就夠。測試是 Python，所以你也要看得懂 `assert`。在 [HDLBits](https://hdlbits.01xz.net/) 上大約是 *Verilog Language* 那一段，不是整個網站。
 
 **SystemVerilog 也讀得進來。** 從 c4o-core 2.8.3 開始，`logic`、`always_ff` 和可合成的那個子集在每個指令下都能用。這個 repo 之後釘過的每一版都包含這項修改。在 2.8.3 之前，同一個檔案會通過 `make cocotb` 和 `make gds`，卻在 `make sim` 和 `make synth` 失敗。仍然不行的是把 `interface` 當成模組邊界：yosys 讀得懂宣告，然後在 `hierarchy` 階段失敗。所以 interface 留在測試平台裡，不要放在可合成模組之間。
 
@@ -42,29 +42,26 @@ LibreLane 不做**模擬與驗證**。這個起手式加上去的就是這兩樣
 
 ## 換成你自己的設計
 
-範例是一個 blinky，也就是時脈除頻器。要換成你自己的設計，有五個地方必須互相對上，其他都不用動：
+範例是一個 blinky，也就是時脈除頻器。要換成你自己的設計，有四個地方必須互相對上，其他都不用動：
 
 | 要改的 | 在哪裡 |
 |---|---|
 | 你的 RTL | `src/`，列在 `config.yaml` 的 `VERILOG_FILES` |
 | `DESIGN_NAME` | `config.yaml`——必須和你的頂層模組同名 |
-| 你的測試平台 | `test/`，列在 `"//TEST_FILES"` 和 `"//COCOTB_TESTS"` |
-| 閘級測試平台 | `test/gate/`，列在 `"//GATE_TESTS"` |
-| 波形圖的訊號 | `"//WAVE_SIGNALS"`，從你的測試平台頂層往下寫 |
+| 你的測試平台 | `test/`，列在 `"//COCOTB_TESTS"` |
+| 波形圖的訊號 | `"//WAVE_SIGNALS"`，從你的頂層模組往下寫 |
 
 沒有別的檔案寫死設計名稱。`Makefile` 和 CI 工作流都從 `config.yaml` 讀 `DESIGN_NAME`。
 
 第一次換設計時，還有三件事常造成問題：
 
-*   **刪掉被你取代的 blinky 檔案**：`src/blinky.v`、`test/tb_blinky.v`、`test/test_blinky_*.py`、`test/gate/tb_blinky_gl.v`。也可以改成把它們從 `config.yaml` 移除。測試用的 key 接受萬用字元，例如 `test/*.v`，所以還留在 `test/` 的 blinky 測試檔仍然會被包含進來。`VERILOG_FILES` 要逐一列出檔名，所以要在那裡用檔名取代 `src/blinky.v`。
-*   **每個 RTL 檔第一行寫 `` `timescale 1ns/1ps ``。** 少了它，`make sim` 照樣通過，因為 Verilog 測試平台自己有宣告。但 `make cocotb` 會失敗，訊息是 `Unable to accurately represent 10(ns)`。
-*   **改寫 `config.yaml` 的 `"//DESCRIPTION"`。** 不改的話，你的結果網頁會說這個設計是一個讓 LED 閃爍的時脈除頻器。`"//WAVE_SIGNALS"` 也要改成你測試平台裡的訊號。不改的話，`make site` 會停在第一個 VCD 裡沒有的訊號。
+*   **刪掉被你取代的 blinky 檔案**：`src/blinky.v` 和 `test/test_blinky_*.py`。也可以改成把它們從 `config.yaml` 移除。測試用的 key 使用萬用字元 `test/*.py`，所以還留在 `test/` 的 blinky 測試檔仍然會被包含進來。`VERILOG_FILES` 要逐一列出檔名，所以要在那裡用檔名取代 `src/blinky.v`。
+*   **每個 RTL 檔第一行寫 `` `timescale 1ns/1ps ``。** 少了它，`make cocotb` 會失敗，訊息是 `Unable to accurately represent 10(ns)`。`make sim` 照樣通過，因為 Verilog 測試平台自己有宣告。
+*   **改寫 `config.yaml` 的 `"//DESCRIPTION"`。** 不改的話，你的結果網頁會說這個設計是一個讓 LED 閃爍的時脈除頻器。`"//WAVE_SIGNALS"` 也要改成你設計裡的訊號。不改的話，`make site` 會停在第一個 VCD 裡沒有的訊號。
 
-**其中三個 key 是選用的。** 你可以把 `"//COCOTB_TESTS"`、`"//GATE_TESTS"` 或 `"//WAVE_SIGNALS"` 從 `config.yaml` 刪掉。key 那一行**和它下面縮排的路徑**要一起刪。刪掉之後，CI 會跳過那一類測試，不會失敗。如果只刪 key 那一行，它下面的路徑會併入上面的 key，不然就是檔案無法解析。如果把 key 留著卻對不到任何檔案，CI 會失敗。這是對的：你要求了不存在的測試。
+**其中一個 key 是選用的。** 你可以把 `"//WAVE_SIGNALS"` 從 `config.yaml` 刪掉，結果網頁就沒有波形圖。key 那一行**和它下面縮排的路徑**要一起刪。如果只刪 key 那一行，它下面的路徑會併入上面的 key，不然就是檔案無法解析。
 
-**第二個 Verilog 測試平台要多一個 key。** `"//TEST_FILES"` 接受萬用字元。Icarus 會把每一個沒有被其他模組實例化的模組各自當成一個 root。所以第一個 `$finish` 就會結束整場模擬，其餘的測試平台根本沒跑。一旦對到超過一個檔案，就用 `"//SIM_TOP"` 指定你要的那一個測試平台。
-
-如果對到超過一個檔案，又沒有設定 `"//SIM_TOP"`，`make sim` 會停下來並報錯，要你設定它。一次 `make sim` 只跑一個頂層模組。要跑另一個測試平台，就改 `"//SIM_TOP"`。然後再跑一次 `make sim`。
+**一個 repo 至少要有一種測試。** 設了 `"//COCOTB_TESTS"`，`make all` 就跑 `cocotb`。設了 `"//TEST_FILES"`，就跑 `sim`。沒設 key 的那一種，它會印一行跳過的訊息。兩個 key 都沒設，`make all` 會失敗。CI 照同樣的規則走。如果把 key 留著卻對不到任何檔案，CI 會失敗。這是對的：你要求了不存在的測試。
 
 第一列弄錯的話，你會立刻收到錯誤，不用等到 `make gds` 跑了三分鐘才發現：
 
@@ -84,11 +81,8 @@ LibreLane 不做**模擬與驗證**。這個起手式加上去的就是這兩樣
 ├── src/               # 你的 Verilog
 │   └── blinky.v
 ├── test/              # 你的測試平台
-│   ├── tb_blinky.v              # RTL 模擬（make sim）
-│   ├── test_blinky_cocotb.py    # Python 測試平台（make cocotb）
-│   ├── test_blinky_random.py    # 隨機刺激對參考模型
-│   └── gate/                    # 閘級模擬（make gatesim）
-│       └── tb_blinky_gl.v
+│   ├── test_blinky_cocotb.py    # Directed test（make cocotb、make gatesim）
+│   └── test_blinky_random.py    # 隨機刺激對參考模型
 ├── build/             # 產生物：GDS、log、netlist、結果網頁
 └── runs/              # make gds 產生：LibreLane 的執行目錄
 ```
@@ -97,15 +91,15 @@ LibreLane 不做**模擬與驗證**。這個起手式加上去的就是這兩樣
 
 | 指令 | 說明 | 輸出 |
 |---|---|---|
-| `make all` | 執行 `lint`、`sim`、`cocotb`、`synth`：幾秒內跑完的所有步驟。 | `終端機` |
+| `make all` | 執行 `lint`、`cocotb`、`synth`，設了 `"//TEST_FILES"` 時再加上 `sim`：幾秒內跑完的所有步驟。 | `終端機` |
 | `make lint` | 用 Verilator 檢查 Verilog。 | `終端機` |
-| `make sim` | 用 Icarus Verilog 跑 Verilog 測試平台。 | `build/wave.vcd` |
-| `make cocotb` | 執行 Python (cocotb) 測試平台。 | `build/cocotb-results.xml` |
+| `make sim` | 用 Icarus Verilog 跑 Verilog 測試平台。需要 `"//TEST_FILES"`：見[加入 Verilog 測試平台](#加入-verilog-測試平台)。 | `build/wave.vcd` |
+| `make cocotb` | 在 RTL 上執行 Python (cocotb) 測試平台。設了 `"//WAVE_SIGNALS"` 時，也會在 `build/` 寫出 VCD。 | `build/cocotb-results.xml` |
 | `make synth` | 用 Yosys 把 RTL 合成成通用邏輯閘。沒有面積，也沒有時序：見[看看電路長什麼樣](#看看電路長什麼樣)。腳本是固定的。想自己操作 Yosys 就用 `make shell`。 | `build/synthesis.json` |
 | `make pdk` | 安裝 Sky130 PDK。`make gds` 會自己執行它。單獨跑可以把那 3GB 的下載提前做完。 | `pdks/` |
 | `make schematic` | 把電路畫成到處都開得了的 SVG。 | `build/schematic.svg` |
 | `make gds` | 用 LibreLane 產生實體版圖。大約三分鐘，第一次還要加上 PDK 下載。 | `build/<DESIGN_NAME>.gds` |
-| `make gatesim` | 對合成後的 netlist 重跑模擬。要先執行 `make gds`。 | `終端機` |
+| `make gatesim` | 對合成後的 netlist 重跑 cocotb 測試平台。設了 `"//GATE_TESTS"` 時，改跑那份 Verilog 測試平台。要先執行 `make gds`。 | `build/cocotb-gl-results.xml` |
 | `make report` | 顯示上次 `make gds` 的面積、時序、功耗與 signoff。 | `終端機` |
 | `make site` | 把 `report`、版圖、電路圖和 cocotb 結果放進同一個網頁。 | `build/site/index.html` |
 | `make shell` | 進入 c4o-core 容器的互動式 shell。 | — |
@@ -121,12 +115,12 @@ LibreLane 不做**模擬與驗證**。這個起手式加上去的就是這兩樣
 ```
   blinky
 
-  die              69.5 x 80.2 um  (5573 um^2)
-  utilization      57.1%
-  standard cells   198
-  setup slack      +4.70 ns  (0 violations)
+  die              56.375 x 67.095 um  (3782.48 um^2)
+  utilization      56.6%
+  standard cells   113
+  setup slack      +5.52 ns  (0 violations)
   hold slack       +0.11 ns  (0 violations)
-  power            0.248 mW  (nom_tt_025C_1v80)
+  power            0.143 mW  (nom_tt_025C_1v80)
   signoff          clean  (Magic DRC, KLayout DRC, LVS, antenna, XOR)
   lint warnings    0
   layout           runs/blinky_run/final/render/blinky.png
@@ -152,7 +146,7 @@ LibreLane 不做**模擬與驗證**。這個起手式加上去的就是這兩樣
 
 ## 發佈結果網頁
 
-`make site` 產生一個網頁 `build/site/index.html`。網頁裡有上面那幾行、版圖、電路圖，以及每個 cocotb 測試的判定和 seed。跑過 `make gds` 之後，網頁還會列出每一項 signoff 檢查，以及 OpenSTA 報出的最差 setup path。它也會列出面積拆分（flip-flop、邏輯、繞線階段加進來的）和功耗拆分（sequential、combinational、clock）。跑過 `make sim` 之後，它會把 `"//WAVE_SIGNALS"` 列的訊號畫成波形圖。
+`make site` 產生一個網頁 `build/site/index.html`。網頁裡有上面那幾行、版圖、電路圖，以及每個 cocotb 測試的判定和 seed。跑過 `make gds` 之後，網頁還會列出每一項 signoff 檢查，以及 OpenSTA 報出的最差 setup path。它也會列出面積拆分（flip-flop、邏輯、繞線階段加進來的）和功耗拆分（sequential、combinational、clock）。跑過 `make cocotb` 之後，它會把 `"//WAVE_SIGNALS"` 列的訊號畫成波形圖。
 
 功耗拆分用的是 OpenSTA 預設的切換活動率，不是你的測試平台的活動率。它告訴你功耗花在哪裡，不是真實工作負載的耗電。每一塊在你跑過對應的指令之後才會出現。
 
@@ -187,47 +181,34 @@ ls -d runs/*/*-openroad-stapostpnr/*/                # 這次到底跑了哪些
 
 ## 幫你自己的設計寫測試平台
 
-`test/tb_blinky.v` 是一份完整的範例。下面是它的基本骨架：能夠真的失敗的最小測試平台。
+`test/test_blinky_cocotb.py` 是一份完整的範例。下面是它的基本骨架：能夠真的失敗的最小測試平台。
 
-```verilog
-`timescale 1ns/1ps
+```python
+import cocotb
+from cocotb.clock import Clock
+from cocotb.triggers import ClockCycles, Timer
 
-module tb_my_design;
+@cocotb.test()
+async def result_is_high_after_reset(dut):
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())   # 100 MHz 時脈
+    dut.rst.value = 1
+    await ClockCycles(dut.clk, 2)
+    dut.rst.value = 0
 
-    reg clk = 0;
-    reg rst = 1;
-    wire result;
-
-    my_design uut (.clk(clk), .rst(rst), .result(result));
-
-    always #5 clk = ~clk;          // 100 MHz 時脈
-
-    initial begin
-        $dumpfile("build/wave.vcd");
-        $dumpvars(0, tb_my_design);
-
-        repeat (2) @(posedge clk);
-        rst = 0;
-
-        @(posedge clk);
-        #1;                        // 等 non-blocking assignment 生效
-        if (result !== 1'b1)
-            $fatal(1, "result should be high after reset, got %b", result);
-
-        $display("tb_my_design: PASS");
-        $finish;
-    end
-
-endmodule
+    await ClockCycles(dut.clk, 1)
+    await Timer(3, units="ns")     # 等輸出穩定
+    assert dut.result.value == 1, f"result should be high after reset, got {dut.result.value}"
 ```
+
+把檔案列在 `"//COCOTB_TESTS"`。讓你的 RTL 宣告 `` `timescale ``（見[換成你自己的設計](#換成你自己的設計)），因為 `10, units="ns"` 的時脈需要它。
 
 真正在做事的是三個地方：
 
-* **`$fatal` 才會讓壞掉的設計變成失敗的 CI。** `$display` 印完就繼續跑，而模擬器兩種情況都回傳 0。一個回報了失敗卻沒有失敗的測試只是裝飾。`$fatal` 會回傳非零，`make sim` 和工作流讀的就是這個回傳值。
-* **邊緣之後的 `#1`。** `@(posedge clk)` 是*在*邊緣當下恢復，此時 non-blocking assignment 還沒生效。在那裡讀到的是上一個 cycle 的值。相對檢查照樣會過，所以這個錯誤很難察覺。
-* **`$dumpfile`/`$dumpvars` 要由你提供。** 工具不會提供。沒有它們，上面那個斷言失敗的時候你沒有波形可以看。
+* **`assert` 才會讓壞掉的設計變成失敗的 CI。** 就算有測試失敗，模擬器還是回傳 0。`make cocotb` 讀的是 cocotb 寫出的結果檔，那裡有測試失敗就回傳非零。一個印出失敗卻沒有 assert 的測試只是裝飾。
+* **邊緣之後的 `Timer`。** `ClockCycles` 是*在*邊緣當下恢復，此時設計的輸出還沒變。在那裡讀到的是上一個 cycle 的值。在閘級電路上，輸出還要再晚幾 ns 才變。相對檢查照樣會過，所以這個錯誤很難察覺。等待的時間要小於半個時脈週期。
+* **`"//WAVE_SIGNALS"` 才會產生波形。** 沒有這個 key，`make cocotb` 什麼都不會輸出。上面那個斷言失敗的時候，你就沒有波形可以看。
 
-試試看。把 `src/blinky.v` 改壞，執行 `make sim`，看它失敗。如果你從沒看過一個測試平台失敗，你就不知道它有沒有用。
+試試看。把 `src/blinky.v` 改壞，執行 `make cocotb`，看它失敗。如果你從沒看過一個測試平台失敗，你就不知道它有沒有用。
 
 **這就是整套方法，而且對任何設計都成立。** 一次改壞一個地方，然後跑測試。確認你瞄準的那個測試會失敗，而且訊息你看得懂。然後執行 `git checkout -- src/blinky.v`，再改壞下一個地方。
 
@@ -235,50 +216,25 @@ endmodule
 
 ## 測試失敗的時候：去看波形
 
-`make sim` 會寫出 `build/wave.vcd`，裡面有每一條訊號在每一個 cycle 的值。前提是你的測試平台有上面骨架裡那兩行 `$dumpfile`/`$dumpvars`。用 GTKWave 打開，或用 Dev Container 已經裝好的 **WaveTrace** 擴充套件（直接點那個 `.vcd` 檔）。失敗的斷言告訴你設計*錯了*。波形告訴你*為什麼*。
+`make cocotb` 會在 `build/` 寫出一個 VCD，裡面有你設計的每一條訊號在每一個 cycle 的值。前提是 `config.yaml` 有 `"//WAVE_SIGNALS"`。檔案裡的名字從設計頂層開始，例如 `blinky.count`。用 GTKWave 打開，或用 Dev Container 已經裝好的 **WaveTrace** 擴充套件（直接點那個 `.vcd` 檔）。失敗的斷言告訴你設計*錯了*。波形告訴你*為什麼*。
 
 `*.vcd` 在 `.gitignore` 裡。CI 會把每次執行的副本留在 `chipforall-build-artifacts` 上傳中，保存五天。所以只在 CI 上失敗的測試，一樣可以回頭檢查。
 
 ## 用 Python 寫測試平台
 
-`make cocotb` 執行 [cocotb](https://www.cocotb.org/) 測試：用 Python coroutine 驅動同一份 RTL，底層是同一個模擬器。它是 `test/tb_blinky.v` 的另一種選擇，不是取代。哪種語言適合這個測試就用哪種。
+`make cocotb` 執行 [cocotb](https://www.cocotb.org/) 測試：用 Python coroutine 透過模擬器驅動設計。`make gatesim` 在閘級電路上跑同樣的檔案。
 
 ```bash
 make cocotb
 ```
 
-下面是會驅動時脈並檢查一件事的最小測試檔。注意 `tick`。`RisingEdge` 是在時脈邊緣**當下**恢復執行，此時 non-blocking assignment 還沒生效。緊接著讀到的是上一個 cycle 的值。這和 Verilog 裡要 `#1` 是同一個問題。所以每次過邊緣後都要再等一個 `Timer`：
+`test/` 裡的兩個檔案只碰 `dut.clk`、`dut.rst` 和 `dut.led`。它們不讀 `dut.count`，也不強制寫入它。你的測試也只碰設計的接腳，這樣它們在閘級電路上也能跑。[為什麼 →](#模擬閘級電路而不只是-rtl)
 
-```python
-import cocotb
-from cocotb.clock import Clock
-from cocotb.triggers import RisingEdge, Timer
+沒有計數器可以碰，測試就只能等 `led` 變化。reset 之後，經過 2^(`WIDTH`-1) 個時脈週期，`led` 才會上升。每個 cycle 都花模擬時間，所以 `src/blinky.v` 的 `WIDTH` 很小。板子的時脈需要更寬的計數器，那個檔案裡的註解寫了要多寬。測試要等那麼久，時間會長得離譜。
 
-async def tick(dut):
-    await RisingEdge(dut.clk)
-    await Timer(1, units="ns")     # 等 non-blocking assignment 生效
+`test/test_blinky_cocotb.py` 有四個 directed test。一個檢查 reset 讓 `led` 維持低電位。一個檢查 reset 放開之後，`led` 剛好在 2^(`WIDTH`-1) 個 cycle 上升，不早也不晚一個 cycle。一個檢查完整的一個週期。一個檢查週期中間的 reset。`led` 必須不等時脈邊緣就回到低電位，計數也要重新開始。
 
-@cocotb.test()
-async def result_is_high_after_reset(dut):
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
-    dut.rst.value = 1
-    await tick(dut)
-    dut.rst.value = 0
-    await tick(dut)
-    assert dut.result.value == 1, f"result should be high, got {dut.result.value}"
-```
-
-把檔案列在 `"//COCOTB_TESTS"`。讓你的 RTL 宣告 `` `timescale ``（見[換成你自己的設計](#換成你自己的設計)），因為 `10, units="ns"` 的時脈需要它。
-
-`test/test_blinky_cocotb.py` 這個範例用的是 Python 在這裡明顯佔優的一件事：直接寫入設計**內部**的訊號。
-
-```python
-dut.count.value = (1 << (WIDTH - 1)) - 1   # 停在翻轉前一拍
-await tick(dut)
-assert dut.led.value == 1
-```
-
-有了這個寫入，驗證「`led` 就是計數器最高位元」只需要四個 cycle。Verilog 測試平台要做到同一件事，只能覆寫 `WIDTH`（閘級測試平台做不到），或是跑完 2^25 個 cycle。
+兩個測試檔都重複寫了 `WIDTH`，因為 netlist 沒有參數可以讀。這個常數要和 `src/blinky.v` 的 `WIDTH` 保持相同。
 
 ## 隨機刺激與參考模型
 
@@ -287,19 +243,19 @@ assert dut.led.value == 1
 它有三個部分，每個大約十行：
 
 * **模型**是 `BlinkyModel`：用 Python 把 blinky 的行為再寫一次。它刻意不是 RTL 的逐行翻譯。如果模型把設計的錯誤照抄一遍，它在每一點上都會同意設計，也就永遠抓不到任何錯。
-* **刺激**是隨機的起始計數與隨機的 reset 脈衝。五個視窗裡有兩個放在 `led` 會變的位置，這樣一次執行不會整場盯著一條不動的訊號。
-* **scoreboard** 在每個時脈之後把 `led` 和模型比對。失敗時印出第幾個 cycle、兩邊的值，以及那個視窗的起始計數。
+* **刺激**是先跑到 `led` 上升的第一段，reset 之後的第二次上升，接著是隨機的 reset 脈衝。第一段確保一次執行不會整場盯著一條不動的訊號。
+* **scoreboard** 在每個時脈之後把 `led` 和模型比對。失敗時印出第幾個 cycle、兩邊的值，以及模型的計數。
 
 ```bash
 make cocotb                   # 每次換一個 seed
 make cocotb SEED=1789965785   # 完全重現某一次
 ```
 
-cocotb 會 seed Python 的 `random`，並把用的 seed 印出來。所以 CI 上的失敗可以照著那一行 log 在你的機器上重現。
+cocotb 會 seed Python 的 `random`，並把用的 seed 印出來。所以 CI 上的失敗可以照著那一行 log 在你的機器上重現。`make gatesim SEED=1789965785` 用同樣的方式重現一次閘級執行。
 
-`led` 從頭到尾沒動過的話，這個測試也會失敗。200 個通過的 cycle 盯著一條常數訊號，什麼都沒證明。一個會為此回報 PASS 的測試套件，正是這個專案花最多力氣在避免的東西。
+`led` 從頭到尾沒動過的話，這個測試也會失敗。通過的 cycle 如果盯著一條常數訊號，什麼都沒證明。一個會為此回報 PASS 的測試套件，正是這個專案花最多力氣在避免的東西。
 
-它不檢查 reset 的*時序*。刺激只在時脈邊緣之後才動 `rst`，所以非同步 reset 和同步 reset 在這裡看起來一樣。那是靜態時序的問題：recovery 和 removal。那九行摘要沒有它，因為摘要裡那兩列 slack 是 setup 和 hold，是不同的檢查。per-corner 報告有它，而且放在獨立的 path group：
+它不檢查 reset 是否不等時脈邊緣就生效。刺激在下降緣動 `rst`，下一個下降緣才讀 `led`。所以非同步 reset 和同步 reset 在這裡看起來一樣。directed test `reset_in_the_middle_restarts_the_count` 檢查這一點。reset 的*時序*屬於靜態時序：recovery 和 removal。那九行摘要沒有它，因為摘要裡那兩列 slack 是 setup 和 hold，是不同的檢查。per-corner 報告有它，而且放在獨立的 path group：
 
 ```bash
 grep -A12 'Path Group: asynchronous' runs/*/*-openroad-stapostpnr/*/checks.rpt
@@ -307,26 +263,41 @@ grep -A12 'Path Group: asynchronous' runs/*/*-openroad-stapostpnr/*/checks.rpt
 
 這是量過的，不是猜的。這個設計的一次 CI 執行在九份 corner 報告裡都產出了 `recovery check against rising-edge clock clk`。CI 每次都會把它在那裡找到的內容印出來。同步 reset 的設計在那個 path group 裡什麼都沒有。那對它來說是正確的答案，不是缺漏。
 
+## 加入 Verilog 測試平台
+
+這個模板不附 Verilog 測試平台，但路還是開著的。把檔案放進 `test/`，再列出來：
+
+```yaml
+"//TEST_FILES":
+  - dir::test/tb_my_design.v
+```
+
+`make sim` 會跑它，`make all` 和 CI 也會。檢查失敗時必須呼叫 `$fatal`。`$display` 印完就繼續跑，模擬器回傳 0，但 `$fatal` 會回傳非零，`make sim` 讀的就是這個回傳值。`$dumpfile` 和 `$dumpvars` 要由你自己寫。`"//WAVE_SIGNALS"` 的名字之後從你的測試平台頂層開始。
+
+`"//TEST_FILES"` 接受萬用字元。Icarus 會把每一個沒有被其他模組實例化的模組各自當成一個 root。所以有一個以上的測試平台時，第一個 `$finish` 就會結束整場模擬，其餘的測試平台根本沒跑。對到超過一個檔案時，用 `"//SIM_TOP"` 指定你要的那一個測試平台。沒有設定的話，`make sim` 會停下來並報錯，要你設定它。一次 `make sim` 只跑一個頂層模組。
+
+要在閘級電路上跑 Verilog 測試平台，就把它列在 `"//GATE_TESTS"`。這樣 `make gatesim` 會跑它，不跑 cocotb 測試。`"//GATE_TOP"` 指定它的頂層模組，用法和 `"//SIM_TOP"` 一樣。合成會把參數固定下來，所以閘級測試平台不能像 RTL 的那樣縮小設計。
+
 ## 模擬閘級電路，而不只是 RTL
 
-`make sim` 告訴你寫的 Verilog 行為正確。它沒有告訴你工具從中產生的 netlist 對不對。latch 被誤推斷、reset 處理方式、合成器如何解讀有歧義的 `always` 區塊，這些都夾在兩者之間。從 RTL 看不出這些。
+`make cocotb` 告訴你寫的 Verilog 行為正確。它沒有告訴你工具從中產生的 netlist 對不對。latch 被誤推斷、reset 處理方式、合成器如何解讀有歧義的 `always` 區塊，這些都夾在兩者之間。從 RTL 看不出這些。
 
-`make gatesim` 補上這一段。它拿 `make gds` 留下的閘級 netlist（`runs/<tag>/final/nl/`），對著 Sky130 元件自己的 Verilog model 跑模擬。`<tag>` 是這次執行的目錄：沒有自己命名的話就是 `<DESIGN_NAME>_run`。
+`make gatesim` 補上這一段。它拿 `make gds` 留下的閘級 netlist（`runs/<tag>/final/nl/`），對著 Sky130 元件自己的 Verilog model，跑同樣的 cocotb 測試。`<tag>` 是這次執行的目錄：沒有自己命名的話就是 `<DESIGN_NAME>_run`。判定寫在 `build/cocotb-gl-results.xml`。
 
 ```bash
 make gds       # 產生 netlist
-make gatesim   # 模擬它
+make gatesim   # 在它上面跑測試
 ```
 
-它需要自己的測試平台，放在 `test/gate/`，因為合成會把參數固定下來。`test/tb_blinky.v` 靠把 `WIDTH` 設成 4 來縮小設計。netlist 裡已經沒有 `WIDTH` 可以設：它被固定成 `src/blinky.v` 宣告的 26。下面那個 2^26 就是這樣來的。因此 `test/gate/tb_blinky_gl.v` 只驅動真正的接腳，並觀察 `led` 走完一個完整的除頻週期。那是整整 2^26 個 cycle，需要幾分鐘。
+同樣的檔案能跑，是因為它們只碰接腳。合成會把參數固定下來，也會拿掉內部訊號的名字。netlist 裡沒有 `WIDTH` 可以讀，也沒有 `count` 可以寫。任何伸手進設計內部的東西在 RTL 上能用，到這一步就不能用。讓你看到這件事，是這一步存在的理由之一。
 
-合成拿掉的不只是參數。內部訊號的名字也會消失。上面的 cocotb 測試直接寫 `dut.count` 來跳過 2^25 個 cycle，但 netlist 裡沒有 `count` 可以寫。任何伸手進設計內部的東西在 RTL 上能用，到這一步就不能用。讓你看到這件事，是這一步存在的理由之一。
+`src/blinky.v` 的 `WIDTH` 是 16，也是出於這個原因。只看得到接腳的測試必須等 `led` 上升，而閘級電路跑得比 RTL 慢。`WIDTH` 小的時候，等待的時間夠短，CI 才能在每個 pull request 都跑這些測試。
 
 **這是功能驗證，不是時序驗證。** 這裡沒有任何地方做 SDF back-annotation。元件是零延遲切換的，所以這次模擬看不到只在真實延遲下才出現的競態。它看得到合成做的每一個決定：被推論出來的 latch、reset 的實作方式，以及有歧義的 `always` 區塊被怎麼解讀。
 
 時序是 STA 的工作，在 `make gds` 裡，答案在上面那些 per-corner 報告。有些流程把 SDF-annotated 閘級模擬當成時序的最後一道關卡。這一步不是那道關卡。
 
-因為 `make gatesim` 要跑幾分鐘，CI 只在推送和 `v*` tag 時跑它，不是每個 pull request 都跑。
+CI 在每個事件都對閘級電路跑 cocotb 測試，pull request 也不例外。接著它拿這次的通過、失敗、跳過數量和 RTL 那次比對，不同就失敗。Verilog 閘級測試平台維持舊的規則：CI 只在推送和 `v*` tag 時跑它，不是每個 pull request 都跑。
 
 ## 不重跑整條流程的迭代方式
 
@@ -356,11 +327,11 @@ make schematic
 
 這個指令畫出 `build/schematic.svg`：你的設計以 flop、加法器、多工器呈現，帶著你取的名字。用瀏覽器開，或在 VS Code 裡點一下。它是 SVG，不需要特別的工具就能看。
 
-這不是 netlist 的圖。`make synth` 會跑完整合成，產出上百個通用邏輯閘，沒有人能從那些閘看懂自己的設計。`make schematic` 停得更早，停在電路還看得出原始碼樣子的地方。
+這不是 netlist 的圖。`make synth` 會跑完整合成，產出一長串通用邏輯閘，沒有人能從那些閘看懂自己的設計。`make schematic` 停得更早，停在電路還看得出原始碼樣子的地方。
 
-**是通用閘，不是 Sky130 的元件。** `make synth` 只映射到 Yosys 自己的 cell 就停了。範例的 `build/synthesis.json` 裡有 94 顆這種 cell（`$_DFF_PP0_`、`$_OR_`、`$_XOR_` 之類），一顆 `sky130_` 都沒有，因為這裡沒有東西給 Yosys liberty 檔。這個指令回答的是「它合得起來嗎、大概多少邏輯」。它回答不了面積和時序。
+**是通用閘，不是 Sky130 的元件。** `make synth` 只映射到 Yosys 自己的 cell 就停了。範例的 `build/synthesis.json` 裡只有這種 cell（`$_DFF_PP0_`、`$_OR_`、`$_XOR_` 之類），一顆 `sky130_` 都沒有，因為這裡沒有東西給 Yosys liberty 檔。這個指令回答的是「它合得起來嗎、大概多少邏輯」。它回答不了面積和時序。
 
-`make report` 裡那 `198 standard cells` 是 `make gds` 裡 LibreLane 自己對著真實元件庫合成的結果。它是另一個數字，兩者不能互相比較。
+`make report` 裡的 standard cell 數量是 `make gds` 裡 LibreLane 自己對著真實元件庫合成的結果。它是另一個數字，兩者不能互相比較。
 
 這個指令不到一秒，所以每改一次都可以跑，和 `make gds` 不一樣。
 
@@ -391,7 +362,7 @@ make gds PDK_ROOT=/opt/sky130
 
 | 部分 | 修正怎麼到你手上 |
 |---|---|
-| 工具 | `Makefile` 和 `.devcontainer/devcontainer.json` 都寫著映像檔 `ghcr.io/anlit75/c4o-core:2.17`。2.17 的修正會在下一次拉映像檔時到。2.18 發佈之後，要改這兩行才拿得到它的修正。這兩行不一樣的話 CI 會失敗。 |
+| 工具 | `Makefile` 和 `.devcontainer/devcontainer.json` 都寫著映像檔 `ghcr.io/anlit75/c4o-core:2.18`。2.18 的修正會在下一次拉映像檔時到。2.19 發佈之後，要改這兩行才拿得到它的修正。這兩行不一樣的話 CI 會失敗。 |
 | make 指令 | `Makefile` 從映像檔引入它的規則。像 `make gds` 這樣的指令有修正時，修正會隨映像檔到。見[你自己的 target 可以用什麼](https://github.com/anlit75/c4o-core/blob/main/docs/makefile.md)。 |
 | CI 的步驟 | `.github/workflows/verify.yml` 呼叫 c4o-core 的 action，版本是 `@v2`。action 的修正會在下一次執行時到。見[每個 action 做什麼](https://github.com/anlit75/c4o-core/blob/main/docs/actions.md)。 |
 
@@ -411,12 +382,12 @@ make gds PDK_ROOT=/opt/sky130
 |---|---|
 | `DESIGN_NAME` | 你的頂層模組名稱。其他地方都從這裡讀。 |
 | `VERILOG_FILES` | 可合成的原始碼。一行一個檔案：LibreLane 會把每一項當成字面路徑驗證，不展開 `**`。 |
-| `"//TEST_FILES"` | 給 `make sim` 的 Verilog 測試平台。可以用萬用字元。 |
-| `"//SIM_TOP"` | 要 elaborate 的測試平台模組。`"//TEST_FILES"` 對到超過一個檔案時必填。 |
-| `"//COCOTB_TESTS"` | 給 `make cocotb` 的 Python 測試平台。選用。 |
-| `"//GATE_TESTS"` / `"//GATE_TOP"` | 給 `make gatesim` 的閘級測試平台。選用。 |
+| `"//COCOTB_TESTS"` | 給 `make cocotb` 和 `make gatesim` 的 Python 測試平台。可以用萬用字元。 |
+| `"//TEST_FILES"` | 給 `make sim` 的 Verilog 測試平台。選用。可以用萬用字元。 |
+| `"//SIM_TOP"` | 要 elaborate 的 Verilog 測試平台模組。`"//TEST_FILES"` 對到超過一個檔案時必填。 |
+| `"//GATE_TESTS"` / `"//GATE_TOP"` | 給 `make gatesim` 的 Verilog 閘級測試平台。選用。設了之後，`make gatesim` 跑它們，不跑 cocotb 測試。 |
 | `"//DESCRIPTION"` | 用一句話說明你的設計是什麼。它出現在結果網頁標題下方，以及分享連結的預覽裡。選用。 |
-| `"//WAVE_SIGNALS"` | `make site` 從 `make sim` 的 VCD 畫的訊號。從測試平台頂層往下寫（`tb_blinky.uut.count`）。VCD 裡沒有的名字會讓 `make site` 失敗。選用。 |
+| `"//WAVE_SIGNALS"` | `make site` 從 `make cocotb` 的 VCD 畫的訊號。從設計頂層往下寫（`blinky.count`）。VCD 裡沒有的名字會讓 `make site` 失敗。選用。 |
 | `CLOCK_PORT` / `CLOCK_PERIOD` | 要約束的時脈，以及它的週期（ns）。 |
 | `PNR_SDC_FILE` / `SIGNOFF_SDC_FILE` | 你自己的時序約束，當上面那兩個 key 不夠用的時候。見下。 |
 | `FP_SIZING` / `FP_CORE_UTIL` | die 的尺寸怎麼決定。見下。 |
