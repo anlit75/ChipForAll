@@ -73,12 +73,12 @@ At the end, it tells you what it built:
 ```
   blinky
 
-  die              69.5 x 80.2 um  (5573 um^2)
-  utilization      57.1%
-  standard cells   198
-  setup slack      +4.70 ns  (0 violations)
+  die              56.375 x 67.095 um  (3782.48 um^2)
+  utilization      56.6%
+  standard cells   113
+  setup slack      +5.52 ns  (0 violations)
   hold slack       +0.11 ns  (0 violations)
-  power            0.248 mW  (nom_tt_025C_1v80)
+  power            0.143 mW  (nom_tt_025C_1v80)
   signoff          clean  (Magic DRC, KLayout DRC, LVS, antenna, XOR)
   lint warnings    0
   layout           runs/blinky_run/final/render/blinky.png
