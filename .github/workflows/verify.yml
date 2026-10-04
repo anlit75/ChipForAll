@@ -247,8 +247,8 @@ jobs:
       # the README describes: a copy of this template with its own design has
       # nothing to break this way, and must not go red for it.
       #
-      # The broken run rewrites build/ with its own cocotb verdict and
-      # waveform, which the results page reads. build/ is put back afterwards.
+      # The broken run rewrites build/ with its own cocotb verdict,
+      # which the results page reads. build/ is put back afterwards.
       - name: The bug the README breaks on purpose is caught
         if: env.IS_TEMPLATE == 'true'
         run: |

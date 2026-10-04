@@ -25,8 +25,8 @@ An open-source flow can already make a layout: [LibreLane](https://github.com/li
 |---|---|
 | 🧪 **Tests that can fail** | Verilog and Python (cocotb) testbenches exit non-zero when the design is broken. |
 | 🔬 **Gate-level simulation** | Runs your tests again on the netlist that synthesis made. Latch bugs and reset bugs hide there. |
-| 📊 **Signoff you can read** | Nine lines show area, timing, power and DRC/LVS. You do not need to read a 300-key JSON. |
-| 🌐 **A results page per commit** | CI publishes tests, signoff, layout and waveform to GitHub Pages. |
+| 📊 **Signoff you can read** | A short summary shows area, timing, power and DRC/LVS. You do not need to read a 300-key JSON. |
+| 🌐 **A results page per commit** | CI publishes the layout, tests, timing, area, power and signoff to GitHub Pages. |
 | 🐳 **No EDA tools to install** | One Docker image contains them all. Run it from Docker, a Dev Container or a Codespace. The commands are the same in all three. |
 | 🔓 **Yours to publish** | Sky130 is Apache 2.0 and has no NDA. Put the GDS in your portfolio. |
 
@@ -73,22 +73,24 @@ At the end, it tells you what it built:
 ```
   blinky
 
-  die              56.375 x 67.095 um  (3782.48 um^2)
-  utilization      56.6%
-  standard cells   113
-  setup slack      +5.52 ns  (0 violations)
-  hold slack       +0.11 ns  (0 violations)
-  power            0.143 mW  (nom_tt_025C_1v80)
-  signoff          clean  (Magic DRC, KLayout DRC, LVS, antenna, XOR)
-  lint warnings    0
-  layout           runs/blinky_run/final/render/blinky.png
+  die                56.375 x 67.095 um  (3782.48 um^2)
+  utilization        56.6%
+  instances          65 after synthesis, 113 after routing
+  instance classes   32 logic, 27 well taps, 18 timing-repair buffers, 17 inverters, 16 sequential, 3 clock buffers
+  drive strength     X1 0->18, X2 65->65, X16 0->3  (synthesis->routing)
+  setup slack        +5.52 ns  (0 violations)
+  hold slack         +0.11 ns  (0 violations)
+  power              0.143 mW  (nom_tt_025C_1v80)
+  signoff            clean  (DRC, LVS, antenna, XOR)
+  lint warnings      0
+  layout             runs/blinky_run/final/render/blinky.png
 ```
 
 `signoff clean` and positive slack tell you that the layout passed the manufacturing checks and meets the clock. The flow stops at this GDS file: fabrication is not part of this repository. [How to read each line →](docs/guide.md#reading-the-result)
 
 ## 🌐 Your results, online
 
-Each CI run on `main` publishes a results page to `https://<you>.github.io/<your-repo>/`. The page shows the layout of your design first, and you can open it in 3D or download the GDS. Next are the verdicts and the tests, then signoff, waveform, timing, area and power. The page gives the time of the build and the commit.
+Each CI run on `main` publishes a results page to `https://<you>.github.io/<your-repo>/`. The page shows the layout of your design first, and you can open it in 3D or download the GDS. Next are the verdicts and the tests, then timing, area and instances, power, and signoff last. The page gives the time of the build and the commit.
 
 Turn it on once: **Settings → Pages → Source: GitHub Actions**. Build the page locally with `make site`. [More →](docs/guide.md#publishing-the-results-page)
 
@@ -107,7 +109,7 @@ Turn it on once: **Settings → Pages → Source: GitHub Actions**. Build the pa
 
 ## ✍️ Make it your design
 
-Delete the blinky files. Put your Verilog in `src/` and your tests in `test/`. List them in `config.yaml`, and set `DESIGN_NAME` to your top module. The `Makefile` and CI read all other data from `config.yaml`. [The four things that must agree →](docs/guide.md#making-it-your-design)
+Delete the blinky files. Put your Verilog in `src/` and your tests in `test/`. List them in `config.yaml`, and set `DESIGN_NAME` to your top module. The `Makefile` and CI read all other data from `config.yaml`. [The three things that must agree →](docs/guide.md#making-it-your-design)
 
 ## Who it is for
 
@@ -119,7 +121,7 @@ Delete the blinky files. Put your Verilog in `src/` and your tests in `test/`. L
 
 ## 📚 Learn more
 
-- [Guide](docs/guide.md): prerequisites, writing testbenches, waveforms, gate-level simulation, negative slack, configuration reference
+- [Guide](docs/guide.md): prerequisites, writing testbenches, the debug waveform, gate-level simulation, negative slack, configuration reference
 - [c4o-core](https://github.com/anlit75/c4o-core): the toolchain engine behind every command
 - [c4o-pyuvm](https://github.com/anlit75/c4o-pyuvm): a pyuvm verification environment on a real UART
 
