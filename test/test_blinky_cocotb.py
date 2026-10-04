@@ -1,93 +1,95 @@
 """
-cocotb tests for blinky: Python coroutines driving the RTL, same simulator
-underneath as `make sim`.
+cocotb tests for blinky: Python coroutines driving the design.
 
-This is not a translation of test/tb_blinky.v. That testbench shrinks the
-design to WIDTH=4 so a full divider period fits in a short run. `make cocotb`
-elaborates blinky itself as the root module, so WIDTH stays at its default 26
-and one period is 2**26 cycles -- far too slow to sit and wait for.
+These tests touch only the ports clk, rst and led. That is what lets the same
+file run on the RTL (`make cocotb`) and on the gates (`make gatesim`): a netlist
+keeps the ports, and the register and the parameter inside are gone.
 
-What Python can do instead is reach into the design and put the counter where
-the interesting behaviour is. The last test does exactly that, in four cycles,
-and it is the reason to keep this file alongside the Verilog one.
+Without access to the counter, the only way to see led move is to wait for it.
+That is why src/blinky.v has a small WIDTH: led rises after 2**(WIDTH-1) clock
+cycles, and each of those cycles costs simulator time.
 """
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.triggers import RisingEdge, Timer
+from cocotb.triggers import ClockCycles, RisingEdge, Timer
 
-WIDTH = 26  # blinky's default; led is count[WIDTH-1]
+# Must match WIDTH in src/blinky.v. A netlist has no parameter to read, so the
+# tests cannot ask the design, and one constant per file is the simplest copy.
+WIDTH = 16
+HALF = 1 << (WIDTH - 1)  # cycles led stays at each level
+PERIOD = 1 << WIDTH      # cycles of one full blink
+
+# How long to wait after an edge before reading led. On the gates a flip-flop
+# takes a moment to change its output, and RisingEdge resumes before that.
+SETTLE_NS = 3
 
 
-async def tick(dut):
-    """
-    One clock, then a moment for the design to settle.
-
-    RisingEdge resumes *at* the edge, before the non-blocking assignment to
-    count has taken effect and before led's continuous assignment has followed
-    it. Reading either one here gives you the previous cycle's value. Relative
-    checks still pass that way, which is exactly what makes it easy to miss --
-    so every read in this file happens after the Timer.
-    """
-    await RisingEdge(dut.clk)
-    await Timer(1, units="ns")
+async def settle():
+    await Timer(SETTLE_NS, units="ns")
 
 
 async def start(dut):
-    """Clock running, reset applied and released."""
+    """Clock running, reset applied for two edges, then released."""
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     dut.rst.value = 1
-    await tick(dut)
-    await tick(dut)
+    await ClockCycles(dut.clk, 2)
+    await settle()
     dut.rst.value = 0
 
 
+async def led_after(dut, edges):
+    """Wait until `edges` rising edges have passed, then return led."""
+    await ClockCycles(dut.clk, edges)
+    await settle()
+    return int(dut.led.value)
+
+
 @cocotb.test()
-async def reset_holds_the_counter_low(dut):
+async def reset_holds_led_low(dut):
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
     dut.rst.value = 1
-    await tick(dut)
-    await tick(dut)
-    assert int(dut.count.value) == 0, f"count was {int(dut.count.value)} while rst asserted"
-    assert dut.led.value == 0, f"led was {dut.led.value} while rst asserted"
+    await ClockCycles(dut.clk, 2)
+    for cycle in range(10):
+        await settle()
+        assert dut.led.value == 0, f"led was {dut.led.value} in cycle {cycle} of reset"
+        await RisingEdge(dut.clk)
 
 
 @cocotb.test()
-async def counts_up_by_one(dut):
+async def led_rises_half_a_period_after_reset(dut):
     await start(dut)
-    await tick(dut)
-    previous = int(dut.count.value)
-    for _ in range(5):
-        await tick(dut)
-        expected = previous + 1
-        assert int(dut.count.value) == expected, (
-            f"count went {previous} -> {int(dut.count.value)}, expected {expected}"
-        )
-        previous = expected
+    # The first edge after release is edge 1. led must be low after edge
+    # HALF-1 and high after edge HALF, not a cycle either side.
+    assert await led_after(dut, HALF - 1) == 0, f"led rose before cycle {HALF}"
+    assert await led_after(dut, 1) == 1, f"led did not rise at cycle {HALF}"
 
 
 @cocotb.test()
-async def led_is_the_counter_top_bit(dut):
-    """
-    Put the counter one tick below each transition and watch led follow.
-
-    A Verilog testbench reaches this property only by overriding WIDTH -- which
-    test/gate/tb_blinky_gl.v cannot do, because synthesis resolved it -- or by
-    running 2**25 cycles, which is what that gate-level run spends four minutes
-    on. From Python the counter is just a signal to write.
-    """
+async def led_toggles_with_a_full_period(dut):
     await start(dut)
+    assert await led_after(dut, HALF - 1) == 0, f"led rose before cycle {HALF}"
+    assert await led_after(dut, 1) == 1, f"led did not rise at cycle {HALF}"
+    assert await led_after(dut, HALF - 1) == 1, f"led fell before cycle {PERIOD}"
+    assert await led_after(dut, 1) == 0, f"led did not fall at cycle {PERIOD}"
 
-    dut.count.value = (1 << (WIDTH - 1)) - 1      # top bit still 0; next tick sets it
-    await tick(dut)
-    assert dut.led.value == 1, (
-        f"led should rise when count reaches {1 << (WIDTH - 1)}, "
-        f"got led={dut.led.value} at count={int(dut.count.value)}"
-    )
 
-    dut.count.value = (1 << WIDTH) - 1            # all ones; next tick wraps to 0
-    await tick(dut)
-    assert dut.led.value == 0, (
-        f"led should fall when count wraps, "
-        f"got led={dut.led.value} at count={int(dut.count.value)}"
-    )
+@cocotb.test()
+async def reset_in_the_middle_restarts_the_count(dut):
+    await start(dut)
+    assert await led_after(dut, HALF + 5) == 1, "led should be high before the reset"
+
+    # Reset is asynchronous: led must fall without waiting for a clock edge.
+    # The edge is 10 ns away, the check comes well before it.
+    dut.rst.value = 1
+    await settle()
+    assert dut.led.value == 0, "led stayed high after rst, before any clock edge"
+
+    await ClockCycles(dut.clk, 2)
+    await settle()
+    assert dut.led.value == 0, "led was not low while rst was held"
+    dut.rst.value = 0
+
+    # The count starts again from zero, so the rise is HALF cycles away.
+    assert await led_after(dut, HALF - 1) == 0, f"led rose before cycle {HALF} after reset"
+    assert await led_after(dut, 1) == 1, f"led did not rise at cycle {HALF} after reset"

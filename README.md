@@ -57,10 +57,10 @@ make all
 **Now break it on purpose.** A layout tool cannot do this part for you. In `src/blinky.v`, change `count[WIDTH-1]` to `count[WIDTH-2]`. The LED now blinks twice as fast. Run `make all` again:
 
 ```
-FATAL: test/tb_blinky.v:58: led held for 4 cycles at cycle 4, expected 8
+[ERROR] cocotb tests failed: led_rises_half_a_period_after_reset, led_toggles_with_a_full_period, reset_in_the_middle_restarts_the_count, random_resets_match_the_model
 ```
 
-The test gives the line, the value it saw and the value it expected. `make` exits non-zero, so CI also fails. Undo the change with `git checkout -- src/blinky.v`. [Writing tests like this for your design →](docs/guide.md#writing-a-testbench-for-your-own-design)
+The last line names the failing tests. Above it, each failing test prints its message. `make` exits non-zero, so CI also fails. Undo the change with `git checkout -- src/blinky.v`. [Writing tests like this for your design →](docs/guide.md#writing-a-testbench-for-your-own-design)
 
 **3. Build the layout** (about 3 minutes, and about 20 minutes more on a first run for the 3 GB PDK download):
 
@@ -96,7 +96,7 @@ Turn it on once: **Settings → Pages → Source: GitHub Actions**. Build the pa
 
 | Command | What it does |
 |---|---|
-| `make all` | Lint, simulation, cocotb and synthesis: all the steps that take seconds |
+| `make all` | Lint, your tests and synthesis: all the steps that take seconds |
 | `make gds` | Full RTL-to-GDSII flow, then the summary above |
 | `make gatesim` | Your tests again, on the gates (after `make gds`) |
 | `make report` | The summary again, with no new run |
@@ -107,7 +107,7 @@ Turn it on once: **Settings → Pages → Source: GitHub Actions**. Build the pa
 
 ## ✍️ Make it your design
 
-Delete the blinky files. Put your Verilog in `src/` and your tests in `test/`. List them in `config.yaml`, and set `DESIGN_NAME` to your top module. The `Makefile` and CI read all other data from `config.yaml`. [The five things that must agree →](docs/guide.md#making-it-your-design)
+Delete the blinky files. Put your Verilog in `src/` and your tests in `test/`. List them in `config.yaml`, and set `DESIGN_NAME` to your top module. The `Makefile` and CI read all other data from `config.yaml`. [The four things that must agree →](docs/guide.md#making-it-your-design)
 
 ## Who it is for
 

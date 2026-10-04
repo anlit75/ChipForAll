@@ -1,10 +1,10 @@
 """
 A self-checking random test: reference model, monitor, scoreboard.
 
-test_blinky_cocotb.py drives the design and asserts on three moments
-somebody chose by hand. This file does the other half of verification: a
-model that says what the design *should* do, a loop that samples what it
-did, and a comparison on every cycle -- under stimulus nobody wrote out.
+test_blinky_cocotb.py asserts on moments somebody chose by hand. This file
+does the other half of verification: a model that says what the design
+*should* do, a loop that samples what it did, and a comparison on every
+cycle, under reset pulses nobody wrote out.
 
 Repeating a failure. cocotb seeds Python's random module itself and logs
 the seed it used ("Seeding Python random module with 1789965785"), so a
@@ -12,31 +12,35 @@ run that failed can be run again exactly:
 
     make cocotb SEED=1789965785
 
-What this does not check: reset *timing*. The stimulus moves rst only
-just after a clock edge, so an asynchronous reset and a synchronous one
-behave identically here. Recovery and removal are a static-timing
-question, and the nine-line summary does not carry them: its two slack
-rows are setup and hold, which are different checks. The per-corner
-reports do. This design's run puts `recovery check against rising-edge
-clock clk` under `Path Group: asynchronous` in all nine of them, which
-CI prints -- so reset timing is answered, just not where the summary
-looks.
+On the gates, `make gatesim SEED=1789965785` replays it the same way.
+
+Like the other file, this one touches only clk, rst and led, so it runs on
+the RTL and on the netlist. Every cycle is a trip through Python, so the run
+is bounded: one rise of led, a second one after a reset, then a few random reset pulses.
+
+What this does not check: that reset acts without a clock edge. rst changes
+here at a falling edge and led is read at the next one, so a synchronous
+reset passes. The directed test reset_in_the_middle_restarts_the_count
+checks it. Recovery and removal are a static-timing question, and the
+nine-line summary does not carry them: its two slack rows are setup and
+hold, which are different checks. The per-corner reports do. This design's
+run puts `recovery check against rising-edge clock clk` under
+`Path Group: asynchronous` in all nine of them, which CI prints.
 """
 
 import random
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.triggers import RisingEdge, Timer
+from cocotb.triggers import FallingEdge
 
-WIDTH = 26                  # blinky's default; led is count[WIDTH-1]
+# Must match WIDTH in src/blinky.v. A netlist has no parameter to read.
+WIDTH = 16
 LIMIT = 1 << WIDTH
-TOP = 1 << (WIDTH - 1)      # the count at which led rises
+HALF = 1 << (WIDTH - 1)   # the count at which led rises
 
-WINDOWS = 5                 # random starting points per run
-CYCLES = 40                 # clocks checked from each one
-NEAR = 5                    # how close to an edge "near" means
-QUIET = NEAR + 2            # cycles before a random reset may interrupt
+RESETS = 3                # random reset pulses after the two fixed ones
+SPREAD = HALF // 4        # longest free run before a random pulse
 
 
 class BlinkyModel:
@@ -48,101 +52,79 @@ class BlinkyModel:
     disagree with the design about.
     """
 
-    def __init__(self, count):
-        self.count = count
+    def __init__(self):
+        self.count = 0
 
-    def tick(self, rst):
+    def clock(self, rst):
         self.count = 0 if rst else (self.count + 1) % LIMIT
+
+    def reset(self):
+        self.count = 0
 
     @property
     def led(self):
         return (self.count >> (WIDTH - 1)) & 1
 
 
-def start_in(region):
-    """A starting count: just below the led edge, just below the wrap, or anywhere."""
-    if region == "rise":
-        return TOP - random.randint(1, NEAR)
-    if region == "wrap":
-        return LIMIT - random.randint(1, NEAR)
-    return random.randrange(LIMIT)
+def plan():
+    """
+    Cycles to run free before each reset pulse, as (gap, pulse length).
+
+    The first gap is longer than the rise at HALF, so a run cannot come back
+    green having watched a signal that never moved. The second lands next to
+    that rise again, counted from the reset, where an off-by-one would show.
+    The rest are short or medium, to keep the run short.
+    """
+    steps = [(HALF + 10, 2), (HALF + random.randint(-3, 3), random.randint(1, 3))]
+    for _ in range(RESETS):
+        gap = random.randint(1, 50) if random.random() < 0.5 else random.randint(1, SPREAD)
+        steps.append((gap, random.randint(1, 3)))
+    return steps
 
 
-async def load(dut, count):
-    """Reset, then put the counter where the test wants it."""
+@cocotb.test()
+async def random_resets_match_the_model(dut):
+    """Random reset pulses over several periods; led checked every cycle."""
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    model = BlinkyModel()
+    rst = 1
     dut.rst.value = 1
-    await RisingEdge(dut.clk)
-    await Timer(1, units="ns")
-    dut.count.value = count
-    dut.rst.value = 0
-    await Timer(1, units="ns")
 
+    steps = plan()
+    # Reset is held for a few edges first, then each step runs free for its
+    # gap and pulses rst for its length.
+    schedule = [1] * 3
+    for gap, length in steps:
+        schedule += [0] * gap + [1] * length
 
-async def run_window(dut, start, quiet):
-    """
-    CYCLES clocks from `start`, led compared against the model every one.
-
-    Random resets begin after `quiet` cycles. That delay is what keeps the
-    two windows placed at an led edge from being neutered by a reset that
-    lands before the edge does -- a run where led never moves would pass
-    while proving nothing.
-    """
-    await load(dut, start)
-    model = BlinkyModel(start)
-    previous = model.led
-    transitions = resets = held = 0
-
-    for cycle in range(CYCLES):
-        # Stimulus for the edge about to happen, driven a moment before it.
-        if cycle >= quiet and held == 0 and random.random() < 0.05:
-            held = random.randint(1, 3)
-            resets += 1
-        rst = 1 if held else 0
-        held = max(held - 1, 0)
-        dut.rst.value = rst
-        await Timer(1, units="ns")
-
-        await RisingEdge(dut.clk)
-        await Timer(1, units="ns")
-
-        model.tick(rst)
+    transitions = resets = 0
+    previous = 0
+    for cycle, want in enumerate(schedule):
+        await FallingEdge(dut.clk)
+        model.clock(rst)
         if int(dut.led.value) != model.led:
             raise AssertionError(
                 f"led is {int(dut.led.value)}, model says {model.led}: "
-                f"cycle {cycle} of a window from count {start}, rst {rst}, "
-                f"model count {model.count}"
+                f"cycle {cycle}, rst was {rst}, model count {model.count}"
             )
-
         if model.led != previous:
             transitions += 1
             previous = model.led
 
-    return transitions, resets
+        # Drive rst for the edge ahead. A reset clears the count at once.
+        if want and not rst:
+            resets += 1
+        rst = want
+        dut.rst.value = rst
+        if rst:
+            model.reset()
 
-
-@cocotb.test()
-async def random_stimulus_matches_the_model(dut):
-    """Random resets from random starting counts; led checked every cycle."""
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
-
-    # Two windows are placed where led changes, so a run cannot come back
-    # green having watched a signal that never moved. The rest are free.
-    plan = [("rise", QUIET), ("wrap", QUIET)]
-    plan += [(random.choice(("rise", "wrap", "any")), 0) for _ in range(WINDOWS - 2)]
-    random.shuffle(plan)
-
-    transitions = resets = 0
-    for region, quiet in plan:
-        moved, reset_count = await run_window(dut, start_in(region), quiet)
-        transitions += moved
-        resets += reset_count
-
-    assert transitions >= 2, (
-        f"led moved {transitions} times in {WINDOWS * CYCLES} cycles. The "
+    assert transitions >= 1, (
+        f"led moved {transitions} times in {len(schedule)} cycles. The "
         "stimulus never reached an edge, so this run checked nothing."
     )
 
     dut._log.info(
-        f"{WINDOWS * CYCLES} cycles checked, {resets} resets, "
+        f"{len(schedule)} cycles checked, {resets} resets, "
         f"{transitions} led transitions"
     )
