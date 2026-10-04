@@ -137,6 +137,31 @@ jobs:
           fi
 
       # Template only.
+      # This template's Makefile is the stub that c4o-core ships, so that a copy
+      # made from it starts with a stub that works with the image. The commands
+      # are in the image, and the stub is what finds them. A stub edited by hand,
+      # or one left over from an older image, would make a new repository fail
+      # before its first command. So compare the stub in the Makefile, from its
+      # marker line to the include line, with the stub in the image it names.
+      - name: The Makefile is still the stub the image ships
+        if: env.IS_TEMPLATE == 'true'
+        run: |
+          image=$(grep -E '^C4O_IMAGE :=' Makefile | sed 's/.*:= *//')
+          marker='# --- From here down this file is c4o-core'"'"'s stub.mk. Do not edit it. ---'
+          if ! grep -qxF "$marker" Makefile; then
+            echo "::error::The Makefile has no line '$marker'. The stub must start with that line, and the stub must not be edited."
+            exit 1
+          fi
+          work=$(mktemp -d)
+          awk -v m="$marker" '$0 == m { p = 1 } p { print } p && $0 == "include $(C4O_RULES)" { exit }' Makefile > "$work/makefile-stub"
+          docker run --rm --entrypoint cat "$image" /opt/c4o-core/stub.mk > "$work/image-stub"
+          if ! diff -u "$work/image-stub" "$work/makefile-stub"; then
+            echo "::error::The stub in the Makefile differs from the stub in $image. The stub must not be edited. Copy stub.mk from that image again."
+            exit 1
+          fi
+          echo "  the Makefile's stub is the one in $image"
+
+      # Template only.
       # README tells anyone on an Apple Silicon machine that `make gds` runs
       # native because LibreLane publishes arm64, and that is a fact about
       # somebody else's registry: if they stop publishing it, or the pinned tag
