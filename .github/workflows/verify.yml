@@ -84,6 +84,15 @@ jobs:
             echo "--- the in-container delegation path ---"
             make lint
 
+  # The steps every repository made from this template shares -- the image and
+  # PDK setup, the fast checks, the flow, the report, the uploads -- are
+  # composite actions in c4o-core, called at a branch that each c4o-core
+  # release moves. So a fix to one of them reaches a repository made from this
+  # template without anybody copying it. What each action does:
+  # https://github.com/anlit75/c4o-core/blob/main/docs/actions.md
+  #
+  # Steps of your own go between the actions. They run in this job, so they
+  # read runs/ and build/ directly.
   full-flow:
     needs: changes
     # Runs unless the job above said no. If that job fails, its output is
@@ -92,131 +101,49 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pages: read  # only to ask whether Pages is on; see the results page steps
+      pages: read  # only to ask whether Pages is on
     outputs:
-      publish-pages: ${{ steps.pages.outputs.publish }}
+      publish-pages: ${{ steps.report.outputs.publish-pages }}
+    env:
+      # 'true' in the template itself, and not in a repository made from it.
+      IS_TEMPLATE: ${{ github.event.repository.is_template }}
     steps:
       - uses: actions/checkout@v5
 
-      # The LibreLane image is 1.5GB and its pull is the longest single thing a
-      # pull request waits for. Nothing it needs comes from the steps before
-      # `make gds`, so start it now and let it run under them. The step before
-      # `make gds` waits for it.
-      - name: Start pulling the LibreLane image
+      - name: Setup
+        uses: anlit75/c4o-core/actions/setup@v2
+
+      # The steps marked "Template only" check sentences in this template's own
+      # README and guide. They run when this repository is the template and are
+      # skipped in a repository made from it, where those sentences are no
+      # longer the documentation. Delete them there if you like.
+      #
+      # Whether they run comes from the event that started the workflow. This
+      # step asks the API the same question, so that if the two ever disagree
+      # the template's checks do not just stop running with every step green.
+      - name: The template's own checks are on where they should be
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          image=$(grep -E '^LIBRELANE_IMAGE :=' Makefile | sed 's/.*:= *//')
-          nohup docker pull "$image" > "$RUNNER_TEMP/librelane-pull.log" 2>&1 &
-
-      # c4o-core's version tag is repeated three times because nothing here
-      # reads it from a single source: the Makefile drives `make gds`, this
-      # workflow pulls the image before the Makefile ever runs, and
-      # devcontainer.json is read by an external tool that never touches the
-      # Makefile at all. A tag bumped in one place and missed in another does
-      # not fail loudly -- it just means whoever builds locally, opens the
-      # Codespace, or runs this workflow silently gets a different c4o-core
-      # than everyone else. Runs before the pull below so a mismatch is
-      # caught as a config error, not paid for as a wasted image pull.
-      - name: Verify c4o-core image version is pinned consistently
-        run: |
-          python3 -c "
-          import json, os, re, sys
-
-          def read(path):
-              # A file that is not here is a file somebody removed on purpose --
-              # dropping .devcontainer/ is a reasonable thing to do with a
-              # template. Only the pins that are still here have to agree.
-              return open(path).read() if os.path.exists(path) else None
-
-          def matched(pattern, text):
-              m = re.search(pattern, text, re.M)
-              return m.group(1) if m else None
-
-          values = {}
-
-          makefile = read('Makefile')
-          if makefile is not None:
-              values['Makefile'] = matched(r'^C4O_IMAGE\s*:=\s*(\S+)', makefile)
-
-          workflow = read('.github/workflows/verify.yml')
-          if workflow is not None:
-              values['.github/workflows/verify.yml'] = matched(
-                  r'docker pull (ghcr\.io/\S+/c4o-core:\S+)', workflow)
-
-          devcontainer = read('.devcontainer/devcontainer.json')
-          if devcontainer is not None:
-              # devcontainer.json is JSONC; strip the line comments first.
-              stripped = re.sub(r'^\s*//.*\$', '', devcontainer, flags=re.M)
-              values['.devcontainer/devcontainer.json'] = json.loads(stripped).get('image')
-
-          # Present but unreadable means this step went stale, not that the pins
-          # disagree. Name the file rather than leaving a traceback nothing
-          # points anyone at.
-          for path, value in values.items():
-              if value is None:
-                  print(path + ': found no c4o-core image reference.')
-                  print('If you renamed or moved it, this step has to be updated too.')
-                  sys.exit(1)
-
-          if len(set(values.values())) > 1:
-              print('c4o-core image reference is inconsistent:')
-              for path in values:
-                  print('  ' + path + ': ' + values[path])
-              sys.exit(1)
-          print('c4o-core image reference is consistent: ' + next(iter(values.values())))
-          "
-
-      - name: Pull c4o-core Image
-        run: docker pull ghcr.io/anlit75/c4o-core:2.15
-
-      # The PDK is a third of a gigabyte to download and the same every time,
-      # so it is cached -- keyed on the version c4o-core installs, read out of
-      # the image. A key that did not name the version was restored on every
-      # run and then not used: it held what an older c4o-core had installed,
-      # `make pdk` downloaded the PDK again beside it, and a hit on the key
-      # meant the new one was never saved. No restore-keys, for the same
-      # reason: a near match is a PDK this image does not want.
-      - name: Which PDK version does this c4o-core install?
-        id: pdk
-        run: |
-          image=$(grep -E '^C4O_IMAGE :=' Makefile | sed 's/.*:= *//')
-          source=/opt/c4o-core/scripts/entrypoint.py
-          version=$(docker run --rm --entrypoint grep "$image" -oE 'commit_hash = "[0-9a-f]{40}"' "$source" | grep -oE '[0-9a-f]{40}' || true)
-          if [ "$(wc -w <<<"$version")" -ne 1 ]; then
-            echo "::error::Could not read one PDK version out of the c4o-core image (found: '$version'). The cache key is built from it."
+          api=$(gh api "repos/$GITHUB_REPOSITORY" --jq '.is_template')
+          echo "the event says is_template='$IS_TEMPLATE', the API says '$api'"
+          if [ "$api" = true ] && [ "$IS_TEMPLATE" != true ]; then
+            echo "::error::This repository is a template, and the steps marked 'Template only' are switched off. They read github.event.repository.is_template."
             exit 1
           fi
-          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [ "$api" != true ] && [ "$IS_TEMPLATE" = true ]; then
+            echo "::error::This repository is not a template, and the steps marked 'Template only' are switched on."
+            exit 1
+          fi
 
-      - name: Cache Sky130 PDK
-        id: cache-pdk
-        uses: actions/cache@v5
-        with:
-          path: pdks
-          key: sky130-pdk-${{ runner.os }}-${{ steps.pdk.outputs.version }}
-
-      # The devcontainer runs as a named user so that files it creates on a
-      # Linux host stay owned by the host user. That user comes from the base
-      # image rather than from our Dockerfile, so assert it is really there --
-      # otherwise a future c4o-core rebuild breaks the devcontainer silently,
-      # in a way no other step here would catch.
-      - name: Verify the devcontainer user exists in its image
-        run: |
-          # devcontainer.json is JSONC, so strip line comments before parsing.
-          set -- $(python3 -c "
-          import json, re
-          src = open('.devcontainer/devcontainer.json').read()
-          d = json.loads(re.sub(r'^\s*//.*$', '', src, flags=re.M))
-          print(d['image'], d['remoteUser'])
-          ")
-          echo "image=$1 remoteUser=$2"
-          docker run --rm --entrypoint id "$1" -u "$2"
-
+      # Template only.
       # README tells anyone on an Apple Silicon machine that `make gds` runs
       # native because LibreLane publishes arm64, and that is a fact about
       # somebody else's registry: if they stop publishing it, or the pinned tag
       # moves, that paragraph is wrong with nothing failing. Ask the registry.
       # No arm64 runner needed -- a manifest index lists its platforms.
       - name: The arm64 image the README promises is still published
+        if: env.IS_TEMPLATE == 'true'
         run: |
           image=$(grep -E '^LIBRELANE_IMAGE :=' Makefile | sed 's/.*:= *//')
           repo=${image%:*}; repo=${repo#ghcr.io/}; tag=${image##*:}
@@ -239,12 +166,14 @@ jobs:
             exit 1
           fi
 
+      # Template only.
       # README tells a reader that SystemVerilog works in every command from
       # c4o-core 2.8.3 on. `make sim` is the one that used to reject it, so run
       # the pinned image against a file that needs it. Written by this step
       # rather than shipped into the template: the claim is about the image, not
       # about the example, and the template stays a Verilog one.
       - name: SystemVerilog reads, as the README says it does
+        if: env.IS_TEMPLATE == 'true'
         run: |
           image=$(grep -E '^C4O_IMAGE :=' Makefile | sed 's/.*:= *//')
           work=$(mktemp -d)
@@ -279,12 +208,12 @@ jobs:
             -u "$(id -u):$(id -g)" "$image" sim
           echo "  sim accepted always_ff and logic"
 
-      - name: 1. Lint Check
-        run: make lint
+      # Lint, the Verilog testbench, the Python (cocotb) testbenches when
+      # config.yaml asks for them, synthesis and the schematic.
+      - name: Fast checks
+        uses: anlit75/c4o-core/actions/checks@v2
 
-      - name: 2. Simulation
-        run: make sim
-
+      # Template only.
       # README's quick start has the reader change count[WIDTH-1] to
       # count[WIDTH-2] in src/blinky.v, run `make all`, and see it stop on a
       # FATAL line it quotes word for word. Make that edit here and check the
@@ -292,6 +221,7 @@ jobs:
       # the example the README describes: a copy of this template with its own
       # design has nothing to break this way, and must not go red for it.
       - name: The bug the README breaks on purpose is caught
+        if: env.IS_TEMPLATE == 'true'
         run: |
           if ! grep -qF 'count[WIDTH-1]' src/blinky.v 2>/dev/null; then
             echo "::notice::src/blinky.v is not the README's example; nothing to break."
@@ -314,57 +244,11 @@ jobs:
           fi
           echo "  make all failed with the line the README quotes"
 
-      # Cheap -- the tests run in well under a second -- so unlike the
-      # gate-level step below, this one runs on pull requests too.
-      #
-      # Skipped when config.yaml does not ask for Python testbenches. This is
-      # a template: somebody putting their own design in it may only want
-      # Verilog tests, and a starter kit whose CI goes red for a test kind you
-      # never opted into is a starter kit you abandon. The key's presence is
-      # the opt-in; if it IS there and matches no files, `make cocotb` fails,
-      # which is correct -- you asked for something that is not there.
-      - name: 2b. cocotb Tests
-        run: |
-          if ! grep -q '^"//COCOTB_TESTS":' config.yaml; then
-            echo "config.yaml has no //COCOTB_TESTS -- no Python testbenches to run."
-            exit 0
-          fi
-          make cocotb
+      # `make gds`, after the LibreLane image the setup step started pulling.
+      - name: Physical design
+        uses: anlit75/c4o-core/actions/gds@v2
 
-      # The cocotb verdicts as a table on the run's summary page, instead of
-      # only in the log. always() so a failing test is shown too -- that is
-      # when the table is worth opening. Gated on the file, not on the
-      # //COCOTB_TESTS key: a run that crashed before writing it has nothing to
-      # show, and the step above has already gone red for it.
-      - name: cocotb results on the summary page
-        if: always() && hashFiles('build/cocotb-results.xml') != ''
-        uses: test-summary/action@v2
-        with:
-          paths: build/cocotb-results.xml
-
-      - name: 3. Logic Synthesis
-        run: make synth
-
-      # Cheap, like the cocotb step: yosys stops after proc and opt, so this
-      # is under a second even though `make gds` below is three minutes.
-      - name: 3b. Schematic
-        run: |
-          make schematic
-          ls -lh build/schematic.svg
-          grep -qF "<svg" build/schematic.svg || { echo "not an SVG"; exit 1; }
-
-      # A second pull of the same image waits for the one started at the top
-      # of the job, and does the pull itself if that one failed -- so a failed
-      # background pull is an error here, not a silent retry inside `make gds`.
-      - name: The LibreLane image is here
-        run: |
-          image=$(grep -E '^LIBRELANE_IMAGE :=' Makefile | sed 's/.*:= *//')
-          docker pull "$image" || { cat "$RUNNER_TEMP/librelane-pull.log"; exit 1; }
-
-      - name: 4. Physical Design (GDSII)
-        # This step will automatically trigger 'make pdk' first
-        run: make gds
-
+      # Template only.
       # docs/guide.md tells a reader they can bring their own timing constraints
       # by setting PNR_SDC_FILE and SIGNOFF_SDC_FILE. Those are LibreLane's
       # variables, not this repository's -- nothing here would notice if an
@@ -373,6 +257,7 @@ jobs:
       # asserts the keys exist, not that a given SDC file is read; only a run
       # with one in it can say that.
       - name: The SDC keys the guide documents exist in this LibreLane
+        if: env.IS_TEMPLATE == 'true'
         run: |
           image=$(grep -E '^LIBRELANE_IMAGE :=' Makefile | sed 's/.*:= *//')
           echo "Asking $image which SDC variables it declares:"
@@ -393,44 +278,13 @@ jobs:
             echo "  $key ok"
           done
 
-      # Matched rather than named. `make gds` names its output after DESIGN_NAME
-      # in config.yaml, so hardcoding "blinky" meant the first thing anyone does
-      # with this template -- put their own design in it -- broke CI, on a line
-      # nothing points them at.
-      - name: Verify GDS Output
-        run: |
-          shopt -s nullglob
-          gds=(build/*.gds)
-          if [ ${#gds[@]} -eq 0 ]; then
-            echo "Error: make gds produced no .gds in build/"
-            exit 1
-          fi
-          for f in "${gds[@]}"; do
-            [ -s "$f" ] || { echo "Error: $f is empty"; exit 1; }
-          done
-          ls -lh "${gds[@]}"
-
-      # The render is what `report`'s layout row points at and what the
-      # artifact step below uploads. Both degrade to silence when it is
-      # missing: if-no-files-found stays on 'warn' so that a failed `make gds`
-      # does not produce a second, misleading red step -- which also means an
-      # upload of nothing would look green. So assert it here instead, where
-      # `make gds` has just succeeded and a missing render is a real problem.
-      - name: Verify the layout render exists
-        run: |
-          shopt -s nullglob
-          png=(runs/*/final/render/*.png)
-          if [ ${#png[@]} -eq 0 ]; then
-            echo "Error: the flow drew no layout render under runs/*/final/render/"
-            exit 1
-          fi
-          ls -lh "${png[@]}"
-
+      # Template only.
       # docs/guide.zh-TW.md tells a reader with negative slack to cat this exact
       # glob. The path it used to give -- runs/*/final/*.rpt -- matched nothing,
       # and the reader who needed it most got silence back. A documented path
       # that nothing checks is a path that rots, so check it here.
       - name: The timing report the guide tells you to read is where it says
+        if: env.IS_TEMPLATE == 'true'
         run: |
           shopt -s nullglob
           rpts=(runs/*/*-openroad-stapostpnr/*ss_*/checks.rpt)
@@ -475,35 +329,14 @@ jobs:
           echo "--- timing corners this run produced (${#corners[@]}) ---"
           printf '%s\n' "${corners[@]}"
 
-      # Gate-level simulation of the netlist the step above just produced.
-      #
-      # Push-only, and a step rather than a job: it needs that netlist, so it
-      # could not run in parallel anyway, and keeping it here avoids shipping
-      # the whole build/ directory through the artifact store to get at it.
-      #
-      # Not on pull requests. blinky's led toggles once every 2**25 cycles and
-      # the netlist has no WIDTH left to shrink, so this costs ~4 minutes --
-      # measured here, not guessed. Paying that on every review round trip buys
-      # little: the netlist only changes when the RTL or the flow does, and
-      # merging to main catches that before any tag is cut.
-      #
-      # Phrased as "not a pull request" rather than "is a push" so that
-      # workflow_dispatch runs it too -- that is the way to exercise a branch's
-      # gate-level simulation before merging it, without paying for it on every
-      # review round trip.
-      #
-      # Skipped when config.yaml does not ask for it, for the reason the
-      # cocotb step gives -- and more so here: a gate-level testbench cannot
-      # reuse the RTL one's trick of shrinking the design through a parameter,
-      # so it is the hardest file in this repo to write. Requiring it of
-      # everyone who pushes their own design would mean red CI on their first
-      # push, for a test they were never told was mandatory.
+      # Template only.
       # docs/guide.md says reset timing is unanswered here, and says whether the
       # flow checks recovery and removal at all depends on arcs in the cell
       # library. blinky is an async-reset design, the corner reports are right
       # here, and nobody has looked. Printed rather than asserted: this is how
       # the next edit to that paragraph gets a fact instead of a hedge.
       - name: What the corner reports say about reset timing
+        if: env.IS_TEMPLATE == 'true'
         run: |
           shopt -s nullglob
           rpts=(runs/*/*-openroad-stapostpnr/*/checks.rpt)
@@ -517,60 +350,13 @@ jobs:
             grep -rhoE '^[a-z ]+(check|checks|slack)' "${rpts[0]}" | sort -u | head -20
           fi
 
-      - name: 5. Gate-Level Simulation
-        if: github.event_name != 'pull_request'
-        timeout-minutes: 15
-        run: |
-          if ! grep -q '^"//GATE_TESTS":' config.yaml; then
-            echo "config.yaml has no //GATE_TESTS -- no gate-level testbench to run."
-            exit 0
-          fi
-          make gatesim
+      # The gate-level simulation (not on pull requests), the signoff numbers
+      # on the run summary, and the results page.
+      - name: Report
+        id: report
+        uses: anlit75/c4o-core/actions/report@v2
 
-      # What `make report` prints -- area, timing, power, signoff -- on the
-      # run's summary page, so reading them does not mean opening the log or
-      # waiting for Pages. The [INFO] lines are c4o-core saying which files it
-      # read, not results, so they stay in the log.
-      - name: Signoff numbers on the summary page
-        run: |
-          # A run: step's bash has -e but not pipefail, so without this a
-          # report that failed would pass through tee as a green step.
-          set -o pipefail
-          make -s report | tee build/report.txt
-          {
-            echo '## Signoff'
-            echo '```text'
-            grep -v '\[INFO\]' build/report.txt
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      # One page with what `make report` prints, the layout, the schematic and
-      # the cocotb verdicts. Built on every run, pull requests included, so a
-      # change that breaks the page is caught before it reaches main.
-      - name: Build the results page
-        run: |
-          make site
-          ls -lh build/site/
-          # After make gds these four come from the run's own reports. Each is
-          # left out silently when its report is missing, so a LibreLane
-          # upgrade that moved one would otherwise just shrink the page.
-          sections=("Signoff checks" "Worst setup path" "Area" "Power")
-          # Only when asked for: the README tells a student that deleting the
-          # key skips the waveform, and a red run would make that a lie.
-          if grep -q '^"//WAVE_SIGNALS":' config.yaml; then
-            sections+=("Waveform")
-          fi
-          for section in "${sections[@]}"; do
-            grep -qF "<h2>$section</h2>" build/site/index.html \
-              || { echo "The results page has no '$section' section."; exit 1; }
-          done
-          # The page names the commit it was built from, so a published page
-          # can always say which run it shows. c4o-core only writes that line
-          # when GITHUB_* reach it, and they reach it only if `make site`
-          # passes them into the container -- for a long time it did not.
-          grep -qF "/commit/$GITHUB_SHA" build/site/index.html \
-            || { echo "::error::The results page does not link commit $GITHUB_SHA. make site has to pass GITHUB_* into the container."; exit 1; }
-
+      # Template only.
       # docs/guide.md, "Iterating without re-running the whole flow", gives one
       # command for resuming from floorplan. Nothing ran the command it used to
       # give, and it had stopped working three separate ways with every other
@@ -586,7 +372,7 @@ jobs:
       # when the Makefile or the LibreLane pin does. Phrased the same way, so
       # workflow_dispatch exercises it on a branch before merging.
       - name: Resuming from floorplan works, as the guide says it does
-        if: github.event_name != 'pull_request'
+        if: env.IS_TEMPLATE == 'true' && github.event_name != 'pull_request'
         run: |
           shopt -s nullglob
           netlists=(runs/*/*-yosys-synthesis/*.nl.v)
@@ -614,92 +400,10 @@ jobs:
           fi
           echo "  resumed from floorplan: synthesis kept, resumed steps added after the old ones"
 
-      # Only main is published, and only when the repository has Pages set to
-      # "GitHub Actions". A copy of this template starts with Pages off, and
-      # turning it on is a setting no workflow token can change -- so off is
-      # a notice, not a red run. An answer that is neither yes nor no fails,
-      # because a silently unpublished page is the failure this step exists
-      # to rule out. README, "Publishing the results page".
-      - name: Is GitHub Pages set to publish from Actions?
-        id: pages
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          code=$(curl -sS -o pages.json -w '%{http_code}' \
-            -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
-            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/pages")
-          case "$code" in
-            200)
-              build_type=$(python3 -c "import json; print(json.load(open('pages.json')).get('build_type'))")
-              if [ "$build_type" = workflow ]; then
-                echo "publish=true" >> "$GITHUB_OUTPUT"
-              else
-                echo "::notice::GitHub Pages publishes from a branch here (build_type: $build_type), so the results page was not published. Settings > Pages > Source: GitHub Actions publishes it."
-              fi ;;
-            404)
-              echo "::notice::GitHub Pages is off for this repository, so the results page was not published. Settings > Pages > Source: GitHub Actions turns it on." ;;
-            *)
-              echo "Asking GitHub whether Pages is on returned HTTP $code:"
-              cat pages.json
-              exit 1 ;;
-          esac
-
-      - name: Upload the results page
-        if: steps.pages.outputs.publish == 'true'
-        uses: actions/upload-pages-artifact@v5
-        with:
-          path: build/site
-
-      # The schematic on its own, for the same reason the layout render gets
-      # one below: it is a small file people actually want to open, and it is
-      # otherwise only inside the ~10MB bundle. Its existence is already
-      # asserted in step 3b, so 'warn' here cannot hide a missing file.
-      - name: Upload the schematic
+      - name: Upload
         if: always()
-        uses: actions/upload-artifact@v6
-        with:
-          name: schematic
-          path: build/schematic.svg
-          if-no-files-found: warn
-          retention-days: 5
+        uses: anlit75/c4o-core/actions/upload@v2
 
-      # The layout image on its own, because the bundle below is ~10MB and
-      # this is the one file in it anyone wants to look at. `report` prints
-      # its path; this makes it one click from the run summary instead.
-      - name: Upload the layout render
-        if: always()
-        uses: actions/upload-artifact@v6
-        with:
-          name: layout
-          path: runs/*/final/render/*.png
-          if-no-files-found: warn
-          retention-days: 5
-
-      # runs/ is no longer inside build/, so name both or the run itself --
-      # every log, netlist and report the flow produced -- stops being kept.
-      - name: Upload Artifacts
-        if: always()
-        uses: actions/upload-artifact@v6
-        with:
-          name: chipforall-build-artifacts
-          path: |
-            build/
-            runs/
-          retention-days: 5
-
-      # A v* tag publishes the GDS that the steps above just verified.
-      - name: Publish Release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v3
-        with:
-          # A glob, for the same reason the verify step above uses one.
-          files: build/*.gds
-          generate_release_notes: true
-
-  # Publishes the page full-flow built. A job of its own because deploying to
-  # Pages needs an OIDC token and the github-pages environment, and neither
-  # belongs on the job that runs everything else.
   pages:
     needs: full-flow
     if: needs.full-flow.outputs.publish-pages == 'true'

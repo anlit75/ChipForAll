@@ -3,18 +3,18 @@
 
 # Image Configuration
 #
-# Pinned to the minor, not the patch. c4o-core publishes 2.15.0, 2.15, 2 and
-# latest for every release; 2.15 means a fix reaches you without anybody editing
-# this line -- for as long as 2.15 is c4o-core's newest minor. Only the newest
-# minor gets fixes, so once 2.16 is out this line has to move to keep getting
-# them. A new behaviour never arrives unannounced. Pin 2.15.0 instead if you
+# Pinned to the minor, not the patch. c4o-core publishes 2.16.0, 2.16, 2 and
+# latest for every release; 2.16 means a fix reaches you without anybody editing
+# this line -- for as long as 2.16 is c4o-core's newest minor. Only the newest
+# minor gets fixes, so once 2.17 is out this line has to move to keep getting
+# them. A new behaviour never arrives unannounced. Pin 2.16.0 instead if you
 # want a byte-identical image forever, and remember that you then also own
 # noticing its fixes.
 #
-# Three files carry this version -- here, .devcontainer/devcontainer.json, and
-# the docker pull in .github/workflows/verify.yml. CI refuses to continue when
-# they disagree, so change all three together.
-C4O_IMAGE := ghcr.io/anlit75/c4o-core:2.15
+# Two files carry this version -- here and .devcontainer/devcontainer.json. CI
+# refuses to continue when they disagree, so change both together. The workflow
+# reads the image name from this line.
+C4O_IMAGE := ghcr.io/anlit75/c4o-core:2.16
 LIBRELANE_IMAGE := ghcr.io/librelane/librelane:3.0.14
 
 # Extra flags for the LibreLane run, passed through as they are.
