@@ -42,14 +42,13 @@ You do not need Verilog to start. `make gds` runs the example unchanged and prin
 
 ## Making it your design
 
-The example is a blinky, which is a clock divider. To replace it with your own design, four things must agree, and only these four:
+The example is a blinky, which is a clock divider. To replace it with your own design, three things must agree, and only these three:
 
 | Change | Where |
 |---|---|
 | Your RTL | `src/`, listed under `VERILOG_FILES` in `config.yaml` |
 | `DESIGN_NAME` | `config.yaml` — must match your top module's name |
 | Your testbenches | `test/`, under `"//COCOTB_TESTS"` |
-| The waveform's signals | `"//WAVE_SIGNALS"`, named from your top module down |
 
 No other file names the design. The `Makefile` and the CI workflow both read `DESIGN_NAME` from `config.yaml`.
 
@@ -57,9 +56,7 @@ Three more things cause problems in a first design:
 
 *   **Delete the blinky files that you replace**: `src/blinky.v` and `test/test_blinky_*.py`. As an alternative, remove them from `config.yaml`. The test key uses the glob `test/*.py`, so a blinky test file that is still in `test/` is still included. `VERILOG_FILES` names each file, so replace `src/blinky.v` there by name.
 *   **Start every RTL file with `` `timescale 1ns/1ps ``.** Without it, `make cocotb` fails with `Unable to accurately represent 10(ns)`. `make sim` still passes, because a Verilog testbench declares its own.
-*   **Rewrite `"//DESCRIPTION"`** in `config.yaml`. If you do not, your results page says that the design is a clock divider that blinks an LED. Also change `"//WAVE_SIGNALS"` to the signals of your design. If you do not, `make site` stops at the first signal that the VCD does not declare.
-
-**One of those keys is optional.** You can delete `"//WAVE_SIGNALS"` from `config.yaml`, and the results page then has no waveform. Delete the key line *and* the indented paths below it. If you delete only the key line, the paths below it join the key above, or the file does not parse.
+*   **Rewrite `"//DESCRIPTION"`** in `config.yaml`. If you do not, your results page says that the design is a clock divider that blinks an LED.
 
 **A repository needs tests of at least one kind.** `make all` runs `cocotb` when `"//COCOTB_TESTS"` is set and `sim` when `"//TEST_FILES"` is set. It prints a skip line for a kind whose key is not set. With neither key set, `make all` fails. CI follows the same rules. If you keep a key but it matches no files, CI fails. That is correct: you asked for tests that are not there.
 
@@ -94,14 +91,14 @@ If the first row is wrong, you get an error immediately, not three minutes into 
 | `make all` | Runs `lint`, `cocotb` and `synth`, and `sim` when `"//TEST_FILES"` is set: all the steps that run in seconds. | `Terminal` |
 | `make lint` | Checks your Verilog with Verilator. | `Terminal` |
 | `make sim` | Runs a Verilog testbench with Icarus Verilog. It needs `"//TEST_FILES"`: see [Adding a Verilog testbench](#adding-a-verilog-testbench). | `build/wave.vcd` |
-| `make cocotb` | Runs the Python (cocotb) testbenches on the RTL. With `"//WAVE_SIGNALS"` set, it also writes a VCD into `build/`. | `build/cocotb-results.xml` |
+| `make cocotb` | Runs the Python (cocotb) testbenches on the RTL. With `WAVES=1`, it also writes a VCD into `build/`. | `build/cocotb-results.xml` |
 | `make synth` | Synthesises RTL into generic gates with Yosys. It gives no area and no timing: see [Seeing the circuit](#seeing-the-circuit). The script is fixed. Use `make shell` to run Yosys yourself. | `build/synthesis.json` |
 | `make pdk` | Installs the Sky130 PDK. `make gds` runs it for you. Run it alone to do the 3GB download before you need it. | `pdks/` |
 | `make schematic` | Draws the circuit as an SVG that you can open anywhere. | `build/schematic.svg` |
 | `make gds` | Builds the physical layout with LibreLane. It takes about three minutes, plus the PDK download on a first run. | `build/<DESIGN_NAME>.gds` |
 | `make gatesim` | Runs the cocotb testbenches again on the synthesised netlist. With `"//GATE_TESTS"` set, it runs that Verilog testbench instead. Run `make gds` first. | `build/cocotb-gl-results.xml` |
 | `make report` | Prints area, timing, power and signoff from the last `make gds`. | `Terminal` |
-| `make site` | Puts `report`, the layout, the schematic and the cocotb results on one page. | `build/site/index.html` |
+| `make site` | Puts `report`, the layout and the cocotb results on one page. | `build/site/index.html` |
 | `make shell` | Opens a bash shell inside the c4o-core container. | — |
 | `make clean` | Removes `build/`. Keeps `runs/`, because `report` and `gatesim` read it. | — |
 | `make distclean` | Removes `build/` and `runs/`. | — |
@@ -115,15 +112,17 @@ If the first row is wrong, you get an error immediately, not three minutes into 
 ```
   blinky
 
-  die              56.375 x 67.095 um  (3782.48 um^2)
-  utilization      56.6%
-  standard cells   113
-  setup slack      +5.52 ns  (0 violations)
-  hold slack       +0.11 ns  (0 violations)
-  power            0.143 mW  (nom_tt_025C_1v80)
-  signoff          clean  (Magic DRC, KLayout DRC, LVS, antenna, XOR)
-  lint warnings    0
-  layout           runs/blinky_run/final/render/blinky.png
+  die                56.375 x 67.095 um  (3782.48 um^2)
+  utilization        56.6%
+  instances          65 after synthesis, 113 after routing
+  instance classes   32 logic, 27 well taps, 18 timing-repair buffers, 17 inverters, 16 sequential, 3 clock buffers
+  drive strength     X1 0->18, X2 65->65, X16 0->3  (synthesis->routing)
+  setup slack        +5.52 ns  (0 violations)
+  hold slack         +0.11 ns  (0 violations)
+  power              0.143 mW  (nom_tt_025C_1v80)
+  signoff            clean  (DRC, LVS, antenna, XOR)
+  lint warnings      0
+  layout             runs/blinky_run/final/render/blinky.png
 ```
 
 Those are the numbers of the example design, from one PDK version. Your numbers will be different, but the lines to read are the same.
@@ -132,23 +131,27 @@ Those are the numbers of the example design, from one PDK version. Your numbers 
 
 That is the default of that version, not a guarantee from this repository, so check it again after an upgrade. `clean` states the result and names the checks that it saw. When a check fails, the line names the failures: `2 Magic DRC, 1 LVS`.
 
+**`instances`** counts the cells of the design, once after synthesis and once after routing. The difference is what place and route added, such as well taps, clock buffers and timing-repair buffers. `instance classes` splits the count after routing. `drive strength` counts the same instances by the `_N` suffix of the Sky130 cell name, from synthesis to routing. `X1 0->18` means that synthesis made no X1 instances and the flow has 18 after routing. Physical-only cells, such as well taps, are not in that line.
+
 **`layout`** is the PNG that the flow drew of your chip. Open it.
 
 `XOR` in that line is not a process-rule check. Two tools write the same layout as GDS, and the check compares the two results, which must agree. It finds a stream-out bug in one of the two writers. It is not a cross-check of the design by tools from two vendors, because both tools read the same database. Do not read a clean XOR as a second opinion on the layout.
 
 **Positive slack** means that the design meets the clock in `config.yaml`. Negative slack means that it does not. The flow does not stop for negative slack, so a run can finish and still report that the design missed the clock. See [When slack is negative](#when-slack-is-negative).
 
-**Those nine lines are a summary, not a signoff report.** They come from a `metrics.json` with 300 keys, so what they omit is important. They do not show the clock uncertainty and the derating that were applied, or the skew of the clock tree. They do not show which of the nine corners (`ss`/`tt`/`ff` against `min`/`nom`/`max` interconnect) gave that slack. All of these are LibreLane defaults, because `config.yaml` sets none of them. All of them are under `runs/`, with one directory for each step.
+**Those lines are a summary, not a signoff report.** They come from a `metrics.json` with 300 keys, so what they omit is important. They do not show the clock uncertainty and the derating that were applied, or the skew of the clock tree. They do not show which of the nine corners (`ss`/`tt`/`ff` against `min`/`nom`/`max` interconnect) gave that slack. All of these are LibreLane defaults, because `config.yaml` sets none of them. All of them are under `runs/`, with one directory for each step.
 
-The difference between a summary and a signoff report is practical. A flow in which you set the OCV derates yourself would not accept a `+0.11 ns` hold slack as a pass. For that level of confidence, read the per-corner reports, not these nine lines.
+The difference between a summary and a signoff report is practical. A flow in which you set the OCV derates yourself would not accept a `+0.11 ns` hold slack as a pass. For that level of confidence, read the per-corner reports, not these lines.
 
 `make report` prints the summary again. It does not run the flow again.
 
 ## Publishing the results page
 
-`make site` builds one page, `build/site/index.html`. The page contains those lines, the layout image, the schematic, and every cocotb test with its verdict and seed. After `make gds`, the page also shows each signoff check and the worst setup path as OpenSTA reports it. It also shows an area split (flip-flops, logic, what routing added) and a power split (sequential, combinational, clock). After `make cocotb`, it draws the signals that `"//WAVE_SIGNALS"` names as a waveform.
+`make site` builds one page, `build/site/index.html`. The page starts with the layout image and the verdicts. It lists every cocotb test with its verdict and seed. After `make gds`, the page also shows four sections in this order: timing, area and instances, power, and signoff checks.
 
-The power split uses the default switching activity of OpenSTA, not the activity of your testbench. It shows where the power goes, not what a real workload draws. Each part appears after you run its command.
+Timing says whether the design meets the clock, and gives the worst setup and hold slack. It then lists the constraints that the run used. Each one says whether `config.yaml` set it or the flow used its default. Area and instances count the instances after synthesis and after routing, by class and by drive strength. They also name the standard cell library and say that it has a single threshold voltage.
+
+Power gives the corner, the clock frequency and the activity. The activity is the default switching activity of OpenSTA, not the activity of your testbench. It shows where the power goes, not what a real workload draws. Signoff checks come last: one DRC row for Magic and KLayout, LVS, antenna, XOR and the static IR drop. The page says that electromigration, crosstalk and dynamic IR drop are not analysed. Each part appears after you run its command.
 
 The page is designed for sharing, as a portfolio piece. The layout is first, then the numbers, then the tests. Your `"//DESCRIPTION"` is below the title. Buttons let you open the chip in 3D, download the GDS and view the source. The heading gives the build time and the commit that the page shows. The heading gives them because CI does not publish a failing `main`: the page continues to show the last run that passed.
 
@@ -206,7 +209,7 @@ Three things do the work:
 
 *   **`assert` makes a broken design a failed CI run.** The simulator exits 0 even when a test failed. `make cocotb` reads the results file that cocotb writes, and exits non-zero when a test failed there. A test that prints a failure but does not assert is decoration.
 *   **A `Timer` after the edge.** `ClockCycles` resumes *at* the edge, before the outputs of the design change. A read at that point sees the value of the previous cycle. On the gates the outputs change a few ns later still. Relative checks still pass with that old value, so this error is easy to miss. Keep the wait below half a clock period.
-*   **`"//WAVE_SIGNALS"` makes the waveform.** Without that key, `make cocotb` dumps nothing. You then have no waveform to examine when the assertion above fails.
+*   **`make cocotb WAVES=1` makes the waveform.** Without `WAVES=1`, `make cocotb` dumps nothing. Run it again with `WAVES=1` when the assertion above fails.
 
 Try it. Change `src/blinky.v` so that the design is wrong, run `make cocotb`, and see it fail. If you have never seen a testbench fail, you do not know that it works.
 
@@ -216,9 +219,9 @@ You do not learn that "the tests pass". You learn which test catches which mista
 
 ## When a test fails: look at the waveform
 
-`make cocotb` writes a VCD into `build/`, which contains every signal of your design on every cycle. It does this only if `config.yaml` has `"//WAVE_SIGNALS"`. The names in the file start at the design top, for example `blinky.count`. Open the file with GTKWave, or with the **WaveTrace** extension that the Dev Container installs (click the `.vcd` file). A failed assertion tells you *that* the design is wrong. The waveform shows you *why*.
+`make cocotb WAVES=1` writes `build/<DESIGN_NAME>.vcd`, which contains every signal of your design on every cycle. Without `WAVES=1`, `make cocotb` writes no VCD. The names in the file start at the design top, for example `blinky.count`. Open the file with GTKWave, or with the **WaveTrace** extension that the Dev Container installs (click the `.vcd` file). A failed assertion tells you *that* the design is wrong. The waveform shows you *why*.
 
-`*.vcd` is in `.gitignore`. CI keeps the copy from each run in the `chipforall-build-artifacts` upload for five days. So you can still examine a test that fails only on CI.
+`*.vcd` is in `.gitignore`. CI does not write a VCD. To examine a test that fails only on CI, run `make cocotb WAVES=1 SEED=<seed>` with the seed from the CI log.
 
 ## Writing testbenches in Python
 
@@ -272,7 +275,7 @@ The template ships no Verilog testbench, but the path stays open. Put the file i
   - dir::test/tb_my_design.v
 ```
 
-`make sim` runs it, and `make all` and CI run it too. A failed check must call `$fatal`. `$display` prints and the simulator exits 0, but `$fatal` exits non-zero, and `make sim` reads that exit code. You supply `$dumpfile` and `$dumpvars` yourself. The names in `"//WAVE_SIGNALS"` then start at your testbench top.
+`make sim` runs it, and `make all` and CI run it too. A failed check must call `$fatal`. `$display` prints and the simulator exits 0, but `$fatal` exits non-zero, and `make sim` reads that exit code. You supply `$dumpfile` and `$dumpvars` yourself.
 
 `"//TEST_FILES"` accepts a glob. Icarus elaborates every module that no other module instantiates, and each one becomes a separate root. With more than one testbench, the first `$finish` stops the full simulation, and the other testbenches never run. When more than one file matches, name the testbench that you want with `"//SIM_TOP"`. Without it, `make sim` stops with an error that asks for it. One `make sim` runs one top module.
 
@@ -331,7 +334,7 @@ It is not a picture of the netlist. `make synth` runs a full synthesis and gives
 
 **Generic gates, not Sky130 gates.** `make synth` maps to Yosys' own cells and stops there. For the example, `build/synthesis.json` contains only such cells (`$_DFF_PP0_`, `$_OR_`, `$_XOR_` and others) and no `sky130_` cell, because nothing gives Yosys a liberty file here. This command answers "does it synthesise, and approximately how much logic is it". It cannot answer area or timing.
 
-The standard cell count in `make report` comes from LibreLane's own synthesis inside `make gds`, with the real library. It is a different number, and you cannot compare the two.
+The instance count after synthesis in `make report` comes from LibreLane's own synthesis inside `make gds`, with the real library. It is a different number, and you cannot compare the two.
 
 This takes less than a second, so you can run it after every change, unlike `make gds`.
 
@@ -362,7 +365,7 @@ A repository that you make from this template has no git history in common with 
 
 | Part | How a fix reaches you |
 |---|---|
-| The tools | The `Makefile` and `.devcontainer/devcontainer.json` name the image `ghcr.io/anlit75/c4o-core:2.18`. A fix to 2.18 arrives the next time the image is pulled. When 2.19 is released, change the two lines to get its fixes. CI fails if the two lines are different. |
+| The tools | The `Makefile` and `.devcontainer/devcontainer.json` name the image `ghcr.io/anlit75/c4o-core:2.20`. A fix to 2.20 arrives the next time the image is pulled. When 2.21 is released, change the two lines to get its fixes. CI fails if the two lines are different. |
 | The make commands | The `Makefile` includes its rules from the image. A fix to a command such as `make gds` arrives with the image. See [what your own targets can use](https://github.com/anlit75/c4o-core/blob/main/docs/makefile.md). |
 | The CI steps | `.github/workflows/verify.yml` calls actions from c4o-core at `@v2`. A fix to an action arrives on the next run. See [what each action does](https://github.com/anlit75/c4o-core/blob/main/docs/actions.md). |
 
@@ -387,7 +390,6 @@ Some steps in `verify.yml` have the comment `Template only`. They check sentence
 | `"//SIM_TOP"` | Which Verilog testbench module to elaborate. Required when `"//TEST_FILES"` matches more than one file. |
 | `"//GATE_TESTS"` / `"//GATE_TOP"` | Verilog gate-level testbenches for `make gatesim`. Optional. When set, `make gatesim` runs them and not the cocotb tests. |
 | `"//DESCRIPTION"` | One line that tells what your design is. It appears below the title of the results page and in its link preview. Optional. |
-| `"//WAVE_SIGNALS"` | Signals that `make site` draws from the VCD of `make cocotb`. Name them from the design top down (`blinky.count`). `make site` fails on a name that the VCD does not declare. Optional. |
 | `CLOCK_PORT` / `CLOCK_PERIOD` | The clock to constrain, and its period in ns. |
 | `PNR_SDC_FILE` / `SIGNOFF_SDC_FILE` | Your own timing constraints, when those two keys are not sufficient. See below. |
 | `FP_SIZING` / `FP_CORE_UTIL` | How the die is sized. See below. |

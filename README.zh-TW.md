@@ -25,8 +25,8 @@
 |---|---|
 | 🧪 **真的會失敗的測試** | Verilog 與 Python（cocotb）測試平台，設計壞了就回傳非零。 |
 | 🔬 **閘級模擬** | 在合成產出的 netlist 上重跑你的測試。latch 和 reset 的 bug 就藏在那裡。 |
-| 📊 **看得懂的 signoff** | 九行就列出面積、時序、功耗和 DRC/LVS。不用去讀 300 個 key 的 JSON。 |
-| 🌐 **每個 commit 一個結果網頁** | CI 把測試、signoff、版圖和波形發佈到 GitHub Pages。 |
+| 📊 **看得懂的 signoff** | 一份簡短的摘要列出面積、時序、功耗和 DRC/LVS。不用去讀 300 個 key 的 JSON。 |
+| 🌐 **每個 commit 一個結果網頁** | CI 把版圖、測試、時序、面積、功耗和 signoff 發佈到 GitHub Pages。 |
 | 🐳 **不用裝任何 EDA 工具** | 全部都在一個 Docker 映像檔裡。可以從 Docker、Dev Container 或 Codespace 執行。三種環境的指令都一樣。 |
 | 🔓 **成果可以公開** | Sky130 是 Apache 2.0，沒有 NDA。GDS 可以直接放進作品集。 |
 
@@ -73,22 +73,24 @@ make gds
 ```
   blinky
 
-  die              56.375 x 67.095 um  (3782.48 um^2)
-  utilization      56.6%
-  standard cells   113
-  setup slack      +5.52 ns  (0 violations)
-  hold slack       +0.11 ns  (0 violations)
-  power            0.143 mW  (nom_tt_025C_1v80)
-  signoff          clean  (Magic DRC, KLayout DRC, LVS, antenna, XOR)
-  lint warnings    0
-  layout           runs/blinky_run/final/render/blinky.png
+  die                56.375 x 67.095 um  (3782.48 um^2)
+  utilization        56.6%
+  instances          65 after synthesis, 113 after routing
+  instance classes   32 logic, 27 well taps, 18 timing-repair buffers, 17 inverters, 16 sequential, 3 clock buffers
+  drive strength     X1 0->18, X2 65->65, X16 0->3  (synthesis->routing)
+  setup slack        +5.52 ns  (0 violations)
+  hold slack         +0.11 ns  (0 violations)
+  power              0.143 mW  (nom_tt_025C_1v80)
+  signoff            clean  (DRC, LVS, antenna, XOR)
+  lint warnings      0
+  layout             runs/blinky_run/final/render/blinky.png
 ```
 
 `signoff clean` 加上正的 slack，代表版圖通過了製造檢查，也滿足時脈。流程到這個 GDS 檔為止：下線製造不在這個 repo 的範圍內。[每一行怎麼讀 →](docs/guide.zh-TW.md#看懂執行結果)
 
 ## 🌐 結果直接上線
 
-`main` 上每次 CI 都會把結果網頁發佈到 `https://<you>.github.io/<your-repo>/`。頁面最前面是你的設計版圖，可以用 3D 開啟，也可以下載 GDS。接著是判定和測試，然後是 signoff、波形、時序、面積和功耗。頁面上會寫建置時間和對應的 commit。
+`main` 上每次 CI 都會把結果網頁發佈到 `https://<you>.github.io/<your-repo>/`。頁面最前面是你的設計版圖，可以用 3D 開啟，也可以下載 GDS。接著是判定和測試，然後是時序、面積與 instance、功耗，最後是 signoff。頁面上會寫建置時間和對應的 commit。
 
 只要開一次：**Settings → Pages → Source: GitHub Actions**。本機用 `make site` 產生這個網頁。[更多 →](docs/guide.zh-TW.md#發佈結果網頁)
 
@@ -107,7 +109,7 @@ make gds
 
 ## ✍️ 換成你的設計
 
-刪掉 blinky 的檔案。Verilog 放 `src/`，測試放 `test/`。在 `config.yaml` 列出它們，並把 `DESIGN_NAME` 設成你的頂層模組。其他資料 `Makefile` 和 CI 都從那個檔案讀。[必須一致的四件事 →](docs/guide.zh-TW.md#換成你自己的設計)
+刪掉 blinky 的檔案。Verilog 放 `src/`，測試放 `test/`。在 `config.yaml` 列出它們，並把 `DESIGN_NAME` 設成你的頂層模組。其他資料 `Makefile` 和 CI 都從那個檔案讀。[必須一致的三件事 →](docs/guide.zh-TW.md#換成你自己的設計)
 
 ## 適合誰
 
@@ -119,7 +121,7 @@ make gds
 
 ## 📚 延伸閱讀
 
-- [指南](docs/guide.zh-TW.md)：前置條件、寫測試平台、看波形、閘級模擬、slack 為負時、設定參考
+- [指南](docs/guide.zh-TW.md)：前置條件、寫測試平台、除錯用波形、閘級模擬、slack 為負時、設定參考
 - [c4o-core](https://github.com/anlit75/c4o-core)：每個指令背後的工具鏈引擎
 - [c4o-pyuvm](https://github.com/anlit75/c4o-pyuvm)：跑在真實 UART 上的 pyuvm 驗證環境
 

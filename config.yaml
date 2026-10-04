@@ -43,16 +43,6 @@ VERILOG_FILES:
 # the example, so replace it along with src/blinky.v.
 "//DESCRIPTION": "A clock divider that blinks an LED: the ChipForAll example, from RTL to GDS."
 
-# Signals the results page (`make site`) draws from the VCD of `make cocotb`.
-# The names start at the design top, blinky, because the cocotb run dumps them.
-# A name the VCD does not declare fails `make site`. Delete the key and its
-# lines to have no waveform instead.
-"//WAVE_SIGNALS":
-  - blinky.clk
-  - blinky.rst
-  - blinky.count
-  - blinky.led
-
 CLOCK_PORT: clk
 CLOCK_PERIOD: 10.0
 
