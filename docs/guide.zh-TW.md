@@ -79,7 +79,7 @@ LibreLane 不做**模擬與驗證**。這個起手式加上去的就是這兩樣
 .
 ├── .devcontainer/     # Dev Container 定義
 ├── config.yaml        # 設計名稱、時脈、floorplan
-├── Makefile           # 所有指令
+├── Makefile           # 映像檔名稱。指令來自映像檔
 ├── docs/              # 這份指南
 ├── src/               # 你的 Verilog
 │   └── blinky.v
@@ -387,14 +387,17 @@ make gds PDK_ROOT=/opt/sky130
 
 ## 複製之後怎麼拿到修正
 
-從這個模板建立的 repo 和模板沒有共同的 git 歷史。模板改了，GitHub 不會改你的 repo。有兩個部分不用你動手就會拿到修正：
+從這個模板建立的 repo 和模板沒有共同的 git 歷史。模板改了，GitHub 不會改你的 repo。有三個部分不用你動手就會拿到修正：
 
 | 部分 | 修正怎麼到你手上 |
 |---|---|
-| 工具 | `Makefile` 和 `.devcontainer/devcontainer.json` 都寫著映像檔 `ghcr.io/anlit75/c4o-core:2.16`。2.16 的修正會在下一次拉映像檔時到。2.17 發佈之後，要改這兩行才拿得到它的修正。這兩行不一樣的話 CI 會失敗。 |
+| 工具 | `Makefile` 和 `.devcontainer/devcontainer.json` 都寫著映像檔 `ghcr.io/anlit75/c4o-core:2.17`。2.17 的修正會在下一次拉映像檔時到。2.18 發佈之後，要改這兩行才拿得到它的修正。這兩行不一樣的話 CI 會失敗。 |
+| make 指令 | `Makefile` 從映像檔引入它的規則。像 `make gds` 這樣的指令有修正時，修正會隨映像檔到。見[你自己的 target 可以用什麼](https://github.com/anlit75/c4o-core/blob/main/docs/makefile.md)。 |
 | CI 的步驟 | `.github/workflows/verify.yml` 呼叫 c4o-core 的 action，版本是 `@v2`。action 的修正會在下一次執行時到。見[每個 action 做什麼](https://github.com/anlit75/c4o-core/blob/main/docs/actions.md)。 |
 
-其他檔案在你複製之後就不會再變：`Makefile`、workflow 的觸發條件和 job、`devcontainer.json`，以及文件。
+其他部分在你複製之後就不會再變。它們是 `Makefile` 裡的映像檔名稱和 stub 文字、workflow 的觸發條件和 job、`devcontainer.json`，以及文件。
+
+你自己的 target 放在 `Makefile` 的最後面，`include` 那一行的下面。
 
 你自己的步驟放在 `verify.yml` 裡的 action 之間。它們在同一個 job 裡執行，所以讀得到 `runs/` 和 `build/`。
 

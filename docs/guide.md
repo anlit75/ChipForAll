@@ -79,7 +79,7 @@ If the first row is wrong, you get an error immediately, not three minutes into 
 .
 ├── .devcontainer/     # Dev Container definition
 ├── config.yaml        # Design name, clock, floorplan
-├── Makefile           # Every command
+├── Makefile           # Image names. Commands come from the image
 ├── docs/              # This guide
 ├── src/               # Your Verilog
 │   └── blinky.v
@@ -387,14 +387,17 @@ Prefer to stay in your own editor? `make shell` opens the same image from any te
 
 ## Getting fixes after you copy the template
 
-A repository that you make from this template has no git history in common with it. GitHub does not change your repository when the template changes. Two parts get fixes without a change from you:
+A repository that you make from this template has no git history in common with it. GitHub does not change your repository when the template changes. Three parts get fixes without a change from you:
 
 | Part | How a fix reaches you |
 |---|---|
-| The tools | The `Makefile` and `.devcontainer/devcontainer.json` name the image `ghcr.io/anlit75/c4o-core:2.16`. A fix to 2.16 arrives the next time the image is pulled. When 2.17 is released, change the two lines to get its fixes. CI fails if the two lines are different. |
+| The tools | The `Makefile` and `.devcontainer/devcontainer.json` name the image `ghcr.io/anlit75/c4o-core:2.17`. A fix to 2.17 arrives the next time the image is pulled. When 2.18 is released, change the two lines to get its fixes. CI fails if the two lines are different. |
+| The make commands | The `Makefile` includes its rules from the image. A fix to a command such as `make gds` arrives with the image. See [what your own targets can use](https://github.com/anlit75/c4o-core/blob/main/docs/makefile.md). |
 | The CI steps | `.github/workflows/verify.yml` calls actions from c4o-core at `@v2`. A fix to an action arrives on the next run. See [what each action does](https://github.com/anlit75/c4o-core/blob/main/docs/actions.md). |
 
-The other files do not change after you copy them: the `Makefile`, the triggers and jobs of the workflow, `devcontainer.json`, and the docs.
+The other parts do not change after you copy them. They are the image names and the stub text in the `Makefile`, the triggers and jobs of the workflow, `devcontainer.json`, and the docs.
+
+Put targets of your own at the end of the `Makefile`, below the `include` line.
 
 Put steps of your own between the actions in `verify.yml`. They run in the same job, so they can read `runs/` and `build/`.
 
