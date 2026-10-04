@@ -93,3 +93,9 @@ async def reset_in_the_middle_restarts_the_count(dut):
     # The count starts again from zero, so the rise is HALF cycles away.
     assert await led_after(dut, HALF - 1) == 0, f"led rose before cycle {HALF} after reset"
     assert await led_after(dut, 1) == 1, f"led did not rise at cycle {HALF} after reset"
+
+
+@cocotb.test()
+async def reaches_the_counter(dut):
+    await start(dut)
+    assert int(dut.count.value) == 0
