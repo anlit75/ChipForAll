@@ -385,6 +385,21 @@ Without it, every clone keeps its own copy under `pdks/`. With it, a shared mach
 
 Prefer to stay in your own editor? `make shell` opens the same image from any terminal.
 
+## Getting fixes after you copy the template
+
+A repository that you make from this template has no git history in common with it. GitHub does not change your repository when the template changes. Two parts get fixes without a change from you:
+
+| Part | How a fix reaches you |
+|---|---|
+| The tools | The `Makefile` and `.devcontainer/devcontainer.json` name the image `ghcr.io/anlit75/c4o-core:2.16`. A fix to 2.16 arrives the next time the image is pulled. When 2.17 is released, change the two lines to get its fixes. CI fails if the two lines are different. |
+| The CI steps | `.github/workflows/verify.yml` calls actions from c4o-core at `@v2`. A fix to an action arrives on the next run. See [what each action does](https://github.com/anlit75/c4o-core/blob/main/docs/actions.md). |
+
+The other files do not change after you copy them: the `Makefile`, the triggers and jobs of the workflow, `devcontainer.json`, and the docs.
+
+Put steps of your own between the actions in `verify.yml`. They run in the same job, so they can read `runs/` and `build/`.
+
+Some steps in `verify.yml` have the comment `Template only`. They check sentences in this template's README and guide. They run in the template repository and are skipped in yours. You can delete them.
+
 ## Configuration reference
 
 `config.yaml` is a [LibreLane](https://github.com/librelane/librelane) configuration file. Keys that LibreLane does not own have a `//` prefix. LibreLane ignores those keys completely, so one file stays valid for both tools.
