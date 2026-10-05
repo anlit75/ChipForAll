@@ -1,0 +1,11 @@
+# The list that `make regress` runs: each entry over its number of seeds, on
+# one compile. `make regress SEED=<n>` runs the whole list again with the same
+# seeds. A failed run prints the command that replays it:
+#
+#   make cocotb SEED=<seed> TEST=<entry>
+#
+# `test` names a module of "//COCOTB_TESTS", and every test in it runs. Add
+# `.<function>` to run one test of the module. `seeds` defaults to 1.
+- test: test_blinky_random     # random stimulus: a new seed is a new run
+  seeds: 5
+- test: test_blinky_cocotb     # directed: the same on every seed, so one is enough

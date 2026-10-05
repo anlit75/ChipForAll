@@ -34,7 +34,7 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import FallingEdge
 
-# Must match WIDTH in src/blinky.v. A netlist has no parameter to read.
+# Must match WIDTH in rtl/blinky.v. A netlist has no parameter to read.
 WIDTH = 16
 LIMIT = 1 << WIDTH
 HALF = 1 << (WIDTH - 1)   # the count at which led rises

@@ -54,13 +54,13 @@ git clone https://github.com/<you>/<your-repo>.git && cd <your-repo>
 make all
 ```
 
-**接著故意把它改壞。** 這一步是版圖工具做不到的。把 `src/blinky.v` 裡的 `count[WIDTH-1]` 改成 `count[WIDTH-2]`。LED 的閃爍會快一倍。再跑一次 `make all`：
+**接著故意把它改壞。** 這一步是版圖工具做不到的。把 `rtl/blinky.v` 裡的 `count[WIDTH-1]` 改成 `count[WIDTH-2]`。LED 的閃爍會快一倍。再跑一次 `make all`：
 
 ```
 [ERROR] cocotb tests failed: led_rises_half_a_period_after_reset, led_toggles_with_a_full_period, reset_in_the_middle_restarts_the_count, random_resets_match_the_model
 ```
 
-最後一行指出哪些測試失敗。它上面，每個失敗的測試會印出自己的訊息。`make` 回傳非零，所以 CI 也會失敗。用 `git checkout -- src/blinky.v` 還原。[幫你的設計寫這種測試 →](docs/guide.zh-TW.md#幫你自己的設計寫測試平台)
+最後一行指出哪些測試失敗。它上面，每個失敗的測試會印出自己的訊息。`make` 回傳非零，所以 CI 也會失敗。用 `git checkout -- rtl/blinky.v` 還原。[幫你的設計寫這種測試 →](docs/guide.zh-TW.md#幫你自己的設計寫測試平台)
 
 **3. 做出版圖**（約 3 分鐘。第一次還要下載 3 GB 的 PDK，另外約 20 分鐘）：
 
@@ -100,6 +100,7 @@ make gds
 |---|---|
 | `make all` | Lint、你的測試、合成：幾秒內跑完的所有步驟 |
 | `make gds` | 完整 RTL 到 GDSII 流程，最後印出上面的摘要 |
+| `make regress` | 你的測試清單，每個測試跑多個 seed。[更多 →](docs/guide.zh-TW.md#多個-seed) |
 | `make coverage` | Python 測試跑過你 RTL 的多少部分 |
 | `make gatesim` | 在閘級電路上重跑你的測試（`make gds` 之後） |
 | `make report` | 不重跑，再印一次摘要 |
@@ -110,7 +111,7 @@ make gds
 
 ## ✍️ 換成你的設計
 
-刪掉 blinky 的檔案。Verilog 放 `src/`，測試放 `test/`。在 `config.yaml` 列出它們，並把 `DESIGN_NAME` 設成你的頂層模組。其他資料 `Makefile` 和 CI 都從那個檔案讀。[必須一致的三件事 →](docs/guide.zh-TW.md#換成你自己的設計)
+刪掉 blinky 的檔案。Verilog 放 `rtl/`，測試放 `tb/`。在 `config.yaml` 列出它們，並把 `DESIGN_NAME` 設成你的頂層模組。其他資料 `Makefile` 和 CI 都從那個檔案讀。[必須一致的三件事 →](docs/guide.zh-TW.md#換成你自己的設計)
 
 ## 適合誰
 

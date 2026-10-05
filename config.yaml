@@ -11,19 +11,19 @@
 DESIGN_NAME: blinky
 
 # One line per source file. A glob does not work here: LibreLane validates
-# each entry as a literal path and never expands '**', so `dir::src/**/*.v`
+# each entry as a literal path and never expands '**', so `dir::rtl/**/*.v`
 # lints, simulates and synthesises fine -- c4o-core does expand it -- and then
-# `make gds` stops with "'/workspace/src/**/*.v' does not exist". Measured in
+# `make gds` stops with "'/workspace/rtl/**/*.v' does not exist". Measured in
 # CI, not guessed.
 #
 # More than one file is one entry each, and order does not matter -- the top
 # module is DESIGN_NAME, not the first line:
 #
 #   VERILOG_FILES:
-#     - dir::src/my_cpu.v
-#     - dir::src/alu.v
+#     - dir::rtl/my_cpu.v
+#     - dir::rtl/alu.v
 VERILOG_FILES:
-  - dir::src/blinky.v
+  - dir::rtl/blinky.v
 
 # Simulation only. LibreLane has no testbench variable -- simulation sits
 # outside an RTL-to-GDSII flow -- and it ignores any key starting with '//',
@@ -34,13 +34,18 @@ VERILOG_FILES:
 #
 # Python testbenches, run by `make cocotb` on the RTL and again by `make
 # gatesim` on the netlist the GDS flow produced. They touch only the ports, so
-# the same files work on both. See test/test_blinky_cocotb.py.
+# the same files work on both. See tb/test_blinky_cocotb.py.
 "//COCOTB_TESTS":
-  - dir::test/*.py
+  - dir::tb/*.py
+
+# The test list for `make regress`: which tests to run, and over how many
+# seeds. `make coverage` merges coverage over the same runs, and CI runs both.
+# A failed run prints the command that replays it. See tb/regression.yaml.
+"//REGRESSION": dir::tb/regression.yaml
 
 # One line under the title of the results page (`make site`) and in its link
 # preview when the page is shared. Say what your design is; this one describes
-# the example, so replace it along with src/blinky.v.
+# the example, so replace it along with rtl/blinky.v.
 "//DESCRIPTION": "A clock divider that blinks an LED: the ChipForAll example, from RTL to GDS."
 
 CLOCK_PORT: clk
