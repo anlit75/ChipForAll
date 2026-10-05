@@ -92,6 +92,7 @@ LibreLane 不做**模擬與驗證**。這個起手式加上去的就是這兩樣
 | `make lint` | 用 Verilator 檢查 Verilog。 | `終端機` |
 | `make sim` | 用 Icarus Verilog 跑 Verilog 測試平台。需要 `"//TEST_FILES"`：見[加入 Verilog 測試平台](#加入-verilog-測試平台)。 | `build/wave.vcd` |
 | `make cocotb` | 在 RTL 上執行 Python (cocotb) 測試平台。加了 `WAVES=1` 時，也會在 `build/` 寫出 VCD。 | `build/cocotb-results.xml` |
+| `make coverage` | 用 Verilator 把 Python 測試再跑一次，數出測試跑過的 RTL。它不決定通過或失敗。見[程式碼覆蓋率](#程式碼覆蓋率)。 | `build/coverage/` |
 | `make synth` | 用 Yosys 把 RTL 合成成通用邏輯閘。沒有面積，也沒有時序：見[看看電路長什麼樣](#看看電路長什麼樣)。腳本是固定的。想自己操作 Yosys 就用 `make shell`。 | `build/synthesis.json` |
 | `make pdk` | 安裝 Sky130 PDK。`make gds` 會自己執行它。單獨跑可以把那 3GB 的下載提前做完。 | `pdks/` |
 | `make schematic` | 把電路畫成到處都開得了的 SVG。 | `build/schematic.svg` |
@@ -147,7 +148,7 @@ LibreLane 不做**模擬與驗證**。這個起手式加上去的就是這兩樣
 
 ## 發佈結果網頁
 
-`make site` 產生一個網頁 `build/site/index.html`。網頁最前面是版圖和判定。網頁列出每個 cocotb 測試的判定和 seed。跑過 `make gds` 之後，網頁還會依序列出四個區塊：時序、面積與 instance、功耗，以及 signoff 檢查。
+`make site` 產生一個網頁 `build/site/index.html`。網頁最前面是版圖和判定。網頁列出每個 cocotb 測試的判定和 seed。跑過 `make coverage` 之後，網頁會列出覆蓋率區塊。跑過 `make gds` 之後，網頁還會依序列出四個區塊：時序、面積與 instance、功耗，以及 signoff 檢查。
 
 時序區塊說明設計有沒有滿足時脈，並給出最差的 setup 和 hold slack。接著列出這次執行用到的限制條件。每一項都註明是 `config.yaml` 設的，還是流程用了預設值。面積與 instance 區塊數出合成之後和繞線之後的 instance，依類別和 drive strength 分開。它也寫出標準元件庫的名稱，並說明這個元件庫只有單一臨界電壓。
 
@@ -155,7 +156,17 @@ LibreLane 不做**模擬與驗證**。這個起手式加上去的就是這兩樣
 
 這個網頁是照「拿去分享、放進作品集」來排的。版圖在最前面，接著是數字，再來是測試。標題下方是你的 `"//DESCRIPTION"`。有按鈕可以用 3D 開啟晶片、下載 GDS 和看原始碼。頁首寫著網頁的建置時間和對應的 commit。頁首寫這兩項，是因為 `main` 失敗時 CI 不會發佈：網頁會一直顯示最後一次通過的結果。
 
-CI 每次執行都會產生這個網頁。在 `main` 上，它會把網頁發佈到 GitHub Pages，網址是 `https://<你的帳號>.github.io/<你的-repo>/`。剛從 template 複製出來的 repo 沒有開 Pages，而且沒有任何 workflow 能替你打開。做一次就好：**Settings → Pages → Source: GitHub Actions**。在你打開之前，CI 照樣會過，並用一則 notice 告訴你這次沒有發佈。
+CI 每次執行都會產生這個網頁。在 `main` 上，它會把網頁發佈到 GitHub Pages，網址是 `https://<你的帳號>.github.io/<你的-repo>/`。在 `main` 上手動執行 workflow 會再發佈一次網頁。用它可以不用 commit 就更新網頁。剛從 template 複製出來的 repo 沒有開 Pages，而且沒有任何 workflow 能替你打開。做一次就好：**Settings → Pages → Source: GitHub Actions**。在你打開之前，CI 照樣會過，並用一則 notice 告訴你這次沒有發佈。
+
+## 程式碼覆蓋率
+
+`make coverage` 顯示 Python 測試跑過你 RTL 的多少部分。它用有覆蓋率計數器的 Verilator，把 `"//COCOTB_TESTS"` 再跑一次。Icarus 沒有覆蓋率。`make all` 不會執行它，但 CI 會。
+
+它計算三種點。Block 是執行過的一段程式碼。Branch 是 `if` 或 `case` 的一邊。Toggle 是值變過的一個訊號位元。結果網頁依種類列出命中的點數和總數。網頁頂端的摘要也有一張卡片顯示它們。
+
+通過或失敗仍由在 Icarus 上跑的 `make cocotb` 決定。Verilator 是 2 值模擬，所以 reset 之前是 `x` 的訊號在那裡讀成 0。同一個測試可能在一個模擬器通過，在另一個失敗。Verilator 那次執行失敗，不會讓 `make coverage` 失敗。Verilator 建不起來的設計才會。
+
+`make coverage SEED=<n>` 設定 seed。網頁會寫出這次執行用的 seed。[完整細節 →](https://github.com/anlit75/c4o-core/blob/main/docs/commands.md#code-coverage-coverage)
 
 ## slack 為負值的時候
 
@@ -365,7 +376,7 @@ make gds PDK_ROOT=/opt/sky130
 
 | 部分 | 修正怎麼到你手上 |
 |---|---|
-| 工具 | `Makefile` 和 `.devcontainer/devcontainer.json` 都寫著映像檔 `ghcr.io/anlit75/c4o-core:2.20`。2.20 的修正會在下一次拉映像檔時到。2.21 發佈之後，要改這兩行才拿得到它的修正。這兩行不一樣的話 CI 會失敗。 |
+| 工具 | `Makefile` 和 `.devcontainer/devcontainer.json` 都寫著映像檔 `ghcr.io/anlit75/c4o-core:2.21`。2.21 的修正會在下一次拉映像檔時到。2.22 發佈之後，要改這兩行才拿得到它的修正。這兩行不一樣的話 CI 會失敗。 |
 | make 指令 | `Makefile` 從映像檔引入它的規則。像 `make gds` 這樣的指令有修正時，修正會隨映像檔到。見[你自己的 target 可以用什麼](https://github.com/anlit75/c4o-core/blob/main/docs/makefile.md)。 |
 | CI 的步驟 | `.github/workflows/verify.yml` 呼叫 c4o-core 的 action，版本是 `@v2`。action 的修正會在下一次執行時到。見[每個 action 做什麼](https://github.com/anlit75/c4o-core/blob/main/docs/actions.md)。 |
 

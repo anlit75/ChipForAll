@@ -90,7 +90,7 @@ At the end, it tells you what it built:
 
 ## 🌐 Your results, online
 
-Each CI run on `main` publishes a results page to `https://<you>.github.io/<your-repo>/`. The page shows the layout of your design first, and you can open it in 3D or download the GDS. Next are the verdicts and the tests, then timing, area and instances, power, and signoff last. The page gives the time of the build and the commit.
+Each CI run on `main` publishes a results page to `https://<you>.github.io/<your-repo>/`. The page shows the layout of your design first, and you can open it in 3D or download the GDS. Next are the verdicts and the tests, then code coverage, timing, area and instances, power, and signoff last. The page gives the time of the build and the commit.
 
 Turn it on once: **Settings → Pages → Source: GitHub Actions**. Build the page locally with `make site`. [More →](docs/guide.md#publishing-the-results-page)
 
@@ -100,6 +100,7 @@ Turn it on once: **Settings → Pages → Source: GitHub Actions**. Build the pa
 |---|---|
 | `make all` | Lint, your tests and synthesis: all the steps that take seconds |
 | `make gds` | Full RTL-to-GDSII flow, then the summary above |
+| `make coverage` | How much of your RTL the Python tests run |
 | `make gatesim` | Your tests again, on the gates (after `make gds`) |
 | `make report` | The summary again, with no new run |
 | `make site` | The results page, in `build/site/` |
