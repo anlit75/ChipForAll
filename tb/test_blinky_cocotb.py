@@ -6,7 +6,7 @@ file run on the RTL (`make cocotb`) and on the gates (`make gatesim`): a netlist
 keeps the ports, and the register and the parameter inside are gone.
 
 Without access to the counter, the only way to see led move is to wait for it.
-That is why src/blinky.v has a small WIDTH: led rises after 2**(WIDTH-1) clock
+That is why rtl/blinky.v has a small WIDTH: led rises after 2**(WIDTH-1) clock
 cycles, and each of those cycles costs simulator time.
 """
 
@@ -14,7 +14,7 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles, RisingEdge, Timer
 
-# Must match WIDTH in src/blinky.v. A netlist has no parameter to read, so the
+# Must match WIDTH in rtl/blinky.v. A netlist has no parameter to read, so the
 # tests cannot ask the design, and one constant per file is the simplest copy.
 WIDTH = 16
 HALF = 1 << (WIDTH - 1)  # cycles led stays at each level

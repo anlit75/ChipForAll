@@ -38,7 +38,7 @@ LibreLane 不做**模擬與驗證**。這個起手式加上去的就是這兩樣
 
 **SystemVerilog 也讀得進來。** 從 c4o-core 2.8.3 開始，`logic`、`always_ff` 和可合成的那個子集在每個指令下都能用。這個 repo 之後釘過的每一版都包含這項修改。在 2.8.3 之前，同一個檔案會通過 `make cocotb` 和 `make gds`，卻在 `make sim` 和 `make synth` 失敗。仍然不行的是把 `interface` 當成模組邊界：yosys 讀得懂宣告，然後在 `hierarchy` 階段失敗。所以 interface 留在測試平台裡，不要放在可合成模組之間。
 
-**你不需要先會 Verilog 才能開始。** `make gds` 直接就能把範例跑完，印出真實的面積、時序和功耗。`make all` 會讓你看到測試通過。先做這兩件事，因為它們告訴你整套工具在你的機器上是通的。真正需要 Verilog 的是下一步：改 `src/blinky.v`、判斷一個「通過」的測試到底證明了什麼，或者自己寫一個測試。先跑範例，再學 Verilog，然後回來做那一步。
+**你不需要先會 Verilog 才能開始。** `make gds` 直接就能把範例跑完，印出真實的面積、時序和功耗。`make all` 會讓你看到測試通過。先做這兩件事，因為它們告訴你整套工具在你的機器上是通的。真正需要 Verilog 的是下一步：改 `rtl/blinky.v`、判斷一個「通過」的測試到底證明了什麼，或者自己寫一個測試。先跑範例，再學 Verilog，然後回來做那一步。
 
 ## 換成你自己的設計
 
@@ -46,15 +46,16 @@ LibreLane 不做**模擬與驗證**。這個起手式加上去的就是這兩樣
 
 | 要改的 | 在哪裡 |
 |---|---|
-| 你的 RTL | `src/`，列在 `config.yaml` 的 `VERILOG_FILES` |
+| 你的 RTL | `rtl/`，列在 `config.yaml` 的 `VERILOG_FILES` |
 | `DESIGN_NAME` | `config.yaml`——必須和你的頂層模組同名 |
-| 你的測試平台 | `test/`，列在 `"//COCOTB_TESTS"` |
+| 你的測試平台 | `tb/`，列在 `"//COCOTB_TESTS"` |
 
 沒有別的檔案寫死設計名稱。`Makefile` 和 CI 工作流都從 `config.yaml` 讀 `DESIGN_NAME`。
 
-第一次換設計時，還有三件事常造成問題：
+第一次換設計時，還有四件事常造成問題：
 
-*   **刪掉被你取代的 blinky 檔案**：`src/blinky.v` 和 `test/test_blinky_*.py`。也可以改成把它們從 `config.yaml` 移除。測試用的 key 使用萬用字元 `test/*.py`，所以還留在 `test/` 的 blinky 測試檔仍然會被包含進來。`VERILOG_FILES` 要逐一列出檔名，所以要在那裡用檔名取代 `src/blinky.v`。
+*   **刪掉被你取代的 blinky 檔案**：`rtl/blinky.v` 和 `tb/test_blinky_*.py`。也可以改成把它們從 `config.yaml` 移除。測試用的 key 使用萬用字元 `tb/*.py`，所以還留在 `tb/` 的 blinky 測試檔仍然會被包含進來。`VERILOG_FILES` 要逐一列出檔名，所以要在那裡用檔名取代 `rtl/blinky.v`。
+*   **為你的測試改寫 `tb/regression.yaml`。** 清單裡的項目指向你已刪掉的測試檔時，`make regress` 會停下來，CI 也一樣。不想用清單，就刪掉那個檔案和 `"//REGRESSION"` 這個 key。
 *   **每個 RTL 檔第一行寫 `` `timescale 1ns/1ps ``。** 少了它，`make cocotb` 會失敗，訊息是 `Unable to accurately represent 10(ns)`。`make sim` 照樣通過，因為 Verilog 測試平台自己有宣告。
 *   **改寫 `config.yaml` 的 `"//DESCRIPTION"`。** 不改的話，你的結果網頁會說這個設計是一個讓 LED 閃爍的時脈除頻器。
 
@@ -75,11 +76,12 @@ LibreLane 不做**模擬與驗證**。這個起手式加上去的就是這兩樣
 ├── config.yaml        # 設計名稱、時脈、floorplan
 ├── Makefile           # 映像檔名稱。指令來自映像檔
 ├── docs/              # 這份指南
-├── src/               # 你的 Verilog
+├── rtl/               # 你的 Verilog
 │   └── blinky.v
-├── test/              # 你的測試平台
+├── tb/                # 你的測試平台
 │   ├── test_blinky_cocotb.py    # Directed test（make cocotb、make gatesim）
-│   └── test_blinky_random.py    # 隨機刺激對參考模型
+│   ├── test_blinky_random.py    # 隨機刺激對參考模型
+│   └── regression.yaml          # make regress 的測試清單
 ├── build/             # 產生物：GDS、log、netlist、結果網頁
 └── runs/              # make gds 產生：LibreLane 的執行目錄
 ```
@@ -92,6 +94,7 @@ LibreLane 不做**模擬與驗證**。這個起手式加上去的就是這兩樣
 | `make lint` | 用 Verilator 檢查 Verilog。 | `終端機` |
 | `make sim` | 用 Icarus Verilog 跑 Verilog 測試平台。需要 `"//TEST_FILES"`：見[加入 Verilog 測試平台](#加入-verilog-測試平台)。 | `build/wave.vcd` |
 | `make cocotb` | 在 RTL 上執行 Python (cocotb) 測試平台。加了 `WAVES=1` 時，也會在 `build/` 寫出 VCD。 | `build/cocotb-results.xml` |
+| `make regress` | 執行 `tb/regression.yaml` 的測試，每個測試跑它的 seed 數。見[多個 seed](#多個-seed)。 | `build/regress/` |
 | `make coverage` | 用 Verilator 把 Python 測試再跑一次，數出測試跑過的 RTL。它不決定通過或失敗。見[程式碼覆蓋率](#程式碼覆蓋率)。 | `build/coverage/` |
 | `make synth` | 用 Yosys 把 RTL 合成成通用邏輯閘。沒有面積，也沒有時序：見[看看電路長什麼樣](#看看電路長什麼樣)。腳本是固定的。想自己操作 Yosys 就用 `make shell`。 | `build/synthesis.json` |
 | `make pdk` | 安裝 Sky130 PDK。`make gds` 會自己執行它。單獨跑可以把那 3GB 的下載提前做完。 | `pdks/` |
@@ -166,7 +169,7 @@ CI 每次執行都會產生這個網頁。在 `main` 上，它會把網頁發佈
 
 通過或失敗仍由在 Icarus 上跑的 `make cocotb` 決定。Verilator 是 2 值模擬，所以 reset 之前是 `x` 的訊號在那裡讀成 0。同一個測試可能在一個模擬器通過，在另一個失敗。Verilator 那次執行失敗，不會讓 `make coverage` 失敗。Verilator 建不起來的設計才會。
 
-`make coverage SEED=<n>` 設定 seed。網頁會寫出這次執行用的 seed。[完整細節 →](https://github.com/anlit75/c4o-core/blob/main/docs/commands.md#code-coverage-coverage)
+`make coverage SEED=<n>` 設定 seed。網頁會寫出這次執行用的 seed。設了 `"//REGRESSION"` 時，它會量那份清單的每一次執行並合併，所以數字涵蓋每一個 seed。[完整細節 →](https://github.com/anlit75/c4o-core/blob/main/docs/commands.md#code-coverage-coverage)
 
 ## slack 為負值的時候
 
@@ -195,7 +198,7 @@ ls -d runs/*/*-openroad-stapostpnr/*/                # 這次到底跑了哪些
 
 ## 幫你自己的設計寫測試平台
 
-`test/test_blinky_cocotb.py` 是一份完整的範例。下面是它的基本骨架：能夠真的失敗的最小測試平台。
+`tb/test_blinky_cocotb.py` 是一份完整的範例。下面是它的基本骨架：能夠真的失敗的最小測試平台。
 
 ```python
 import cocotb
@@ -222,9 +225,9 @@ async def result_is_high_after_reset(dut):
 * **邊緣之後的 `Timer`。** `ClockCycles` 是*在*邊緣當下恢復，此時設計的輸出還沒變。在那裡讀到的是上一個 cycle 的值。在閘級電路上，輸出還要再晚幾 ns 才變。相對檢查照樣會過，所以這個錯誤很難察覺。等待的時間要小於半個時脈週期。
 * **`make cocotb WAVES=1` 才會產生波形。** 沒有 `WAVES=1`，`make cocotb` 什麼都不會輸出。上面那個斷言失敗的時候，就加上 `WAVES=1` 再跑一次。
 
-試試看。把 `src/blinky.v` 改壞，執行 `make cocotb`，看它失敗。如果你從沒看過一個測試平台失敗，你就不知道它有沒有用。
+試試看。把 `rtl/blinky.v` 改壞，執行 `make cocotb`，看它失敗。如果你從沒看過一個測試平台失敗，你就不知道它有沒有用。
 
-**這就是整套方法，而且對任何設計都成立。** 一次改壞一個地方，然後跑測試。確認你瞄準的那個測試會失敗，而且訊息你看得懂。然後執行 `git checkout -- src/blinky.v`，再改壞下一個地方。
+**這就是整套方法，而且對任何設計都成立。** 一次改壞一個地方，然後跑測試。確認你瞄準的那個測試會失敗，而且訊息你看得懂。然後執行 `git checkout -- rtl/blinky.v`，再改壞下一個地方。
 
 你學到的不是「測試都過了」。你學到的是哪個測試抓得到哪種錯。你也學到哪裡沒有任何測試抓得到：那就是你還沒寫的測試。這是「我的測試到底有沒有在檢查設計」唯一的答案，因為一個不會失敗的測試什麼都告訴不了你。
 
@@ -242,17 +245,17 @@ async def result_is_high_after_reset(dut):
 make cocotb
 ```
 
-`test/` 裡的兩個檔案只碰 `dut.clk`、`dut.rst` 和 `dut.led`。它們不讀 `dut.count`，也不強制寫入它。你的測試也只碰設計的接腳，這樣它們在閘級電路上也能跑。[為什麼 →](#模擬閘級電路而不只是-rtl)
+`tb/` 裡的兩個檔案只碰 `dut.clk`、`dut.rst` 和 `dut.led`。它們不讀 `dut.count`，也不強制寫入它。你的測試也只碰設計的接腳，這樣它們在閘級電路上也能跑。[為什麼 →](#模擬閘級電路而不只是-rtl)
 
-沒有計數器可以碰，測試就只能等 `led` 變化。reset 之後，經過 2^(`WIDTH`-1) 個時脈週期，`led` 才會上升。每個 cycle 都花模擬時間，所以 `src/blinky.v` 的 `WIDTH` 很小。板子的時脈需要更寬的計數器，那個檔案裡的註解寫了要多寬。測試要等那麼久，時間會長得離譜。
+沒有計數器可以碰，測試就只能等 `led` 變化。reset 之後，經過 2^(`WIDTH`-1) 個時脈週期，`led` 才會上升。每個 cycle 都花模擬時間，所以 `rtl/blinky.v` 的 `WIDTH` 很小。板子的時脈需要更寬的計數器，那個檔案裡的註解寫了要多寬。測試要等那麼久，時間會長得離譜。
 
-`test/test_blinky_cocotb.py` 有四個 directed test。一個檢查 reset 讓 `led` 維持低電位。一個檢查 reset 放開之後，`led` 剛好在 2^(`WIDTH`-1) 個 cycle 上升，不早也不晚一個 cycle。一個檢查完整的一個週期。一個檢查週期中間的 reset。`led` 必須不等時脈邊緣就回到低電位，計數也要重新開始。
+`tb/test_blinky_cocotb.py` 有四個 directed test。一個檢查 reset 讓 `led` 維持低電位。一個檢查 reset 放開之後，`led` 剛好在 2^(`WIDTH`-1) 個 cycle 上升，不早也不晚一個 cycle。一個檢查完整的一個週期。一個檢查週期中間的 reset。`led` 必須不等時脈邊緣就回到低電位，計數也要重新開始。
 
-兩個測試檔都重複寫了 `WIDTH`，因為 netlist 沒有參數可以讀。這個常數要和 `src/blinky.v` 的 `WIDTH` 保持相同。
+兩個測試檔都重複寫了 `WIDTH`，因為 netlist 沒有參數可以讀。這個常數要和 `rtl/blinky.v` 的 `WIDTH` 保持相同。
 
 ## 隨機刺激與參考模型
 
-`test/test_blinky_random.py` 是驗證的另一半。directed test 在某人挑的幾個時刻做斷言。這一支測試則建立一個「設計應該怎麼動」的模型。它在沒有人手寫的刺激下，每個 cycle 都拿設計和模型比對一次。
+`tb/test_blinky_random.py` 是驗證的另一半。directed test 在某人挑的幾個時刻做斷言。這一支測試則建立一個「設計應該怎麼動」的模型。它在沒有人手寫的刺激下，每個 cycle 都拿設計和模型比對一次。
 
 它有三個部分，每個大約十行：
 
@@ -277,13 +280,30 @@ grep -A12 'Path Group: asynchronous' runs/*/*-openroad-stapostpnr/*/checks.rpt
 
 這是量過的，不是猜的。這個設計的一次 CI 執行在九份 corner 報告裡都產出了 `recovery check against rising-edge clock clk`。CI 每次都會把它在那裡找到的內容印出來。同步 reset 的設計在那個 path group 裡什麼都沒有。那對它來說是正確的答案，不是缺漏。
 
+## 多個 seed
+
+一個 seed 是一次隨機執行。`make regress` 執行一份測試清單，每個測試跑多個 seed。清單是 `tb/regression.yaml`，由 `config.yaml` 的 `"//REGRESSION"` 指定。每一項有一個 `test`，可以是 `"//COCOTB_TESTS"` 的一個模組，或寫成 `<module>.<function>` 的單一測試，另有選用的 `seeds`。RTL 只編譯一次。
+
+```bash
+make regress                  # 整份清單，從新的 base seed 開始
+make regress SEED=1789965785  # 整份清單再跑一次，用同樣的 seed
+```
+
+指令會印出 base seed，以及每一項通過的次數表。一次失敗不會讓其他執行停下來，結束碼是 1。每一次失敗的執行，指令都會印出重現它的方法：
+
+```text
+make cocotb SEED=910098751 TEST=test_blinky_random
+```
+
+CI 在每個 pull request 都會跑這份清單。要讓新測試也在其中，就加一項。[完整細節 →](https://github.com/anlit75/c4o-core/blob/main/docs/commands.md#many-seeds-regress)
+
 ## 加入 Verilog 測試平台
 
-這個模板不附 Verilog 測試平台，但路還是開著的。把檔案放進 `test/`，再列出來：
+這個模板不附 Verilog 測試平台，但路還是開著的。把檔案放進 `tb/`，再列出來：
 
 ```yaml
 "//TEST_FILES":
-  - dir::test/tb_my_design.v
+  - dir::tb/tb_my_design.v
 ```
 
 `make sim` 會跑它，`make all` 和 CI 也會。檢查失敗時必須呼叫 `$fatal`。`$display` 印完就繼續跑，模擬器回傳 0，但 `$fatal` 會回傳非零，`make sim` 讀的就是這個回傳值。`$dumpfile` 和 `$dumpvars` 要由你自己寫。
@@ -305,7 +325,7 @@ make gatesim   # 在它上面跑測試
 
 同樣的檔案能跑，是因為它們只碰接腳。合成會把參數固定下來，也會拿掉內部訊號的名字。netlist 裡沒有 `WIDTH` 可以讀，也沒有 `count` 可以寫。任何伸手進設計內部的東西在 RTL 上能用，到這一步就不能用。讓你看到這件事，是這一步存在的理由之一。
 
-`src/blinky.v` 的 `WIDTH` 是 16，也是出於這個原因。只看得到接腳的測試必須等 `led` 上升，而閘級電路跑得比 RTL 慢。`WIDTH` 小的時候，等待的時間夠短，CI 才能在每個 pull request 都跑這些測試。
+`rtl/blinky.v` 的 `WIDTH` 是 16，也是出於這個原因。只看得到接腳的測試必須等 `led` 上升，而閘級電路跑得比 RTL 慢。`WIDTH` 小的時候，等待的時間夠短，CI 才能在每個 pull request 都跑這些測試。
 
 **這是功能驗證，不是時序驗證。** 這裡沒有任何地方做 SDF back-annotation。元件是零延遲切換的，所以這次模擬看不到只在真實延遲下才出現的競態。它看得到合成做的每一個決定：被推論出來的 latch、reset 的實作方式，以及有歧義的 `always` 區塊被怎麼解讀。
 
@@ -376,7 +396,7 @@ make gds PDK_ROOT=/opt/sky130
 
 | 部分 | 修正怎麼到你手上 |
 |---|---|
-| 工具 | `Makefile` 和 `.devcontainer/devcontainer.json` 都寫著映像檔 `ghcr.io/anlit75/c4o-core:2.21`。2.21 的修正會在下一次拉映像檔時到。2.22 發佈之後，要改這兩行才拿得到它的修正。這兩行不一樣的話 CI 會失敗。 |
+| 工具 | `Makefile` 和 `.devcontainer/devcontainer.json` 都寫著映像檔 `ghcr.io/anlit75/c4o-core:2.22`。2.22 的修正會在下一次拉映像檔時到。2.23 發佈之後，要改這兩行才拿得到它的修正。這兩行不一樣的話 CI 會失敗。 |
 | make 指令 | `Makefile` 從映像檔引入它的規則。像 `make gds` 這樣的指令有修正時，修正會隨映像檔到。見[你自己的 target 可以用什麼](https://github.com/anlit75/c4o-core/blob/main/docs/makefile.md)。 |
 | CI 的步驟 | `.github/workflows/verify.yml` 呼叫 c4o-core 的 action，版本是 `@v2`。action 的修正會在下一次執行時到。見[每個 action 做什麼](https://github.com/anlit75/c4o-core/blob/main/docs/actions.md)。 |
 
@@ -397,6 +417,7 @@ make gds PDK_ROOT=/opt/sky130
 | `DESIGN_NAME` | 你的頂層模組名稱。其他地方都從這裡讀。 |
 | `VERILOG_FILES` | 可合成的原始碼。一行一個檔案：LibreLane 會把每一項當成字面路徑驗證，不展開 `**`。 |
 | `"//COCOTB_TESTS"` | 給 `make cocotb` 和 `make gatesim` 的 Python 測試平台。可以用萬用字元。 |
+| `"//REGRESSION"` | `make regress` 的測試清單：一個列出 `test` 和 `seeds` 的 YAML 檔。選用。 |
 | `"//TEST_FILES"` | 給 `make sim` 的 Verilog 測試平台。選用。可以用萬用字元。 |
 | `"//SIM_TOP"` | 要 elaborate 的 Verilog 測試平台模組。`"//TEST_FILES"` 對到超過一個檔案時必填。 |
 | `"//GATE_TESTS"` / `"//GATE_TOP"` | 給 `make gatesim` 的 Verilog 閘級測試平台。選用。設了之後，`make gatesim` 跑它們，不跑 cocotb 測試。 |
