@@ -90,7 +90,7 @@ make gds
 
 ## 🌐 結果直接上線
 
-`main` 上每次 CI 都會把結果網頁發佈到 `https://<you>.github.io/<your-repo>/`。頁面最前面是你的設計版圖，可以用 3D 開啟，也可以下載 GDS。接著是判定和測試，然後是時序、面積與 instance、功耗，最後是 signoff。頁面上會寫建置時間和對應的 commit。
+`main` 上每次 CI 都會把結果網頁發佈到 `https://<you>.github.io/<your-repo>/`。頁面最前面是你的設計版圖，可以用 3D 開啟，也可以下載 GDS。接著是判定和測試，然後是程式碼覆蓋率、時序、面積與 instance、功耗，最後是 signoff。頁面上會寫建置時間和對應的 commit。
 
 只要開一次：**Settings → Pages → Source: GitHub Actions**。本機用 `make site` 產生這個網頁。[更多 →](docs/guide.zh-TW.md#發佈結果網頁)
 
@@ -100,6 +100,7 @@ make gds
 |---|---|
 | `make all` | Lint、你的測試、合成：幾秒內跑完的所有步驟 |
 | `make gds` | 完整 RTL 到 GDSII 流程，最後印出上面的摘要 |
+| `make coverage` | Python 測試跑過你 RTL 的多少部分 |
 | `make gatesim` | 在閘級電路上重跑你的測試（`make gds` 之後） |
 | `make report` | 不重跑，再印一次摘要 |
 | `make site` | 結果網頁，產在 `build/site/` |

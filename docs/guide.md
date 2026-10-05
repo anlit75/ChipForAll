@@ -92,6 +92,7 @@ If the first row is wrong, you get an error immediately, not three minutes into 
 | `make lint` | Checks your Verilog with Verilator. | `Terminal` |
 | `make sim` | Runs a Verilog testbench with Icarus Verilog. It needs `"//TEST_FILES"`: see [Adding a Verilog testbench](#adding-a-verilog-testbench). | `build/wave.vcd` |
 | `make cocotb` | Runs the Python (cocotb) testbenches on the RTL. With `WAVES=1`, it also writes a VCD into `build/`. | `build/cocotb-results.xml` |
+| `make coverage` | Runs the Python tests again on Verilator and counts the RTL that they run. It does not decide pass or fail. See [Code coverage](#code-coverage). | `build/coverage/` |
 | `make synth` | Synthesises RTL into generic gates with Yosys. It gives no area and no timing: see [Seeing the circuit](#seeing-the-circuit). The script is fixed. Use `make shell` to run Yosys yourself. | `build/synthesis.json` |
 | `make pdk` | Installs the Sky130 PDK. `make gds` runs it for you. Run it alone to do the 3GB download before you need it. | `pdks/` |
 | `make schematic` | Draws the circuit as an SVG that you can open anywhere. | `build/schematic.svg` |
@@ -147,7 +148,7 @@ The difference between a summary and a signoff report is practical. A flow in wh
 
 ## Publishing the results page
 
-`make site` builds one page, `build/site/index.html`. The page starts with the layout image and the verdicts. It lists every cocotb test with its verdict and seed. After `make gds`, the page also shows four sections in this order: timing, area and instances, power, and signoff checks.
+`make site` builds one page, `build/site/index.html`. The page starts with the layout image and the verdicts. It lists every cocotb test with its verdict and seed. After `make coverage`, the page shows a Coverage section. After `make gds`, the page also shows four sections in this order: timing, area and instances, power, and signoff checks.
 
 Timing says whether the design meets the clock, and gives the worst setup and hold slack. It then lists the constraints that the run used. Each one says whether `config.yaml` set it or the flow used its default. Area and instances count the instances after synthesis and after routing, by class and by drive strength. They also name the standard cell library and say that it has a single threshold voltage.
 
@@ -155,7 +156,17 @@ Power gives the corner, the clock frequency and the activity. The activity is th
 
 The page is designed for sharing, as a portfolio piece. The layout is first, then the numbers, then the tests. Your `"//DESCRIPTION"` is below the title. Buttons let you open the chip in 3D, download the GDS and view the source. The heading gives the build time and the commit that the page shows. The heading gives them because CI does not publish a failing `main`: the page continues to show the last run that passed.
 
-CI builds that page on every run. From `main`, it publishes the page to GitHub Pages at `https://<your-user>.github.io/<your-repo>/`. A new copy of this template has Pages off, and no workflow can turn it on for you. Turn it on once: **Settings → Pages → Source: GitHub Actions**. Until you do, CI still passes and gives a notice that it published nothing.
+CI builds that page on every run. From `main`, it publishes the page to GitHub Pages at `https://<your-user>.github.io/<your-repo>/`. A manual run of the workflow on `main` publishes the page again. Use it to refresh the page without a commit. A new copy of this template has Pages off, and no workflow can turn it on for you. Turn it on once: **Settings → Pages → Source: GitHub Actions**. Until you do, CI still passes and gives a notice that it published nothing.
+
+## Code coverage
+
+`make coverage` shows how much of your RTL the Python tests run. It runs the `"//COCOTB_TESTS"` again on Verilator, which has the coverage counters. Icarus has none. `make all` does not run it, but CI does.
+
+It counts three kinds of points. A block is a piece of code that ran. A branch is one side of an `if` or a `case`. A toggle is a signal bit that changed value. The results page shows each kind with the points hit and the total. A card in the summary at the top of the page shows them too.
+
+Pass and fail stay with `make cocotb`, which runs on Icarus. Verilator is 2-state, so a signal that is `x` before reset reads 0 there. A test can pass on one simulator and fail on the other. A failing Verilator run does not fail `make coverage`. A design that Verilator cannot build does.
+
+`make coverage SEED=<n>` sets the seed. The page says which seed the run used. [All the details →](https://github.com/anlit75/c4o-core/blob/main/docs/commands.md#code-coverage-coverage)
 
 ## When slack is negative
 
@@ -365,7 +376,7 @@ A repository that you make from this template has no git history in common with 
 
 | Part | How a fix reaches you |
 |---|---|
-| The tools | The `Makefile` and `.devcontainer/devcontainer.json` name the image `ghcr.io/anlit75/c4o-core:2.20`. A fix to 2.20 arrives the next time the image is pulled. When 2.21 is released, change the two lines to get its fixes. CI fails if the two lines are different. |
+| The tools | The `Makefile` and `.devcontainer/devcontainer.json` name the image `ghcr.io/anlit75/c4o-core:2.21`. A fix to 2.21 arrives the next time the image is pulled. When 2.22 is released, change the two lines to get its fixes. CI fails if the two lines are different. |
 | The make commands | The `Makefile` includes its rules from the image. A fix to a command such as `make gds` arrives with the image. See [what your own targets can use](https://github.com/anlit75/c4o-core/blob/main/docs/makefile.md). |
 | The CI steps | `.github/workflows/verify.yml` calls actions from c4o-core at `@v2`. A fix to an action arrives on the next run. See [what each action does](https://github.com/anlit75/c4o-core/blob/main/docs/actions.md). |
 
