@@ -90,7 +90,7 @@ At the end, it tells you what it built:
 
 ## 🌐 Your results, online
 
-Each CI run on `main` publishes a results page to `https://<you>.github.io/<your-repo>/`. The page shows the layout of your design first, and you can open it in 3D or download the GDS. Next are the verdicts and the tests, then code coverage, timing, area and instances, power, and signoff last. The page gives the time of the build and the commit.
+Each CI run on `main` publishes a results page to `https://<you>.github.io/<your-repo>/`. The page shows the layout of your design first, and you can open it in 3D or download the GDS. Next are the verdicts and the tests, then code coverage, timing, area and instances, power, and signoff last. The page gives the time of the build and the commit. Each section can open a History fold with charts of the earlier commits on `main`. Each section also ends with the files behind it, to download.
 
 Turn it on once: **Settings → Pages → Source: GitHub Actions**. Build the page locally with `make site`. [More →](docs/guide.md#publishing-the-results-page)
 
