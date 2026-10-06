@@ -155,7 +155,7 @@ The difference between a summary and a signoff report is practical. A flow in wh
 
 `make site` builds one page, `build/site/index.html`. The page starts with the layout image and the verdicts. It lists every cocotb test with its verdict and seed. After `make coverage`, the page shows a Coverage section. After `make gds`, the page also shows four sections in this order: timing, area and instances, power, and signoff checks.
 
-Timing says whether the design meets the clock, and gives the worst setup and hold slack. It then lists the constraints that the run used. Each one says whether `config.yaml` set it or the flow used its default. Area and instances count the instances after synthesis and after routing, by class and by drive strength. They also name the standard cell library and say that it has a single threshold voltage.
+Timing says whether the design meets the clock, and gives the worst setup and hold slack. It then lists the constraints that the run used. Each one says whether `config.yaml` set it or the flow used its default. Area and Instances counts the instances after synthesis and after routing, by class and by drive strength. It also names the standard cell library and says that it has a single threshold voltage.
 
 Power gives the corner, the clock frequency and the activity. The activity is the default switching activity of OpenSTA, not the activity of your testbench. It shows where the power goes, not what a real workload draws. Signoff checks come last: one DRC row for Magic and KLayout, LVS, antenna, XOR and the static IR drop. The page says that electromigration, crosstalk and dynamic IR drop are not analysed. Each part appears after you run its command.
 
@@ -400,7 +400,7 @@ A repository that you make from this template has no git history in common with 
 
 | Part | How a fix reaches you |
 |---|---|
-| The tools | The `Makefile` and `.devcontainer/devcontainer.json` name the image `ghcr.io/anlit75/c4o-core:2.22`. A fix to 2.22 arrives the next time you pull the image. When 2.23 is released, change the two lines to get its fixes. CI fails if the two lines are different. |
+| The tools | The `Makefile` and `.devcontainer/devcontainer.json` name the image `ghcr.io/anlit75/c4o-core:2.23`. A fix to 2.23 arrives the next time you pull the image. When 2.24 is released, change the two lines to get its fixes. CI fails if the two lines are different. |
 | The make commands | The `Makefile` includes its rules from the image. A fix to a command such as `make gds` arrives with the image. See [what your own targets can use](https://github.com/anlit75/c4o-core/blob/main/docs/makefile.md). |
 | The CI steps | `.github/workflows/verify.yml` calls actions from c4o-core at `@v2`. A fix to an action arrives on the next run. See [what each action does](https://github.com/anlit75/c4o-core/blob/main/docs/actions.md). |
 
