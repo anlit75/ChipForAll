@@ -10,13 +10,13 @@
 
 DESIGN_NAME: blinky
 
-# One line per source file. A glob does not work here: LibreLane validates
-# each entry as a literal path and never expands '**', so `dir::rtl/**/*.v`
-# lints, simulates and synthesises fine -- c4o-core does expand it -- and then
+# One line per source file. A glob does not work here. LibreLane validates
+# each entry as a literal path and never expands '**'. So `dir::rtl/**/*.v`
+# lints, simulates and synthesises fine. c4o-core does expand it. Then
 # `make gds` stops with "'/workspace/rtl/**/*.v' does not exist". Measured in
 # CI, not guessed.
 #
-# More than one file is one entry each, and order does not matter -- the top
+# More than one file is one entry each, and order does not matter. The top
 # module is DESIGN_NAME, not the first line:
 #
 #   VERILOG_FILES:
@@ -25,9 +25,9 @@ DESIGN_NAME: blinky
 VERILOG_FILES:
   - dir::rtl/blinky.v
 
-# Simulation only. LibreLane has no testbench variable -- simulation sits
-# outside an RTL-to-GDSII flow -- and it ignores any key starting with '//',
-# which is what keeps this file valid for both tools.
+# Simulation only. LibreLane has no testbench variable. Simulation sits
+# outside an RTL-to-GDSII flow. LibreLane ignores any key that starts with
+# '//'. That is what keeps this file valid for both tools.
 #
 # Globs do work on the '//' keys, here and below: they are c4o-core's, and only
 # LibreLane's own keys are held to literal paths.
@@ -44,7 +44,7 @@ VERILOG_FILES:
 "//REGRESSION": dir::tb/regression.yaml
 
 # One line under the title of the results page (`make site`) and in its link
-# preview when the page is shared. Say what your design is; this one describes
+# preview when the page is shared. Say what your design is. This one describes
 # the example, so replace it along with rtl/blinky.v.
 "//DESCRIPTION": "A clock divider that blinks an LED: the ChipForAll example, from RTL to GDS."
 
@@ -56,24 +56,26 @@ CLOCK_PERIOD: 10.0
 PDK: sky130A
 STD_CELL_LIBRARY: sky130_fd_sc_hd
 
-# The die sizes itself around your design: FP_SIZING: relative floorplans from
+# The die sizes itself around your design. FP_SIZING: relative floorplans from
 # FP_CORE_UTIL (how full the core should be, as a percentage) instead of a
-# fixed rectangle. Swap
-# in a bigger design and it grows; the old absolute 100x100 refused it instead.
+# fixed rectangle. Swap in a bigger design and it grows. The old absolute
+# 100x100 refused it instead.
 #
-# There is deliberately no DIE_AREA here. Relative sizing never reads it, but
-# one of the two GDS streamers still draws prBoundary from it, so a leftover
+# There is deliberately no DIE_AREA here. Relative sizing never reads it. But
+# one of the two GDS streamers still draws prBoundary from it. So a leftover
 # value fails signoff with a 1-count XOR difference against a boundary the flow
-# never used. Measured, not guessed: a run with FP_SIZING: relative and
-# DIE_AREA: [0,0,100,100] reported "1 XOR differences", every mask layer clean,
-# the difference being that 100x100 square minus the 69.485x80.205 die.
+# never used.
 #
-# To go back to a fixed die: set FP_SIZING: absolute and add DIE_AREA.
+# Measured, not guessed. A run with FP_SIZING: relative and
+# DIE_AREA: [0,0,100,100] reported "1 XOR differences" with every mask layer
+# clean. The difference was that 100x100 square minus the 69.485x80.205 die.
+#
+# To go back to a fixed die, set FP_SIZING: absolute. Add DIE_AREA.
 FP_CORE_UTIL: 40
 FP_SIZING: relative
 
-# The blackbox stubs LibreLane generates for the PDK cells carry no timescale,
-# so TIMESCALEMOD fires once per cell -- 441 warnings, none of them from our
-# RTL. Same reason UNDRIVEN and UNUSEDSIGNAL are in the default list; they have
-# to be repeated here because this overrides rather than appends.
+# The blackbox stubs LibreLane generates for the PDK cells carry no timescale.
+# So TIMESCALEMOD fires once per cell -- 441 warnings, none of them from our
+# RTL. UNDRIVEN and UNUSEDSIGNAL are in the default list for the same reason.
+# They have to be repeated here, because this overrides rather than appends.
 LINTER_DISABLE_WARNINGS_BLACKBOX: [UNDRIVEN, UNUSEDSIGNAL, TIMESCALEMOD]

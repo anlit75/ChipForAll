@@ -111,7 +111,7 @@ make gds
 
 ## ✍️ 換成你的設計
 
-刪掉 blinky 的檔案。Verilog 放 `rtl/`，測試放 `tb/`。在 `config.yaml` 列出它們，並把 `DESIGN_NAME` 設成你的頂層模組。其他資料 `Makefile` 和 CI 都從那個檔案讀。[必須一致的三件事 →](docs/guide.zh-TW.md#換成你自己的設計)
+刪掉 blinky 的檔案。Verilog 放 `rtl/`，測試放 `tb/`。在 `config.yaml` 列出它們。把 `DESIGN_NAME` 設成你的頂層模組。其他資料 `Makefile` 和 CI 都從那個檔案讀。[必須一致的三件事 →](docs/guide.zh-TW.md#換成你自己的設計)
 
 ## 適合誰
 

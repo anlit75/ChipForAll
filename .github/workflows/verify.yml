@@ -9,10 +9,10 @@ on:
       - 'LICENSE'
       - '.gitignore'
   # No paths-ignore here, deliberately. A required status check that never runs
-  # is not "skipped", it is "Expected -- waiting for status to be reported", and
-  # the pull request can never be merged. A docs-only change costs one full run;
-  # a permanently unmergeable pull request costs more. The push trigger above
-  # keeps its filter, so merging docs to main still skips the flow.
+  # is not "skipped". It is "Expected -- waiting for status to be reported",
+  # and the pull request can never be merged. A docs-only change costs one full
+  # run. A permanently unmergeable pull request costs more. The push trigger
+  # above keeps its filter, so merging docs to main still skips the flow.
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
@@ -23,10 +23,10 @@ jobs:
   # any of those files, so three and a half minutes of it could not change a
   # verdict.
   #
-  # Decided in a job because of the trap described above: with paths-ignore the
-  # required check never reports, and here it reports as skipped, which a
-  # required check accepts. Everything is unchecked on such a pull request; a
-  # pull request that touches one other file runs all of it.
+  # The job decides this because of the trap described above. With
+  # paths-ignore the required check never reports. Here it reports as skipped,
+  # which a required check accepts. Everything is unchecked on such a pull
+  # request. A pull request that touches one other file runs all of it.
   changes:
     runs-on: ubuntu-latest
     permissions:
@@ -53,17 +53,17 @@ jobs:
             echo "code=true" >> "$GITHUB_OUTPUT"
           fi
 
-  # The Dev Container is the "zero install" promise, and nothing else here
+  # The Dev Container is the "zero install" promise. Nothing else here
   # exercises it -- the job below runs on the host, against the plain image.
   # So a devcontainer.json change could only be caught by opening a Codespace
-  # by hand, which is how `remoteUser` broke once already.
+  # by hand. That is how `remoteUser` broke once already.
   #
-  # Builds it for real and checks the two things `make gds` needs from it: a
-  # Docker daemon that answers (the guard's exact condition), and the
-  # in-container delegation path the Makefile takes when it finds the
-  # entrypoint script locally. It does not run `make gds` itself -- that wants
-  # a 3GB PDK and twenty minutes -- and it cannot speak for Codespaces, whose
-  # remote server is a different thing again.
+  # Builds it for real. It checks two things that `make gds` needs from it.
+  # One is a Docker daemon that answers (the guard's exact condition). The
+  # other is the in-container delegation path that the Makefile takes when it
+  # finds the entrypoint script locally. It does not run `make gds` itself --
+  # that wants a 3GB PDK and twenty minutes. It also cannot speak for
+  # Codespaces, whose remote server is a different thing again.
   devcontainer:
     needs: changes
     if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
@@ -84,8 +84,8 @@ jobs:
             echo "--- the in-container delegation path ---"
             make lint
 
-  # The steps every repository made from this template shares -- the image and
-  # PDK setup, the fast checks, the flow, the report, the uploads -- are
+  # Every repository made from this template shares some steps: the image and
+  # PDK setup, the fast checks, the flow, the report, the uploads. They are
   # composite actions in c4o-core, called at a branch that each c4o-core
   # release moves. So a fix to one of them reaches a repository made from this
   # template without anybody copying it. What each action does:
@@ -96,7 +96,7 @@ jobs:
   full-flow:
     needs: changes
     # Runs unless the job above said no. If that job fails, its output is
-    # empty and this still runs: a broken decision must not look like a pass.
+    # empty and this still runs. A broken decision must not look like a pass.
     if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-latest
     permissions:
@@ -114,13 +114,14 @@ jobs:
         uses: anlit75/c4o-core/actions/setup@v2
 
       # The steps marked "Template only" check sentences in this template's own
-      # README and guide. They run when this repository is the template and are
+      # README and guide. They run when this repository is the template. They are
       # skipped in a repository made from it, where those sentences are no
       # longer the documentation. Delete them there if you like.
       #
       # Whether they run comes from the event that started the workflow. This
-      # step asks the API the same question, so that if the two ever disagree
-      # the template's checks do not just stop running with every step green.
+      # step asks the API the same question. Its purpose: if the two ever
+      # disagree, the template's checks do not just stop running with every step
+      # green.
       - name: The template's own checks are on where they should be
         env:
           GH_TOKEN: ${{ github.token }}
@@ -141,8 +142,11 @@ jobs:
       # made from it starts with a stub that works with the image. The commands
       # are in the image, and the stub is what finds them. A stub edited by hand,
       # or one left over from an older image, would make a new repository fail
-      # before its first command. So compare the stub in the Makefile, from its
-      # marker line to the include line, with the stub in the image it names.
+      # before its first command.
+      #
+      # So compare two stubs. One is the stub in the
+      # Makefile, from its marker line to the include line. The other is the stub
+      # in the image it names.
       - name: The Makefile is still the stub the image ships
         if: env.IS_TEMPLATE == 'true'
         run: |
@@ -163,10 +167,10 @@ jobs:
 
       # Template only.
       # README tells anyone on an Apple Silicon machine that `make gds` runs
-      # native because LibreLane publishes arm64, and that is a fact about
-      # somebody else's registry: if they stop publishing it, or the pinned tag
+      # native, because LibreLane publishes arm64. That is a fact about
+      # somebody else's registry. If they stop publishing it, or the pinned tag
       # moves, that paragraph is wrong with nothing failing. Ask the registry.
-      # No arm64 runner needed -- a manifest index lists its platforms.
+      # It needs no arm64 runner -- a manifest index lists its platforms.
       - name: The arm64 image the README promises is still published
         if: env.IS_TEMPLATE == 'true'
         run: |
@@ -193,9 +197,9 @@ jobs:
 
       # Template only.
       # README tells a reader that SystemVerilog works in every command from
-      # c4o-core 2.8.3 on. `make sim` is the one that used to reject it, so run
-      # the pinned image against a file that needs it. Written by this step
-      # rather than shipped into the template: the claim is about the image, not
+      # c4o-core 2.8.3 on. `make sim` is the one that used to reject it. So run
+      # the pinned image against a file that needs it. This step writes that file
+      # rather than shipping it in the template. The claim is about the image, not
       # about the example, and the template stays a Verilog one.
       - name: SystemVerilog reads, as the README says it does
         if: env.IS_TEMPLATE == 'true'
@@ -240,12 +244,14 @@ jobs:
 
       # Template only.
       # README's quick start has the reader change count[WIDTH-1] to
-      # count[WIDTH-2] in rtl/blinky.v, run `make all`, and see it stop on a
-      # line it quotes word for word. Make that edit here and check the run
-      # still fails, and fails with that line. The line is read from README.md,
-      # so the two cannot drift apart. Only while rtl/blinky.v is the example
-      # the README describes: a copy of this template with its own design has
-      # nothing to break this way, and must not go red for it.
+      # count[WIDTH-2] in rtl/blinky.v. The reader runs `make all` and sees it stop
+      # on a line that the README quotes word for word.
+      #
+      # Make that edit here. Check
+      # that the run still fails, and fails with that line. The line is read from
+      # README.md, so the two cannot drift apart. This runs only while rtl/blinky.v
+      # is the example that the README describes. A copy of this template with its
+      # own design has nothing to break this way, and must not go red for it.
       #
       # The broken run rewrites build/ with its own cocotb verdict,
       # which the results page reads. build/ is put back afterwards.
@@ -288,10 +294,12 @@ jobs:
       # Template only.
       # docs/guide.md tells a reader they can bring their own timing constraints
       # by setting PNR_SDC_FILE and SIGNOFF_SDC_FILE. Those are LibreLane's
-      # variables, not this repository's -- nothing here would notice if an
-      # upgrade renamed or dropped them, and the guide would go on telling
-      # people to set keys that do nothing. So ask the pinned image itself. This
-      # asserts the keys exist, not that a given SDC file is read; only a run
+      # variables, not this repository's. Nothing here would notice if an
+      # upgrade renamed or dropped them. The guide would go on telling
+      # people to set keys that do nothing.
+      #
+      # So ask the pinned image itself. This
+      # asserts the keys exist, not that a given SDC file is read. Only a run
       # with one in it can say that.
       - name: The SDC keys the guide documents exist in this LibreLane
         if: env.IS_TEMPLATE == 'true'
@@ -331,8 +339,8 @@ jobs:
             find runs -name '*.rpt' 2>/dev/null | head -20
             exit 1
           fi
-          # Not just present: it has to be a timing report, or the guide is
-          # sending the reader to the wrong file rather than to no file.
+          # Not just present: it has to be a timing report. Otherwise the guide sends
+          # the reader to the wrong file rather than to no file.
           rpt="${rpts[0]}"
           echo "--- $rpt ---"
           grep -qF "slack" "$rpt" || {
@@ -359,16 +367,16 @@ jobs:
           echo "--- ${holds[0]} ---"
           head -10 "${holds[0]}"
 
-          # And print every corner. The guide tells the reader these globs match
-          # more than one file and that picking the worst is on them, so the
-          # count here is the evidence for that sentence.
+          # And print every corner. The guide tells the reader that these globs match
+          # more than one file. It also says that picking the worst is up to the reader.
+          # So the count here is the evidence for that sentence.
           corners=(runs/*/*-openroad-stapostpnr/*/)
           echo "--- timing corners this run produced (${#corners[@]}) ---"
           printf '%s\n' "${corners[@]}"
 
       # Template only.
-      # docs/guide.md says reset timing is unanswered here, and says whether the
-      # flow checks recovery and removal at all depends on arcs in the cell
+      # docs/guide.md says reset timing is unanswered here. It also says that
+      # whether the flow checks recovery and removal at all depends on arcs in the cell
       # library. blinky is an async-reset design, the corner reports are right
       # here, and nobody has looked. Printed rather than asserted: this is how
       # the next edit to that paragraph gets a fact instead of a hedge.
@@ -400,15 +408,16 @@ jobs:
       # docs/guide.md, "Iterating without re-running the whole flow", gives one
       # command for resuming from floorplan. Nothing ran the command it used to
       # give, and it had stopped working three separate ways with every other
-      # step here green. So run it, and check what that section says: the
-      # resume needs the state file it names, synthesis is not redone, and the
-      # resumed steps are added after the old ones.
+      # step here green. So run it. Then check what that section says:
+      #   - the resume needs the state file it names
+      #   - synthesis is not redone
+      #   - the resumed steps are added after the old ones
       #
-      # Last among the flow steps, so a failure here does not hide theirs, and
-      # so the steps above read a run directory with one of each step.
+      # Last among the flow steps, so a failure here does not hide theirs. It is
+      # also last so that the steps above read a run directory with one of each step.
       #
       # Not on pull requests, for the reason the gate-level step gives: it runs
-      # the flow from floorplan a second time, and the command only changes
+      # the flow from floorplan a second time. The command only changes
       # when the Makefile or the LibreLane pin does. Phrased the same way, so
       # workflow_dispatch exercises it on a branch before merging.
       - name: Resuming from floorplan works, as the guide says it does

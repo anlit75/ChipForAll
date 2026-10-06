@@ -111,7 +111,7 @@ Turn it on once: **Settings → Pages → Source: GitHub Actions**. Build the pa
 
 ## ✍️ Make it your design
 
-Delete the blinky files. Put your Verilog in `rtl/` and your tests in `tb/`. List them in `config.yaml`, and set `DESIGN_NAME` to your top module. The `Makefile` and CI read all other data from `config.yaml`. [The three things that must agree →](docs/guide.md#making-it-your-design)
+Delete the blinky files. Put your Verilog in `rtl/` and your tests in `tb/`. List them in `config.yaml`. Set `DESIGN_NAME` to your top module. The `Makefile` and CI read all other data from `config.yaml`. [The three things that must agree →](docs/guide.md#making-it-your-design)
 
 ## Who it is for
 
