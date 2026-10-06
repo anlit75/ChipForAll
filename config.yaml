@@ -79,3 +79,10 @@ FP_SIZING: relative
 # RTL. UNDRIVEN and UNUSEDSIGNAL are in the default list for the same reason.
 # They have to be repeated here, because this overrides rather than appends.
 LINTER_DISABLE_WARNINGS_BLACKBOX: [UNDRIVEN, UNUSEDSIGNAL, TIMESCALEMOD]
+
+# The physical flow may not use the clkdlybuf4s delay cells. When it splits a
+# net with too many loads, it picks sky130_fd_sc_hd__clkdlybuf4s25_1. That cell
+# is too weak to drive ten loads. On blinky's reset net, the slew in the ss
+# corners was 1.01 ns, over the 0.75 ns limit, in 11 places. Without the
+# delay cells it picks buf_1 and the count is 0. Setup and hold still pass.
+EXTRA_EXCLUDED_CELLS: ["sky130_fd_sc_hd__clkdlybuf4s*"]
