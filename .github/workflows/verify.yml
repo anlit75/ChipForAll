@@ -9,7 +9,7 @@ on:
       - 'LICENSE'
       - '.gitignore'
   # No paths-ignore here, deliberately. A required status check that never runs
-  # is not "skipped". It is "Expected -- waiting for status to be reported",
+  # is not "skipped". It stays "Expected", waiting for status to be reported,
   # and the pull request can never be merged. A docs-only change costs one full
   # run. A permanently unmergeable pull request costs more. The push trigger
   # above keeps its filter, so merging docs to main still skips the flow.
@@ -18,8 +18,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  # A pull request that changes only what the push trigger above ignores --
-  # Markdown, LICENSE, .gitignore -- does not run the flow. No step below reads
+  # A pull request that changes only what the push trigger above ignores
+  # (Markdown, LICENSE, .gitignore) does not run the flow. No step below reads
   # any of those files, so three and a half minutes of it could not change a
   # verdict.
   #
@@ -54,15 +54,15 @@ jobs:
           fi
 
   # The Dev Container is the "zero install" promise. Nothing else here
-  # exercises it -- the job below runs on the host, against the plain image.
+  # exercises it. The job below runs on the host, against the plain image.
   # So a devcontainer.json change could only be caught by opening a Codespace
   # by hand. That is how `remoteUser` broke once already.
   #
   # Builds it for real. It checks two things that `make gds` needs from it.
   # One is a Docker daemon that answers (the guard's exact condition). The
   # other is the in-container delegation path that the Makefile takes when it
-  # finds the entrypoint script locally. It does not run `make gds` itself --
-  # that wants a 3GB PDK and twenty minutes. It also cannot speak for
+  # finds the entrypoint script locally. It does not run `make gds` itself.
+  # That wants a 3GB PDK and twenty minutes. It also cannot speak for
   # Codespaces, whose remote server is a different thing again.
   devcontainer:
     needs: changes
@@ -170,7 +170,7 @@ jobs:
       # native, because LibreLane publishes arm64. That is a fact about
       # somebody else's registry. If they stop publishing it, or the pinned tag
       # moves, that paragraph is wrong with nothing failing. Ask the registry.
-      # It needs no arm64 runner -- a manifest index lists its platforms.
+      # It needs no arm64 runner: a manifest index lists its platforms.
       - name: The arm64 image the README promises is still published
         if: env.IS_TEMPLATE == 'true'
         run: |
@@ -325,7 +325,7 @@ jobs:
 
       # Template only.
       # docs/guide.zh-TW.md tells a reader with negative slack to cat this exact
-      # glob. The path it used to give -- runs/*/final/*.rpt -- matched nothing,
+      # glob. The path it used to give (runs/*/final/*.rpt) matched nothing,
       # and the reader who needed it most got silence back. A documented path
       # that nothing checks is a path that rots, so check it here.
       - name: The timing report the guide tells you to read is where it says
@@ -350,7 +350,7 @@ jobs:
           head -30 "$rpt"
 
           # Hold fails in the fast corner, so the guide gives a second command
-          # for it. That path is documented, so it is checked too -- the run that
+          # for it. That path is documented, so it is checked too. The run that
           # added the listing below is where its name came from.
           holds=(runs/*/*-openroad-stapostpnr/*ff_*/checks.rpt)
           if [ ${#holds[@]} -eq 0 ]; then

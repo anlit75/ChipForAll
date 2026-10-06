@@ -47,7 +47,7 @@ The example is a blinky, which is a clock divider. To replace it with your own d
 | Change | Where |
 |---|---|
 | Your RTL | `rtl/`, listed under `VERILOG_FILES` in `config.yaml` |
-| `DESIGN_NAME` | `config.yaml` — must match your top module's name |
+| `DESIGN_NAME` | `config.yaml`: must match your top module's name |
 | Your testbenches | `tb/`, under `"//COCOTB_TESTS"` |
 
 No other file names the design. The `Makefile` and the CI workflow both read `DESIGN_NAME` from `config.yaml`.
@@ -105,9 +105,9 @@ If the first row is wrong, you get an error immediately, not three minutes into 
 | `make gatesim` | Runs the cocotb testbenches again on the synthesised netlist. With `"//GATE_TESTS"` set, it runs that Verilog testbench instead. Run `make gds` first. | `build/cocotb-gl-results.xml` |
 | `make report` | Prints area, timing, power and signoff from the last `make gds`. | `Terminal` |
 | `make site` | Puts `report`, the layout and the cocotb results on one page. | `build/site/index.html` |
-| `make shell` | Opens a bash shell inside the c4o-core container. | — |
-| `make clean` | Deletes `build/`. Keeps `runs/`, because `report` and `gatesim` read it. | — |
-| `make distclean` | Deletes `build/` and `runs/`. | — |
+| `make shell` | Opens a bash shell inside the c4o-core container. | None |
+| `make clean` | Deletes `build/`. Keeps `runs/`, because `report` and `gatesim` read it. | None |
+| `make distclean` | Deletes `build/` and `runs/`. | None |
 
 `make help` lists them in the terminal.
 

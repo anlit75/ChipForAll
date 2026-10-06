@@ -47,7 +47,7 @@ LibreLane 不做**模擬與驗證**。這個起手式加上去的就是這兩樣
 | 要改的 | 在哪裡 |
 |---|---|
 | 你的 RTL | `rtl/`，列在 `config.yaml` 的 `VERILOG_FILES` |
-| `DESIGN_NAME` | `config.yaml`——必須和你的頂層模組同名 |
+| `DESIGN_NAME` | `config.yaml`：必須和你的頂層模組同名 |
 | 你的測試平台 | `tb/`，列在 `"//COCOTB_TESTS"` |
 
 沒有別的檔案寫死設計名稱。`Makefile` 和 CI 工作流都從 `config.yaml` 讀 `DESIGN_NAME`。
@@ -104,9 +104,9 @@ CI 照同樣的規則走。如果把 key 留著卻對不到任何檔案，CI 會
 | `make gatesim` | 對合成後的 netlist 重跑 cocotb 測試平台。設了 `"//GATE_TESTS"` 時，改跑那份 Verilog 測試平台。要先執行 `make gds`。 | `build/cocotb-gl-results.xml` |
 | `make report` | 顯示上次 `make gds` 的面積、時序、功耗與 signoff。 | `終端機` |
 | `make site` | 把 `report`、版圖和 cocotb 結果放進同一個網頁。 | `build/site/index.html` |
-| `make shell` | 進入 c4o-core 容器的互動式 shell。 | — |
-| `make clean` | 清除 `build/`。保留 `runs/`，因為 `report` 和 `gatesim` 要讀它。 | — |
-| `make distclean` | 清除 `build/` 和 `runs/`。 | — |
+| `make shell` | 進入 c4o-core 容器的互動式 shell。 | 無 |
+| `make clean` | 清除 `build/`。保留 `runs/`，因為 `report` 和 `gatesim` 要讀它。 | 無 |
+| `make distclean` | 清除 `build/` 和 `runs/`。 | 無 |
 
 `make help` 會在終端機列出這些指令。
 
