@@ -22,7 +22,7 @@ LibreLane does not do simulation and verification. This starter kit adds them, t
 | DRC | Magic, KLayout | Calibre nmDRC, Pegasus |
 | LVS | Netgen | Calibre nmLVS |
 
-The shape of the flow is the same, and the vocabulary transfers. But the tools on your CV are not the tools that a job advert lists, so say which tools you used.
+The shape of the flow is the same, and the vocabulary transfers. But the tools on your CV are not the tools that a job advert lists. So say which tools you used.
 
 **Looking for a worked verification example?** The tests in this repository are two cocotb testbenches. They are enough to show what a test that can fail looks like. They are not a layered verification environment. [c4o-pyuvm](https://github.com/anlit75/c4o-pyuvm) is one: a pyuvm environment on a real UART, built from this template. It has an agent, a driver, a monitor, a scoreboard, and a register model generated from SystemRDL.
 
@@ -38,7 +38,7 @@ This guide has no measurement of how much slower the emulated commands are. A Co
 
 **SystemVerilog is read too.** `logic`, `always_ff` and the synthesisable subset work in every command since c4o-core 2.8.3. Every version that this repository has pinned since then includes this support. Before 2.8.3, the same file passed `make cocotb` and `make gds` but failed `make sim` and `make synth`. An `interface` as a module boundary still does not work: yosys parses the declaration and then fails at `hierarchy`. Keep interfaces in the testbench, not between synthesisable modules.
 
-You do not need Verilog to start. `make gds` runs the example unchanged and prints real area, timing and power. `make all` shows you tests that pass. Do these first, because they tell you that the toolchain works on your machine. You need Verilog for the next step: to change `rtl/blinky.v`, to judge whether a passed test proves something, or to write your own test. Run the example first, learn Verilog, then come back for that step.
+You do not need Verilog to start. `make gds` runs the example unchanged and prints real area, timing and power. `make all` shows you tests that pass. Do these first, because they tell you that the toolchain works on your machine. You need Verilog for the next step: to change `rtl/blinky.v`, to judge whether a passed test proves something, or to write your own test. Run the example first. Learn Verilog. Then come back for that step.
 
 ## Making it your design
 
@@ -47,21 +47,23 @@ The example is a blinky, which is a clock divider. To replace it with your own d
 | Change | Where |
 |---|---|
 | Your RTL | `rtl/`, listed under `VERILOG_FILES` in `config.yaml` |
-| `DESIGN_NAME` | `config.yaml` — must match your top module's name |
+| `DESIGN_NAME` | `config.yaml`: must match your top module's name |
 | Your testbenches | `tb/`, under `"//COCOTB_TESTS"` |
 
 No other file names the design. The `Makefile` and the CI workflow both read `DESIGN_NAME` from `config.yaml`.
 
 Four more things cause problems in a first design:
 
-*   **Delete the blinky files that you replace**: `rtl/blinky.v` and `tb/test_blinky_*.py`. As an alternative, remove them from `config.yaml`. The test key uses the glob `tb/*.py`, so a blinky test file that is still in `tb/` is still included. `VERILOG_FILES` names each file, so replace `rtl/blinky.v` there by name.
+*   **Delete the blinky files that you replace**: `rtl/blinky.v` and `tb/test_blinky_*.py`. As an alternative, delete them from `config.yaml`. The test key uses the glob `tb/*.py`, so a blinky test file that is still in `tb/` is still included. `VERILOG_FILES` names each file, so replace `rtl/blinky.v` there by name.
 *   **Rewrite `tb/regression.yaml`** for your tests. An entry that names a test file that you deleted stops `make regress`, and so CI. To use no list, delete the file and the `"//REGRESSION"` key.
 *   **Start every RTL file with `` `timescale 1ns/1ps ``.** Without it, `make cocotb` fails with `Unable to accurately represent 10(ns)`. `make sim` still passes, because a Verilog testbench declares its own.
 *   **Rewrite `"//DESCRIPTION"`** in `config.yaml`. If you do not, your results page says that the design is a clock divider that blinks an LED.
 
-**A repository needs tests of at least one kind.** `make all` runs `cocotb` when `"//COCOTB_TESTS"` is set and `sim` when `"//TEST_FILES"` is set. It prints a skip line for a kind whose key is not set. With neither key set, `make all` fails. CI follows the same rules. If you keep a key but it matches no files, CI fails. That is correct: you asked for tests that are not there.
+**A repository needs tests of at least one kind.** `make all` runs `cocotb` when `"//COCOTB_TESTS"` is set and `sim` when `"//TEST_FILES"` is set. It prints a skip line for a kind whose key is not set. With neither key set, `make all` fails.
 
-If the first row is wrong, you get an error immediately, not three minutes into `make gds`:
+CI follows the same rules. If you keep a key but it matches no files, CI fails. That is correct: you asked for tests that are not there.
+
+If the first row is wrong, you get an error immediately, not partway through `make gds`:
 
 ```console
 [ERROR] DESIGN_NAME is 'my_cpu', but no module by that name is declared in
@@ -96,16 +98,16 @@ If the first row is wrong, you get an error immediately, not three minutes into 
 | `make cocotb` | Runs the Python (cocotb) testbenches on the RTL. With `WAVES=1`, it also writes a VCD into `build/`. | `build/cocotb-results.xml` |
 | `make regress` | Runs the tests of `tb/regression.yaml`, each over its seeds. See [Many seeds](#many-seeds). | `build/regress/` |
 | `make coverage` | Runs the Python tests again on Verilator and counts the RTL that they run. It does not decide pass or fail. See [Code coverage](#code-coverage). | `build/coverage/` |
-| `make synth` | Synthesises RTL into generic gates with Yosys. It gives no area and no timing: see [Seeing the circuit](#seeing-the-circuit). The script is fixed. Use `make shell` to run Yosys yourself. | `build/synthesis.json` |
-| `make pdk` | Installs the Sky130 PDK. `make gds` runs it for you. Run it alone to do the 3GB download before you need it. | `pdks/` |
+| `make synth` | Synthesises RTL into generic gates with Yosys. It gives no area and no timing: see [Seeing the circuit](#seeing-the-circuit). No setting changes the script. Use `make shell` to run Yosys yourself. | `build/synthesis.json` |
+| `make pdk` | Installs the Sky130 PDK. `make gds` runs it for you. Run it alone to do the multi-GB download before you need it. | `pdks/` |
 | `make schematic` | Draws the circuit as an SVG that you can open anywhere. | `build/schematic.svg` |
-| `make gds` | Builds the physical layout with LibreLane. It takes about three minutes, plus the PDK download on a first run. | `build/<DESIGN_NAME>.gds` |
+| `make gds` | Builds the physical layout with LibreLane. It takes a few minutes, plus the PDK download on a first run. | `build/<DESIGN_NAME>.gds` |
 | `make gatesim` | Runs the cocotb testbenches again on the synthesised netlist. With `"//GATE_TESTS"` set, it runs that Verilog testbench instead. Run `make gds` first. | `build/cocotb-gl-results.xml` |
 | `make report` | Prints area, timing, power and signoff from the last `make gds`. | `Terminal` |
 | `make site` | Puts `report`, the layout and the cocotb results on one page. | `build/site/index.html` |
-| `make shell` | Opens a bash shell inside the c4o-core container. | — |
-| `make clean` | Removes `build/`. Keeps `runs/`, because `report` and `gatesim` read it. | — |
-| `make distclean` | Removes `build/` and `runs/`. | — |
+| `make shell` | Opens a bash shell inside the c4o-core container. | None |
+| `make clean` | Deletes `build/`. Keeps `runs/`, because `report` and `gatesim` read it. | None |
+| `make distclean` | Deletes `build/` and `runs/`. | None |
 
 `make help` lists them in the terminal.
 
@@ -143,7 +145,7 @@ That is the default of that version, not a guarantee from this repository, so ch
 
 **Positive slack** means that the design meets the clock in `config.yaml`. Negative slack means that it does not. The flow does not stop for negative slack, so a run can finish and still report that the design missed the clock. See [When slack is negative](#when-slack-is-negative).
 
-**Those lines are a summary, not a signoff report.** They come from a `metrics.json` with 300 keys, so what they omit is important. They do not show the clock uncertainty and the derating that were applied, or the skew of the clock tree. They do not show which of the nine corners (`ss`/`tt`/`ff` against `min`/`nom`/`max` interconnect) gave that slack. All of these are LibreLane defaults, because `config.yaml` sets none of them. All of them are under `runs/`, with one directory for each step.
+**Those lines are a summary, not a signoff report.** They come from a `metrics.json` with hundreds of keys, so what they omit is important. They do not show the clock uncertainty and the derating that the flow applied, or the skew of the clock tree. They do not show which of the nine corners (`ss`/`tt`/`ff` against `min`/`nom`/`max` interconnect) gave that slack. All of these are LibreLane defaults, because `config.yaml` sets none of them. All of them are under `runs/`, with one directory for each step.
 
 The difference between a summary and a signoff report is practical. A flow in which you set the OCV derates yourself would not accept a `+0.11 ns` hold slack as a pass. For that level of confidence, read the per-corner reports, not these lines.
 
@@ -159,7 +161,9 @@ Power gives the corner, the clock frequency and the activity. The activity is th
 
 The page is designed for sharing, as a portfolio piece. The layout is first, then the numbers, then the tests. Your `"//DESCRIPTION"` is below the title. Buttons let you open the chip in 3D, download the GDS and view the source. The heading gives the build time and the commit that the page shows. The heading gives them because CI does not publish a failing `main`: the page continues to show the last run that passed.
 
-CI builds that page on every run. From `main`, it publishes the page to GitHub Pages at `https://<your-user>.github.io/<your-repo>/`. A manual run of the workflow on `main` publishes the page again. Use it to refresh the page without a commit. A new copy of this template has Pages off, and no workflow can turn it on for you. Turn it on once: **Settings → Pages → Source: GitHub Actions**. Until you do, CI still passes and gives a notice that it published nothing.
+CI builds that page on every run. From `main`, it publishes the page to GitHub Pages at `https://<your-user>.github.io/<your-repo>/`. A manual run of the workflow on `main` publishes the page again. Use it to refresh the page without a commit.
+
+A new copy of this template has Pages off, and no workflow can turn it on for you. Turn it on once: **Settings → Pages → Source: GitHub Actions**. Until you do, CI still passes and gives a notice that it published nothing.
 
 ## Code coverage
 
@@ -173,11 +177,11 @@ Pass and fail stay with `make cocotb`, which runs on Icarus. Verilator is 2-stat
 
 ## When slack is negative
 
-Negative slack means that the design does not meet the clock in `config.yaml`. You have two answers. Give the design more time: increase `CLOCK_PERIOD` and run `make gds` again. Or make the slow path shorter: pipeline it or remove logic from it. The correct answer depends on whether the clock speed is a requirement or a guess. In a first design it is usually a guess.
+Negative slack means that the design does not meet the clock in `config.yaml`. You have two answers. Give the design more time: increase `CLOCK_PERIOD`. Then run `make gds` again. Or make the slow path shorter: pipeline it or remove logic from it. The correct answer depends on whether the clock speed is a requirement or a guess. In a first design it is usually a guess.
 
 Both answers change the design or its constraints. The physical answers are placement density, clock tree targets, resizer margins and routing effort. They belong to LibreLane and they are real, but this guide does not cover them. `config.yaml` sets none of those keys, and the [configuration reference](#configuration-reference) stops where LibreLane's own variables start. If you came here to practise manual timing closure, read LibreLane's documentation for that part.
 
-A third answer is the constraint itself. Maybe the flow should not time the path that fails. Or the input delay that the flow assumed is not the delay that your board gives. In those cases, no design change corrects the problem. An SDC file does, and the [configuration reference](#configuration-reference) tells you how to supply one.
+A third answer is the constraint itself. Maybe the flow should not time the path that fails. Or the input delay that the flow assumed is not the delay that your board gives. In those cases, no design change fixes the problem. An SDC file does, and the [configuration reference](#configuration-reference) tells you how to supply one.
 
 To see *what* is slow, read the timing report that the flow already wrote:
 
@@ -225,9 +229,9 @@ Three things do the work:
 *   **A `Timer` after the edge.** `ClockCycles` resumes *at* the edge, before the outputs of the design change. A read at that point sees the value of the previous cycle. On the gates the outputs change a few ns later still. Relative checks still pass with that old value, so this error is easy to miss. Keep the wait below half a clock period.
 *   **`make cocotb WAVES=1` makes the waveform.** Without `WAVES=1`, `make cocotb` dumps nothing. Run it again with `WAVES=1` when the assertion above fails.
 
-Try it. Change `rtl/blinky.v` so that the design is wrong, run `make cocotb`, and see it fail. If you have never seen a testbench fail, you do not know that it works.
+Try it. Change `rtl/blinky.v` so that the design is wrong. Run `make cocotb`. You see it fail. If you have never seen a testbench fail, you do not know that it works.
 
-That is the full method, and it works on any design. Break one thing and run the tests. Make sure that the test you aimed at fails and gives a message that you can act on. Then run `git checkout -- rtl/blinky.v` and break the next thing.
+That is the full method, and it works on any design. Break one thing. Run the tests. Make sure that the test you aimed at fails and gives a message that you can act on. Then run `git checkout -- rtl/blinky.v`. Break the next thing.
 
 You do not learn that "the tests pass". You learn which test catches which mistake. You also learn where no test catches anything: that is the test you have not written. This method is the only answer to "does my test really check the design", because a test that cannot fail tells you nothing.
 
@@ -299,7 +303,7 @@ CI runs the list on every pull request. Add an entry to put a new test on it. [A
 
 ## Adding a Verilog testbench
 
-The template ships no Verilog testbench, but the path stays open. Put the file in `tb/` and list it:
+The template ships no Verilog testbench, but the path stays open. Put the file in `tb/`. List it:
 
 ```yaml
 "//TEST_FILES":
@@ -343,7 +347,7 @@ make gds LIBRELANE_ARGS="--from OpenROAD.Floorplan --with-initial-state runs/bli
 
 `--from` takes the id of a LibreLane step. `--with-initial-state` takes the state that the step received in the last run: the `state_in.json` in the directory of that step. Without that file, LibreLane starts from the finished design, and the flow fails. The directory names in `runs/<tag>/` are the step ids in lower case, so you can resume from any step.
 
-That command reads the previous run from `runs/`. For this reason `make clean` keeps `runs/`, and only `make distclean` removes it.
+That command reads the previous run from `runs/`. For this reason `make clean` keeps `runs/`, and only `make distclean` deletes it.
 
 LibreLane adds the resumed steps after the old steps and continues the numbers. After a resume, the run directory has two directories for each resumed step, and the globs in this guide match both. The directory with the larger number is the new one.
 
@@ -377,16 +381,16 @@ The repository includes a [Dev Container](https://containers.dev/). Open it in G
 
 Two things to know:
 
-*   **It runs as `root`.** On a Linux host, the files that it writes into `build/` are then owned by `root`, so `make clean` from your host can need `sudo`. Running as a normal user breaks Codespaces.
-*   **Monitor the disk in a Codespace.** The inner daemon has its own image store. It pulls the LibreLane image again and does not share it with the host. The Sky130 PDK adds 3GB more. On the smallest Codespace machine, that is most of the disk. Select a larger machine, or run `make gds` from your own host.
+*   **It runs as `root`.** On a Linux host, `root` then owns the files that it writes into `build/`. So `make clean` from your host can need `sudo`. Running as a normal user breaks Codespaces.
+*   **Monitor the disk in a Codespace.** The inner daemon has its own image store. It pulls the LibreLane image again and does not share it with the host. The Sky130 PDK adds several GB more. Run `du -sh pdks/` to see its size. On the smallest Codespace machine, that is most of the disk. Select a larger machine, or run `make gds` from your own host.
 
-**One PDK can serve several checkouts.** The Sky130 install is 3GB and is always the same. `PDK_ROOT` points the install, and the LibreLane sidecar that reads it, at one directory.
+**One PDK can serve several checkouts.** The Sky130 install is several GB and is always the same. `PDK_ROOT` points the install, and the LibreLane sidecar that reads it, at one directory.
 
 ```bash
 make gds PDK_ROOT=/opt/sky130
 ```
 
-Without it, every clone keeps its own copy under `pdks/`. With it, a shared machine, or a machine with more than one design, stores those 3GB only once. This needs c4o-core 2.8.2 or newer, and the version that the `Makefile` pins is new enough.
+Without it, every clone keeps its own copy under `pdks/`. With it, a shared machine, or a machine with more than one design, stores that install only once. This needs c4o-core 2.8.2 or newer, and the version that the `Makefile` pins is new enough.
 
 Prefer to stay in your own editor? `make shell` opens the same image from any terminal.
 
@@ -396,7 +400,7 @@ A repository that you make from this template has no git history in common with 
 
 | Part | How a fix reaches you |
 |---|---|
-| The tools | The `Makefile` and `.devcontainer/devcontainer.json` name the image `ghcr.io/anlit75/c4o-core:2.22`. A fix to 2.22 arrives the next time the image is pulled. When 2.23 is released, change the two lines to get its fixes. CI fails if the two lines are different. |
+| The tools | The `Makefile` and `.devcontainer/devcontainer.json` name the image `ghcr.io/anlit75/c4o-core:2.22`. A fix to 2.22 arrives the next time you pull the image. When 2.23 is released, change the two lines to get its fixes. CI fails if the two lines are different. |
 | The make commands | The `Makefile` includes its rules from the image. A fix to a command such as `make gds` arrives with the image. See [what your own targets can use](https://github.com/anlit75/c4o-core/blob/main/docs/makefile.md). |
 | The CI steps | `.github/workflows/verify.yml` calls actions from c4o-core at `@v2`. A fix to an action arrives on the next run. See [what each action does](https://github.com/anlit75/c4o-core/blob/main/docs/actions.md). |
 
@@ -415,7 +419,7 @@ Some steps in `verify.yml` have the comment `Template only`. They check sentence
 | Key | What it does |
 |---|---|
 | `DESIGN_NAME` | Your top module's name. Everything else reads it from here. |
-| `VERILOG_FILES` | Synthesisable sources. One entry for each file: LibreLane validates each entry as a literal path and does not expand `**`. |
+| `VERILOG_FILES` | Synthesisable sources. One entry for each file: LibreLane checks each entry as a literal path and does not expand `**`. |
 | `"//COCOTB_TESTS"` | Python testbenches for `make cocotb` and `make gatesim`. Globs work. |
 | `"//REGRESSION"` | The test list for `make regress`: a YAML file of `test` and `seeds`. Optional. |
 | `"//TEST_FILES"` | Verilog testbenches for `make sim`. Optional. Globs work. |
@@ -429,13 +433,15 @@ Some steps in `verify.yml` have the comment `Template only`. They check sentence
 
 **The die sizes itself.** `FP_SIZING: relative` makes the floorplan from `FP_CORE_UTIL`. That key is how full the core should be, as a percentage: the 40 here means 40%. A larger design then gets a larger die and not a "does not fit" error. Decrease `FP_CORE_UTIL` if routing is tight. Increase it for a smaller chip.
 
-A fixed die is still available. Set `FP_SIZING: absolute` and add `DIE_AREA: [0, 0, w, h]`. Do not keep `DIE_AREA` in the file with relative sizing. The flow no longer reads it, but the GDS stream-out still draws the chip boundary from it. Signoff then fails on a boundary that nothing else used.
+A fixed die is still available. Set `FP_SIZING: absolute`. Add `DIE_AREA: [0, 0, w, h]`. Do not keep `DIE_AREA` in the file with relative sizing. The flow no longer reads it, but the GDS stream-out still draws the chip boundary from it. Signoff then fails on a boundary that nothing else used.
 
 All other keys in the file belong to LibreLane. See [its documentation](https://librelane.readthedocs.io/) for the full list. See the [c4o-core README](https://github.com/anlit75/c4o-core) for what this engine reads.
 
-**Keys that this reference does not list still work.** Nothing filters `config.yaml`. c4o-core checks that the few keys it needs are present and sensible. `make gds` then gives the full file to LibreLane unchanged. You can add `PL_TARGET_DENSITY`, `CTS_*`, `GRT_*` and the other LibreLane variables directly, and they take effect. This reference covers the keys that this repository has a reason to set, not all the keys that you are permitted to set.
+**Keys that this reference does not list still work.** Nothing filters `config.yaml`. c4o-core checks that the few keys it needs are present and sensible. `make gds` then gives the full file to LibreLane unchanged. You can add `PL_TARGET_DENSITY`, `CTS_*`, `GRT_*` and the other LibreLane variables directly, and they take effect. This reference covers the keys that this repository has a reason to set, not all the keys that you may set.
 
-**Two keys are the full timing constraint, and an SDC file can replace them.** This repository constrains only `CLOCK_PORT` and `CLOCK_PERIOD`. A static timing tool needs more: input and output delay, transition and fanout limits, clock uncertainty, and every exception. All of that comes from LibreLane's defaults. The defaults are sufficient for a design with one clock and no false paths, and far from sufficient for any other design. Write the constraints yourself and name the file:
+**Two keys are the full timing constraint, and an SDC file can replace them.** This repository constrains only `CLOCK_PORT` and `CLOCK_PERIOD`. A static timing tool needs more: input and output delay, transition and fanout limits, clock uncertainty, and every exception. All of that comes from LibreLane's defaults. The defaults are sufficient for a design with one clock and no false paths, and far from sufficient for any other design. Write the constraints yourself.
+
+Then name the file:
 
 ```yaml
 PNR_SDC_FILE: dir::constraints/pnr.sdc
@@ -446,4 +452,4 @@ Both are LibreLane's own path variables, so they arrive through the pass-through
 
 **A second clock goes in that file, not in this one.** `CLOCK_PORT` and `CLOCK_PERIOD` each have one value, and c4o-core requires both before it starts the flow. A design with two clocks names one of them here and creates both in its SDC. The convenience keys constrain only the pair in this file. The design is signed off against the SDC.
 
-**Macros belong to LibreLane, and this guide does not cover them.** A hard macro (an SRAM, a PLL, a block from another person) goes in through LibreLane's `MACROS` variable. That variable is a dictionary of definitions, each with its own GDS and LEF views. A macro also brings power routing over the macro and placement blockages. Because of the pass-through, you can do this from `config.yaml` with no change here. This repository offers a design small enough to read in one sitting, which is the opposite of that.
+**Macros belong to LibreLane, and this guide does not cover them.** A hard macro goes in through LibreLane's `MACROS` variable. Examples are an SRAM, a PLL or a block from another person. That variable is a dictionary of definitions, each with its own GDS and LEF views. A macro also brings power routing over the macro and placement blockages. Because of the pass-through, you can do this from `config.yaml` with no change here. This repository offers a design small enough to read in one sitting, which is the opposite of that.

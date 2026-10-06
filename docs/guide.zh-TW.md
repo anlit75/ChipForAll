@@ -22,7 +22,7 @@ LibreLane 不做**模擬與驗證**。這個起手式加上去的就是這兩樣
 | DRC | Magic、KLayout | Calibre nmDRC、Pegasus |
 | LVS | Netgen | Calibre nmLVS |
 
-流程的形狀一樣，詞彙也轉得過去。但職缺條列的是商用工具，所以履歷上要講清楚你用的是哪一套。
+流程的形狀一樣，詞彙也轉得過去。但職缺條列的是商用工具。所以履歷上要講清楚你用的是哪一套。
 
 **在找一個完整的驗證範例嗎？** 這個 repo 的測試是兩份 cocotb 測試平台。它們足以示範「一個會失敗的測試長什麼樣」。它們不是一套分層的驗證環境。[c4o-pyuvm](https://github.com/anlit75/c4o-pyuvm) 才是：一個跑在真實 UART 上的 pyuvm 環境，從這個模板建出來。它有 agent、driver、monitor、scoreboard，以及從 SystemRDL 生成的暫存器模型。
 
@@ -38,7 +38,7 @@ LibreLane 不做**模擬與驗證**。這個起手式加上去的就是這兩樣
 
 **SystemVerilog 也讀得進來。** 從 c4o-core 2.8.3 開始，`logic`、`always_ff` 和可合成的那個子集在每個指令下都能用。這個 repo 之後釘過的每一版都包含這項修改。在 2.8.3 之前，同一個檔案會通過 `make cocotb` 和 `make gds`，卻在 `make sim` 和 `make synth` 失敗。仍然不行的是把 `interface` 當成模組邊界：yosys 讀得懂宣告，然後在 `hierarchy` 階段失敗。所以 interface 留在測試平台裡，不要放在可合成模組之間。
 
-**你不需要先會 Verilog 才能開始。** `make gds` 直接就能把範例跑完，印出真實的面積、時序和功耗。`make all` 會讓你看到測試通過。先做這兩件事，因為它們告訴你整套工具在你的機器上是通的。真正需要 Verilog 的是下一步：改 `rtl/blinky.v`、判斷一個「通過」的測試到底證明了什麼，或者自己寫一個測試。先跑範例，再學 Verilog，然後回來做那一步。
+**你不需要先會 Verilog 才能開始。** `make gds` 直接就能把範例跑完，印出真實的面積、時序和功耗。`make all` 會讓你看到測試通過。先做這兩件事，因為它們告訴你整套工具在你的機器上是通的。真正需要 Verilog 的是下一步：改 `rtl/blinky.v`、判斷一個「通過」的測試到底證明了什麼，或者自己寫一個測試。先跑範例。學 Verilog。然後回來做那一步。
 
 ## 換成你自己的設計
 
@@ -47,7 +47,7 @@ LibreLane 不做**模擬與驗證**。這個起手式加上去的就是這兩樣
 | 要改的 | 在哪裡 |
 |---|---|
 | 你的 RTL | `rtl/`，列在 `config.yaml` 的 `VERILOG_FILES` |
-| `DESIGN_NAME` | `config.yaml`——必須和你的頂層模組同名 |
+| `DESIGN_NAME` | `config.yaml`：必須和你的頂層模組同名 |
 | 你的測試平台 | `tb/`，列在 `"//COCOTB_TESTS"` |
 
 沒有別的檔案寫死設計名稱。`Makefile` 和 CI 工作流都從 `config.yaml` 讀 `DESIGN_NAME`。
@@ -59,9 +59,10 @@ LibreLane 不做**模擬與驗證**。這個起手式加上去的就是這兩樣
 *   **每個 RTL 檔第一行寫 `` `timescale 1ns/1ps ``。** 少了它，`make cocotb` 會失敗，訊息是 `Unable to accurately represent 10(ns)`。`make sim` 照樣通過，因為 Verilog 測試平台自己有宣告。
 *   **改寫 `config.yaml` 的 `"//DESCRIPTION"`。** 不改的話，你的結果網頁會說這個設計是一個讓 LED 閃爍的時脈除頻器。
 
-**一個 repo 至少要有一種測試。** 設了 `"//COCOTB_TESTS"`，`make all` 就跑 `cocotb`。設了 `"//TEST_FILES"`，就跑 `sim`。沒設 key 的那一種，它會印一行跳過的訊息。兩個 key 都沒設，`make all` 會失敗。CI 照同樣的規則走。如果把 key 留著卻對不到任何檔案，CI 會失敗。這是對的：你要求了不存在的測試。
+**一個 repo 至少要有一種測試。** 設了 `"//COCOTB_TESTS"`，`make all` 就跑 `cocotb`。設了 `"//TEST_FILES"`，就跑 `sim`。沒設 key 的那一種，它會印一行跳過的訊息。兩個 key 都沒設，`make all` 會失敗。
+CI 照同樣的規則走。如果把 key 留著卻對不到任何檔案，CI 會失敗。這是對的：你要求了不存在的測試。
 
-第一列弄錯的話，你會立刻收到錯誤，不用等到 `make gds` 跑了三分鐘才發現：
+第一列弄錯的話，你會立刻收到錯誤，不用等到 `make gds` 跑到一半才發現：
 
 ```console
 [ERROR] DESIGN_NAME is 'my_cpu', but no module by that name is declared in
@@ -97,15 +98,15 @@ LibreLane 不做**模擬與驗證**。這個起手式加上去的就是這兩樣
 | `make regress` | 執行 `tb/regression.yaml` 的測試，每個測試跑它的 seed 數。見[多個 seed](#多個-seed)。 | `build/regress/` |
 | `make coverage` | 用 Verilator 把 Python 測試再跑一次，數出測試跑過的 RTL。它不決定通過或失敗。見[程式碼覆蓋率](#程式碼覆蓋率)。 | `build/coverage/` |
 | `make synth` | 用 Yosys 把 RTL 合成成通用邏輯閘。沒有面積，也沒有時序：見[看看電路長什麼樣](#看看電路長什麼樣)。腳本是固定的。想自己操作 Yosys 就用 `make shell`。 | `build/synthesis.json` |
-| `make pdk` | 安裝 Sky130 PDK。`make gds` 會自己執行它。單獨跑可以把那 3GB 的下載提前做完。 | `pdks/` |
+| `make pdk` | 安裝 Sky130 PDK。`make gds` 會自己執行它。單獨跑可以把那好幾 GB 的下載提前做完。 | `pdks/` |
 | `make schematic` | 把電路畫成到處都開得了的 SVG。 | `build/schematic.svg` |
-| `make gds` | 用 LibreLane 產生實體版圖。大約三分鐘，第一次還要加上 PDK 下載。 | `build/<DESIGN_NAME>.gds` |
+| `make gds` | 用 LibreLane 產生實體版圖。要幾分鐘，第一次還要加上 PDK 下載。 | `build/<DESIGN_NAME>.gds` |
 | `make gatesim` | 對合成後的 netlist 重跑 cocotb 測試平台。設了 `"//GATE_TESTS"` 時，改跑那份 Verilog 測試平台。要先執行 `make gds`。 | `build/cocotb-gl-results.xml` |
 | `make report` | 顯示上次 `make gds` 的面積、時序、功耗與 signoff。 | `終端機` |
 | `make site` | 把 `report`、版圖和 cocotb 結果放進同一個網頁。 | `build/site/index.html` |
-| `make shell` | 進入 c4o-core 容器的互動式 shell。 | — |
-| `make clean` | 清除 `build/`。保留 `runs/`，因為 `report` 和 `gatesim` 要讀它。 | — |
-| `make distclean` | 清除 `build/` 和 `runs/`。 | — |
+| `make shell` | 進入 c4o-core 容器的互動式 shell。 | 無 |
+| `make clean` | 清除 `build/`。保留 `runs/`，因為 `report` 和 `gatesim` 要讀它。 | 無 |
+| `make distclean` | 清除 `build/` 和 `runs/`。 | 無 |
 
 `make help` 會在終端機列出這些指令。
 
@@ -143,7 +144,7 @@ LibreLane 不做**模擬與驗證**。這個起手式加上去的就是這兩樣
 
 **slack 為正值**代表設計滿足 `config.yaml` 裡設定的時脈。負值代表沒滿足。流程不會因為負 slack 停下來，所以一次成功結束的執行，仍然可能在告訴你設計沒達標。見[slack 為負值的時候](#slack-為負值的時候)。
 
-**這幾行是摘要，不是簽核報告。** 它們從 300 個 key 的 `metrics.json` 裡挑出來，所以它們沒寫的東西很重要。它們沒寫 clock uncertainty 和 derate 設多少，也沒寫 clock tree 的 skew 是多少。它們沒寫九個 corner（`ss`/`tt`/`ff` 各配 `min`/`nom`/`max` 連線）裡是哪一個給出這個 slack。這些全是 LibreLane 的預設值，因為 `config.yaml` 一個都沒設。這些全都在 `runs/` 底下，一個 step 一個目錄。
+**這幾行是摘要，不是簽核報告。** 它們從有好幾百個 key 的 `metrics.json` 裡挑出來，所以它們沒寫的東西很重要。它們沒寫 clock uncertainty 和 derate 設多少，也沒寫 clock tree 的 skew 是多少。它們沒寫九個 corner（`ss`/`tt`/`ff` 各配 `min`/`nom`/`max` 連線）裡是哪一個給出這個 slack。這些全是 LibreLane 的預設值，因為 `config.yaml` 一個都沒設。這些全都在 `runs/` 底下，一個 step 一個目錄。
 
 差別是實務上的。在自己填 OCV derate 的簽核流程裡，`+0.11 ns` 的 hold slack 不會被當成「過了」。要有那種等級的信心，就去讀 per-corner 報告，不要只讀這幾行。
 
@@ -159,7 +160,8 @@ LibreLane 不做**模擬與驗證**。這個起手式加上去的就是這兩樣
 
 這個網頁是照「拿去分享、放進作品集」來排的。版圖在最前面，接著是數字，再來是測試。標題下方是你的 `"//DESCRIPTION"`。有按鈕可以用 3D 開啟晶片、下載 GDS 和看原始碼。頁首寫著網頁的建置時間和對應的 commit。頁首寫這兩項，是因為 `main` 失敗時 CI 不會發佈：網頁會一直顯示最後一次通過的結果。
 
-CI 每次執行都會產生這個網頁。在 `main` 上，它會把網頁發佈到 GitHub Pages，網址是 `https://<你的帳號>.github.io/<你的-repo>/`。在 `main` 上手動執行 workflow 會再發佈一次網頁。用它可以不用 commit 就更新網頁。剛從 template 複製出來的 repo 沒有開 Pages，而且沒有任何 workflow 能替你打開。做一次就好：**Settings → Pages → Source: GitHub Actions**。在你打開之前，CI 照樣會過，並用一則 notice 告訴你這次沒有發佈。
+CI 每次執行都會產生這個網頁。在 `main` 上，它會把網頁發佈到 GitHub Pages，網址是 `https://<你的帳號>.github.io/<你的-repo>/`。在 `main` 上手動執行 workflow 會再發佈一次網頁。用它可以不用 commit 就更新網頁。
+剛從 template 複製出來的 repo 沒有開 Pages，而且沒有任何 workflow 能替你打開。做一次就好：**Settings → Pages → Source: GitHub Actions**。在你打開之前，CI 照樣會過，並用一則 notice 告訴你這次沒有發佈。
 
 ## 程式碼覆蓋率
 
@@ -173,7 +175,7 @@ CI 每次執行都會產生這個網頁。在 `main` 上，它會把網頁發佈
 
 ## slack 為負值的時候
 
-負 slack 代表設計沒有滿足 `config.yaml` 裡的時脈。**你自己能用的答案有兩種。** 第一種是給設計更多時間：把 `CLOCK_PERIOD` 調大，重跑 `make gds`。第二種是把慢的那條路徑縮短：插 pipeline，或把邏輯移出去。哪一種才對，取決於那個時脈速度是需求還是猜的。第一個設計通常是猜的。
+負 slack 代表設計沒有滿足 `config.yaml` 裡的時脈。**你自己能用的答案有兩種。** 第一種是給設計更多時間：把 `CLOCK_PERIOD` 調大。然後重跑 `make gds`。第二種是把慢的那條路徑縮短：插 pipeline，或把邏輯移出去。哪一種才對，取決於那個時脈速度是需求還是猜的。第一個設計通常是猜的。
 
 這兩種答案改的都是設計或它的約束。**實體層面的答案是 placement density、clock tree 的目標、resizer margin 和繞線努力度。** 它們屬於 LibreLane，也真的存在，但這份指南不涵蓋。`config.yaml` 一個都沒設，[設定參考](#設定參考)也停在 LibreLane 自己的變數開始的地方。如果你是為了練手動收時序而來，那一塊要讀 LibreLane 的文件。
 
@@ -225,9 +227,9 @@ async def result_is_high_after_reset(dut):
 * **邊緣之後的 `Timer`。** `ClockCycles` 是*在*邊緣當下恢復，此時設計的輸出還沒變。在那裡讀到的是上一個 cycle 的值。在閘級電路上，輸出還要再晚幾 ns 才變。相對檢查照樣會過，所以這個錯誤很難察覺。等待的時間要小於半個時脈週期。
 * **`make cocotb WAVES=1` 才會產生波形。** 沒有 `WAVES=1`，`make cocotb` 什麼都不會輸出。上面那個斷言失敗的時候，就加上 `WAVES=1` 再跑一次。
 
-試試看。把 `rtl/blinky.v` 改壞，執行 `make cocotb`，看它失敗。如果你從沒看過一個測試平台失敗，你就不知道它有沒有用。
+試試看。把 `rtl/blinky.v` 改壞。執行 `make cocotb`。你會看到它失敗。如果你從沒看過一個測試平台失敗，你就不知道它有沒有用。
 
-**這就是整套方法，而且對任何設計都成立。** 一次改壞一個地方，然後跑測試。確認你瞄準的那個測試會失敗，而且訊息你看得懂。然後執行 `git checkout -- rtl/blinky.v`，再改壞下一個地方。
+**這就是整套方法，而且對任何設計都成立。** 一次改壞一個地方。跑測試。確認你瞄準的那個測試會失敗，而且訊息你看得懂。然後執行 `git checkout -- rtl/blinky.v`。再改壞下一個地方。
 
 你學到的不是「測試都過了」。你學到的是哪個測試抓得到哪種錯。你也學到哪裡沒有任何測試抓得到：那就是你還沒寫的測試。這是「我的測試到底有沒有在檢查設計」唯一的答案，因為一個不會失敗的測試什麼都告訴不了你。
 
@@ -299,7 +301,7 @@ CI 在每個 pull request 都會跑這份清單。要讓新測試也在其中，
 
 ## 加入 Verilog 測試平台
 
-這個模板不附 Verilog 測試平台，但路還是開著的。把檔案放進 `tb/`，再列出來：
+這個模板不附 Verilog 測試平台，但路還是開著的。把檔案放進 `tb/`。再列出來：
 
 ```yaml
 "//TEST_FILES":
@@ -377,16 +379,16 @@ make schematic
 
 兩件要知道的事：
 
-* **容器內以 `root` 執行。** 在 Linux 主機上，它寫進 `build/` 的檔案擁有者會是 `root`，所以從主機執行 `make clean` 可能需要 `sudo`。改用一般使用者會讓 Codespaces 無法連線。
-* **在 Codespace 裡要注意磁碟。** 內部 daemon 有自己的映像檔儲存區。它會重拉一份 LibreLane 映像檔，不跟主機共用。Sky130 PDK 還要再加 3GB。在最小規格的 Codespace 上，這已經佔掉大半個磁碟。選大一點的規格，或者改從自己的主機跑 `make gds`。
+* **容器內以 `root` 執行。** 在 Linux 主機上，`root` 會擁有它寫進 `build/` 的檔案。所以從主機執行 `make clean` 可能需要 `sudo`。改用一般使用者會讓 Codespaces 無法連線。
+* **在 Codespace 裡要注意磁碟。** 內部 daemon 有自己的映像檔儲存區。它會重拉一份 LibreLane 映像檔，不跟主機共用。Sky130 PDK 還要再加好幾 GB。執行 `du -sh pdks/` 可以看它的大小。在最小規格的 Codespace 上，這已經佔掉大半個磁碟。選大一點的規格，或者改從自己的主機跑 `make gds`。
 
-**一份 PDK 可以給好幾個 checkout 用。** Sky130 裝起來是 3GB，而且每次都一模一樣。`PDK_ROOT` 會把兩邊同時指到同一個目錄：安裝，以及讀它的 LibreLane sidecar。
+**一份 PDK 可以給好幾個 checkout 用。** Sky130 裝起來有好幾 GB，而且每次都一模一樣。`PDK_ROOT` 會把兩邊同時指到同一個目錄：安裝，以及讀它的 LibreLane sidecar。
 
 ```bash
 make gds PDK_ROOT=/opt/sky130
 ```
 
-不設它的話，每個 clone 都會在自己的 `pdks/` 底下留一份。設了它，共用的機器，或是放了不只一個設計的機器，那 3GB 就只存一次。這需要 c4o-core 2.8.2 或更新的版本，`Makefile` 釘的版本已經符合。
+不設它的話，每個 clone 都會在自己的 `pdks/` 底下留一份。設了它，共用的機器，或是放了不只一個設計的機器，那份安裝就只存一次。這需要 c4o-core 2.8.2 或更新的版本，`Makefile` 釘的版本已經符合。
 
 習慣用自己的編輯器？`make shell` 可以從任何終端機進入同一個映像檔。
 
@@ -429,13 +431,15 @@ make gds PDK_ROOT=/opt/sky130
 
 **晶片尺寸會自己調整。** `FP_SIZING: relative` 依 `FP_CORE_UTIL` 算出 floorplan。這個 key 是 core 要放多滿，單位是百分比：這裡的 40 就是 40%。所以較大的設計會得到較大的 die，不會得到「放不下」的錯誤。繞線太擠就調低。想要更小的晶片就調高。
 
-仍然可以固定尺寸。把 `FP_SIZING` 改成 `absolute`，並加上 `DIE_AREA: [0, 0, 寬, 高]`。用 relative 的時候不要把 `DIE_AREA` 留在檔案裡。流程已經不讀它了，但 GDS stream-out 還是會照它畫晶片邊界。signoff 就會在一個沒有其他東西用到的邊界上失敗。
+仍然可以固定尺寸。把 `FP_SIZING` 改成 `absolute`。再加上 `DIE_AREA: [0, 0, 寬, 高]`。用 relative 的時候不要把 `DIE_AREA` 留在檔案裡。流程已經不讀它了，但 GDS stream-out 還是會照它畫晶片邊界。signoff 就會在一個沒有其他東西用到的邊界上失敗。
 
 檔案中其餘的 key 都屬於 LibreLane。完整清單見[它的文件](https://librelane.readthedocs.io/)。這個引擎讀哪些，見 [c4o-core README](https://github.com/anlit75/c4o-core)。
 
 **這張表沒列的 key 一樣有效。** 沒有任何東西會過濾 `config.yaml`。c4o-core 只檢查它需要的那幾個 key 在不在、值合不合理。然後 `make gds` 把整份檔案原封不動交給 LibreLane。所以 `PL_TARGET_DENSITY`、`CTS_*`、`GRT_*` 以及 LibreLane 其餘的變數都可以直接加進去，而且會生效。這張表列的是**這個 repo 有理由去設的** key，不是**你被允許設的**所有 key。
 
-**時序約束就只有兩個 key，而 SDC 檔可以取代它們。** 這個 repo 只約束 `CLOCK_PORT` 和 `CLOCK_PERIOD`。靜態時序工具還需要更多：input/output delay、transition 和 fanout 上限、clock uncertainty，以及所有的例外。這些全都來自 LibreLane 的預設值。單一時脈、沒有 false path 的設計用預設值就夠，其他任何設計都遠遠不夠。要自己寫約束，就把檔案指出來：
+**時序約束就只有兩個 key，而 SDC 檔可以取代它們。** 這個 repo 只約束 `CLOCK_PORT` 和 `CLOCK_PERIOD`。靜態時序工具還需要更多：input/output delay、transition 和 fanout 上限、clock uncertainty，以及所有的例外。這些全都來自 LibreLane 的預設值。單一時脈、沒有 false path 的設計用預設值就夠，其他任何設計都遠遠不夠。要自己寫約束。
+
+再把檔案指出來：
 
 ```yaml
 PNR_SDC_FILE: dir::constraints/pnr.sdc
@@ -446,4 +450,4 @@ SIGNOFF_SDC_FILE: dir::constraints/signoff.sdc
 
 **第二個時脈放在那個檔案裡，不在這一份。** `CLOCK_PORT` 和 `CLOCK_PERIOD` 都是單一值，而 c4o-core 在開跑之前會要求這兩個都在。所以雙時脈的設計在這裡指定其中一個，並在自己的 SDC 裡把兩個都 create 出來。那些便利 key 只約束這份檔案裡的那一對。設計真正被簽核的依據是 SDC。
 
-**Macro 是 LibreLane 的事，這份指南不涵蓋。** 一顆硬 macro（SRAM、PLL、別人做的 block）是透過 LibreLane 的 `MACROS` 變數進來的。那個變數是一個定義的字典，每一項帶自己的 GDS 和 LEF view。macro 還會連帶帶進跨 macro 的電源繞線和 placement blockage。因為是直通的，你可以直接從 `config.yaml` 做這件事，這裡什麼都不用改。這個 repo 能提供的，是一個小到可以一次讀完的設計，那是另一個極端。
+**Macro 是 LibreLane 的事，這份指南不涵蓋。** 一顆硬 macro 是透過 LibreLane 的 `MACROS` 變數進來的。例如 SRAM、PLL 或別人做的 block。那個變數是一個定義的字典，每一項帶自己的 GDS 和 LEF view。macro 還會連帶帶進跨 macro 的電源繞線和 placement blockage。因為是直通的，你可以直接從 `config.yaml` 做這件事，這裡什麼都不用改。這個 repo 能提供的，是一個小到可以一次讀完的設計，那是另一個極端。

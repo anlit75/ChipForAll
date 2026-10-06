@@ -25,7 +25,7 @@
 |---|---|
 | 🧪 **真的會失敗的測試** | Verilog 與 Python（cocotb）測試平台，設計壞了就回傳非零。 |
 | 🔬 **閘級模擬** | 在合成產出的 netlist 上重跑你的測試。latch 和 reset 的 bug 就藏在那裡。 |
-| 📊 **看得懂的 signoff** | 一份簡短的摘要列出面積、時序、功耗和 DRC/LVS。不用去讀 300 個 key 的 JSON。 |
+| 📊 **看得懂的 signoff** | 一份簡短的摘要列出面積、時序、功耗和 DRC/LVS。不用去讀有好幾百個 key 的 JSON。 |
 | 🌐 **每個 commit 一個結果網頁** | CI 把版圖、測試、時序、面積、功耗和 signoff 發佈到 GitHub Pages。 |
 | 🐳 **不用裝任何 EDA 工具** | 全部都在一個 Docker 映像檔裡。可以從 Docker、Dev Container 或 Codespace 執行。三種環境的指令都一樣。 |
 | 🔓 **成果可以公開** | Sky130 是 Apache 2.0，沒有 NDA。GDS 可以直接放進作品集。 |
@@ -62,7 +62,7 @@ make all
 
 最後一行指出哪些測試失敗。它上面，每個失敗的測試會印出自己的訊息。`make` 回傳非零，所以 CI 也會失敗。用 `git checkout -- rtl/blinky.v` 還原。[幫你的設計寫這種測試 →](docs/guide.zh-TW.md#幫你自己的設計寫測試平台)
 
-**3. 做出版圖**（約 3 分鐘。第一次還要下載 3 GB 的 PDK，另外約 20 分鐘）：
+**3. 做出版圖**（幾分鐘。第一次還要下載好幾 GB 的 PDK）：
 
 ```bash
 make gds
@@ -111,7 +111,7 @@ make gds
 
 ## ✍️ 換成你的設計
 
-刪掉 blinky 的檔案。Verilog 放 `rtl/`，測試放 `tb/`。在 `config.yaml` 列出它們，並把 `DESIGN_NAME` 設成你的頂層模組。其他資料 `Makefile` 和 CI 都從那個檔案讀。[必須一致的三件事 →](docs/guide.zh-TW.md#換成你自己的設計)
+刪掉 blinky 的檔案。Verilog 放 `rtl/`，測試放 `tb/`。在 `config.yaml` 列出它們。把 `DESIGN_NAME` 設成你的頂層模組。其他資料 `Makefile` 和 CI 都從那個檔案讀。[必須一致的三件事 →](docs/guide.zh-TW.md#換成你自己的設計)
 
 ## 適合誰
 

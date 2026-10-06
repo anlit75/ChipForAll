@@ -25,7 +25,7 @@ An open-source flow can already make a layout: [LibreLane](https://github.com/li
 |---|---|
 | 🧪 **Tests that can fail** | Verilog and Python (cocotb) testbenches exit non-zero when the design is broken. |
 | 🔬 **Gate-level simulation** | Runs your tests again on the netlist that synthesis made. Latch bugs and reset bugs hide there. |
-| 📊 **Signoff you can read** | A short summary shows area, timing, power and DRC/LVS. You do not need to read a 300-key JSON. |
+| 📊 **Signoff you can read** | A short summary shows area, timing, power and DRC/LVS. You do not need to read a JSON file with hundreds of keys. |
 | 🌐 **A results page per commit** | CI publishes the layout, tests, timing, area, power and signoff to GitHub Pages. |
 | 🐳 **No EDA tools to install** | One Docker image contains them all. Run it from Docker, a Dev Container or a Codespace. The commands are the same in all three. |
 | 🔓 **Yours to publish** | Sky130 is Apache 2.0 and has no NDA. Put the GDS in your portfolio. |
@@ -62,7 +62,7 @@ make all
 
 The last line names the failing tests. Above it, each failing test prints its message. `make` exits non-zero, so CI also fails. Undo the change with `git checkout -- rtl/blinky.v`. [Writing tests like this for your design →](docs/guide.md#writing-a-testbench-for-your-own-design)
 
-**3. Build the layout** (about 3 minutes, and about 20 minutes more on a first run for the 3 GB PDK download):
+**3. Build the layout** (a few minutes, plus a multi-GB PDK download on a first run):
 
 ```bash
 make gds
@@ -111,7 +111,7 @@ Turn it on once: **Settings → Pages → Source: GitHub Actions**. Build the pa
 
 ## ✍️ Make it your design
 
-Delete the blinky files. Put your Verilog in `rtl/` and your tests in `tb/`. List them in `config.yaml`, and set `DESIGN_NAME` to your top module. The `Makefile` and CI read all other data from `config.yaml`. [The three things that must agree →](docs/guide.md#making-it-your-design)
+Delete the blinky files. Put your Verilog in `rtl/` and your tests in `tb/`. List them in `config.yaml`. Set `DESIGN_NAME` to your top module. The `Makefile` and CI read all other data from `config.yaml`. [The three things that must agree →](docs/guide.md#making-it-your-design)
 
 ## Who it is for
 
