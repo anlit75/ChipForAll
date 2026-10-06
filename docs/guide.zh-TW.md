@@ -62,7 +62,7 @@ LibreLane 不做**模擬與驗證**。這個起手式加上去的就是這兩樣
 **一個 repo 至少要有一種測試。** 設了 `"//COCOTB_TESTS"`，`make all` 就跑 `cocotb`。設了 `"//TEST_FILES"`，就跑 `sim`。沒設 key 的那一種，它會印一行跳過的訊息。兩個 key 都沒設，`make all` 會失敗。
 CI 照同樣的規則走。如果把 key 留著卻對不到任何檔案，CI 會失敗。這是對的：你要求了不存在的測試。
 
-第一列弄錯的話，你會立刻收到錯誤，不用等到 `make gds` 跑了三分鐘才發現：
+第一列弄錯的話，你會立刻收到錯誤，不用等到 `make gds` 跑到一半才發現：
 
 ```console
 [ERROR] DESIGN_NAME is 'my_cpu', but no module by that name is declared in
@@ -98,9 +98,9 @@ CI 照同樣的規則走。如果把 key 留著卻對不到任何檔案，CI 會
 | `make regress` | 執行 `tb/regression.yaml` 的測試，每個測試跑它的 seed 數。見[多個 seed](#多個-seed)。 | `build/regress/` |
 | `make coverage` | 用 Verilator 把 Python 測試再跑一次，數出測試跑過的 RTL。它不決定通過或失敗。見[程式碼覆蓋率](#程式碼覆蓋率)。 | `build/coverage/` |
 | `make synth` | 用 Yosys 把 RTL 合成成通用邏輯閘。沒有面積，也沒有時序：見[看看電路長什麼樣](#看看電路長什麼樣)。腳本是固定的。想自己操作 Yosys 就用 `make shell`。 | `build/synthesis.json` |
-| `make pdk` | 安裝 Sky130 PDK。`make gds` 會自己執行它。單獨跑可以把那 3GB 的下載提前做完。 | `pdks/` |
+| `make pdk` | 安裝 Sky130 PDK。`make gds` 會自己執行它。單獨跑可以把那好幾 GB 的下載提前做完。 | `pdks/` |
 | `make schematic` | 把電路畫成到處都開得了的 SVG。 | `build/schematic.svg` |
-| `make gds` | 用 LibreLane 產生實體版圖。大約三分鐘，第一次還要加上 PDK 下載。 | `build/<DESIGN_NAME>.gds` |
+| `make gds` | 用 LibreLane 產生實體版圖。要幾分鐘，第一次還要加上 PDK 下載。 | `build/<DESIGN_NAME>.gds` |
 | `make gatesim` | 對合成後的 netlist 重跑 cocotb 測試平台。設了 `"//GATE_TESTS"` 時，改跑那份 Verilog 測試平台。要先執行 `make gds`。 | `build/cocotb-gl-results.xml` |
 | `make report` | 顯示上次 `make gds` 的面積、時序、功耗與 signoff。 | `終端機` |
 | `make site` | 把 `report`、版圖和 cocotb 結果放進同一個網頁。 | `build/site/index.html` |
@@ -144,7 +144,7 @@ CI 照同樣的規則走。如果把 key 留著卻對不到任何檔案，CI 會
 
 **slack 為正值**代表設計滿足 `config.yaml` 裡設定的時脈。負值代表沒滿足。流程不會因為負 slack 停下來，所以一次成功結束的執行，仍然可能在告訴你設計沒達標。見[slack 為負值的時候](#slack-為負值的時候)。
 
-**這幾行是摘要，不是簽核報告。** 它們從 300 個 key 的 `metrics.json` 裡挑出來，所以它們沒寫的東西很重要。它們沒寫 clock uncertainty 和 derate 設多少，也沒寫 clock tree 的 skew 是多少。它們沒寫九個 corner（`ss`/`tt`/`ff` 各配 `min`/`nom`/`max` 連線）裡是哪一個給出這個 slack。這些全是 LibreLane 的預設值，因為 `config.yaml` 一個都沒設。這些全都在 `runs/` 底下，一個 step 一個目錄。
+**這幾行是摘要，不是簽核報告。** 它們從有好幾百個 key 的 `metrics.json` 裡挑出來，所以它們沒寫的東西很重要。它們沒寫 clock uncertainty 和 derate 設多少，也沒寫 clock tree 的 skew 是多少。它們沒寫九個 corner（`ss`/`tt`/`ff` 各配 `min`/`nom`/`max` 連線）裡是哪一個給出這個 slack。這些全是 LibreLane 的預設值，因為 `config.yaml` 一個都沒設。這些全都在 `runs/` 底下，一個 step 一個目錄。
 
 差別是實務上的。在自己填 OCV derate 的簽核流程裡，`+0.11 ns` 的 hold slack 不會被當成「過了」。要有那種等級的信心，就去讀 per-corner 報告，不要只讀這幾行。
 
@@ -380,15 +380,15 @@ make schematic
 兩件要知道的事：
 
 * **容器內以 `root` 執行。** 在 Linux 主機上，`root` 會擁有它寫進 `build/` 的檔案。所以從主機執行 `make clean` 可能需要 `sudo`。改用一般使用者會讓 Codespaces 無法連線。
-* **在 Codespace 裡要注意磁碟。** 內部 daemon 有自己的映像檔儲存區。它會重拉一份 LibreLane 映像檔，不跟主機共用。Sky130 PDK 還要再加 3GB。在最小規格的 Codespace 上，這已經佔掉大半個磁碟。選大一點的規格，或者改從自己的主機跑 `make gds`。
+* **在 Codespace 裡要注意磁碟。** 內部 daemon 有自己的映像檔儲存區。它會重拉一份 LibreLane 映像檔，不跟主機共用。Sky130 PDK 還要再加好幾 GB。執行 `du -sh pdks/` 可以看它的大小。在最小規格的 Codespace 上，這已經佔掉大半個磁碟。選大一點的規格，或者改從自己的主機跑 `make gds`。
 
-**一份 PDK 可以給好幾個 checkout 用。** Sky130 裝起來是 3GB，而且每次都一模一樣。`PDK_ROOT` 會把兩邊同時指到同一個目錄：安裝，以及讀它的 LibreLane sidecar。
+**一份 PDK 可以給好幾個 checkout 用。** Sky130 裝起來有好幾 GB，而且每次都一模一樣。`PDK_ROOT` 會把兩邊同時指到同一個目錄：安裝，以及讀它的 LibreLane sidecar。
 
 ```bash
 make gds PDK_ROOT=/opt/sky130
 ```
 
-不設它的話，每個 clone 都會在自己的 `pdks/` 底下留一份。設了它，共用的機器，或是放了不只一個設計的機器，那 3GB 就只存一次。這需要 c4o-core 2.8.2 或更新的版本，`Makefile` 釘的版本已經符合。
+不設它的話，每個 clone 都會在自己的 `pdks/` 底下留一份。設了它，共用的機器，或是放了不只一個設計的機器，那份安裝就只存一次。這需要 c4o-core 2.8.2 或更新的版本，`Makefile` 釘的版本已經符合。
 
 習慣用自己的編輯器？`make shell` 可以從任何終端機進入同一個映像檔。
 

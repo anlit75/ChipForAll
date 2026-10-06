@@ -20,7 +20,7 @@ on:
 jobs:
   # A pull request that changes only what the push trigger above ignores
   # (Markdown, LICENSE, .gitignore) does not run the flow. No step below reads
-  # any of those files, so three and a half minutes of it could not change a
+  # any of those files, so a full run of it could not change a
   # verdict.
   #
   # The job decides this because of the trap described above. With
@@ -62,7 +62,7 @@ jobs:
   # One is a Docker daemon that answers (the guard's exact condition). The
   # other is the in-container delegation path that the Makefile takes when it
   # finds the entrypoint script locally. It does not run `make gds` itself.
-  # That wants a 3GB PDK and twenty minutes. It also cannot speak for
+  # That wants a multi-GB PDK and a long run. It also cannot speak for
   # Codespaces, whose remote server is a different thing again.
   devcontainer:
     needs: changes

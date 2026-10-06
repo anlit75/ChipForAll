@@ -63,7 +63,7 @@ Four more things cause problems in a first design:
 
 CI follows the same rules. If you keep a key but it matches no files, CI fails. That is correct: you asked for tests that are not there.
 
-If the first row is wrong, you get an error immediately, not three minutes into `make gds`:
+If the first row is wrong, you get an error immediately, not partway through `make gds`:
 
 ```console
 [ERROR] DESIGN_NAME is 'my_cpu', but no module by that name is declared in
@@ -99,9 +99,9 @@ If the first row is wrong, you get an error immediately, not three minutes into 
 | `make regress` | Runs the tests of `tb/regression.yaml`, each over its seeds. See [Many seeds](#many-seeds). | `build/regress/` |
 | `make coverage` | Runs the Python tests again on Verilator and counts the RTL that they run. It does not decide pass or fail. See [Code coverage](#code-coverage). | `build/coverage/` |
 | `make synth` | Synthesises RTL into generic gates with Yosys. It gives no area and no timing: see [Seeing the circuit](#seeing-the-circuit). No setting changes the script. Use `make shell` to run Yosys yourself. | `build/synthesis.json` |
-| `make pdk` | Installs the Sky130 PDK. `make gds` runs it for you. Run it alone to do the 3GB download before you need it. | `pdks/` |
+| `make pdk` | Installs the Sky130 PDK. `make gds` runs it for you. Run it alone to do the multi-GB download before you need it. | `pdks/` |
 | `make schematic` | Draws the circuit as an SVG that you can open anywhere. | `build/schematic.svg` |
-| `make gds` | Builds the physical layout with LibreLane. It takes about three minutes, plus the PDK download on a first run. | `build/<DESIGN_NAME>.gds` |
+| `make gds` | Builds the physical layout with LibreLane. It takes a few minutes, plus the PDK download on a first run. | `build/<DESIGN_NAME>.gds` |
 | `make gatesim` | Runs the cocotb testbenches again on the synthesised netlist. With `"//GATE_TESTS"` set, it runs that Verilog testbench instead. Run `make gds` first. | `build/cocotb-gl-results.xml` |
 | `make report` | Prints area, timing, power and signoff from the last `make gds`. | `Terminal` |
 | `make site` | Puts `report`, the layout and the cocotb results on one page. | `build/site/index.html` |
@@ -145,7 +145,7 @@ That is the default of that version, not a guarantee from this repository, so ch
 
 **Positive slack** means that the design meets the clock in `config.yaml`. Negative slack means that it does not. The flow does not stop for negative slack, so a run can finish and still report that the design missed the clock. See [When slack is negative](#when-slack-is-negative).
 
-**Those lines are a summary, not a signoff report.** They come from a `metrics.json` with 300 keys, so what they omit is important. They do not show the clock uncertainty and the derating that the flow applied, or the skew of the clock tree. They do not show which of the nine corners (`ss`/`tt`/`ff` against `min`/`nom`/`max` interconnect) gave that slack. All of these are LibreLane defaults, because `config.yaml` sets none of them. All of them are under `runs/`, with one directory for each step.
+**Those lines are a summary, not a signoff report.** They come from a `metrics.json` with hundreds of keys, so what they omit is important. They do not show the clock uncertainty and the derating that the flow applied, or the skew of the clock tree. They do not show which of the nine corners (`ss`/`tt`/`ff` against `min`/`nom`/`max` interconnect) gave that slack. All of these are LibreLane defaults, because `config.yaml` sets none of them. All of them are under `runs/`, with one directory for each step.
 
 The difference between a summary and a signoff report is practical. A flow in which you set the OCV derates yourself would not accept a `+0.11 ns` hold slack as a pass. For that level of confidence, read the per-corner reports, not these lines.
 
@@ -382,15 +382,15 @@ The repository includes a [Dev Container](https://containers.dev/). Open it in G
 Two things to know:
 
 *   **It runs as `root`.** On a Linux host, `root` then owns the files that it writes into `build/`. So `make clean` from your host can need `sudo`. Running as a normal user breaks Codespaces.
-*   **Monitor the disk in a Codespace.** The inner daemon has its own image store. It pulls the LibreLane image again and does not share it with the host. The Sky130 PDK adds 3GB more. On the smallest Codespace machine, that is most of the disk. Select a larger machine, or run `make gds` from your own host.
+*   **Monitor the disk in a Codespace.** The inner daemon has its own image store. It pulls the LibreLane image again and does not share it with the host. The Sky130 PDK adds several GB more. Run `du -sh pdks/` to see its size. On the smallest Codespace machine, that is most of the disk. Select a larger machine, or run `make gds` from your own host.
 
-**One PDK can serve several checkouts.** The Sky130 install is 3GB and is always the same. `PDK_ROOT` points the install, and the LibreLane sidecar that reads it, at one directory.
+**One PDK can serve several checkouts.** The Sky130 install is several GB and is always the same. `PDK_ROOT` points the install, and the LibreLane sidecar that reads it, at one directory.
 
 ```bash
 make gds PDK_ROOT=/opt/sky130
 ```
 
-Without it, every clone keeps its own copy under `pdks/`. With it, a shared machine, or a machine with more than one design, stores those 3GB only once. This needs c4o-core 2.8.2 or newer, and the version that the `Makefile` pins is new enough.
+Without it, every clone keeps its own copy under `pdks/`. With it, a shared machine, or a machine with more than one design, stores that install only once. This needs c4o-core 2.8.2 or newer, and the version that the `Makefile` pins is new enough.
 
 Prefer to stay in your own editor? `make shell` opens the same image from any terminal.
 
