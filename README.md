@@ -13,7 +13,7 @@ Write Verilog. Prove that it works with tests that can fail. Get a real chip lay
 
 [**Live results page**](https://anlit75.github.io/ChipForAll/) · [Quick start](#-quick-start) · [Guide](docs/guide.md) · [繁體中文](README.zh-TW.md)
 
-<a href="https://github.com/user-attachments/assets/29de6553-4d02-4779-996a-2966028d2e6d"><img src="https://github.com/user-attachments/assets/61a9f618-7ba2-47b4-89ff-8f3753533a6b" width="960" alt="make all passes, one changed line fails four tests, make gds builds the layout step by step, and CI publishes a results page"></a>
+[![make all passes, one changed line fails four tests, make gds builds the layout step by step, and CI publishes a results page](https://github.com/user-attachments/assets/61a9f618-7ba2-47b4-89ff-8f3753533a6b)](https://github.com/user-attachments/assets/29de6553-4d02-4779-996a-2966028d2e6d)
 
 </div>
 

@@ -13,7 +13,7 @@
 
 [**線上結果網頁**](https://anlit75.github.io/ChipForAll/) · [快速開始](#-快速開始) · [指南](docs/guide.zh-TW.md) · [English](README.md)
 
-<a href="https://github.com/user-attachments/assets/29de6553-4d02-4779-996a-2966028d2e6d"><img src="https://github.com/user-attachments/assets/61a9f618-7ba2-47b4-89ff-8f3753533a6b" width="960" alt="make all 通過，改一行後四個測試失敗，make gds 一步步做出版圖，CI 發布結果網頁"></a>
+[![make all 通過，改一行後四個測試失敗，make gds 一步步做出版圖，CI 發布結果網頁](https://github.com/user-attachments/assets/61a9f618-7ba2-47b4-89ff-8f3753533a6b)](https://github.com/user-attachments/assets/29de6553-4d02-4779-996a-2966028d2e6d)
 
 </div>
 
