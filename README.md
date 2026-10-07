@@ -13,6 +13,8 @@ Write Verilog. Prove that it works with tests that can fail. Get a real chip lay
 
 [**Live results page**](https://anlit75.github.io/ChipForAll/) · [Quick start](#-quick-start) · [Guide](docs/guide.md) · [繁體中文](README.zh-TW.md)
 
+<video src="https://github.com/user-attachments/assets/29de6553-4d02-4779-996a-2966028d2e6d" controls muted></video>
+
 </div>
 
 ---

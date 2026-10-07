@@ -13,6 +13,8 @@
 
 [**線上結果網頁**](https://anlit75.github.io/ChipForAll/) · [快速開始](#-快速開始) · [指南](docs/guide.zh-TW.md) · [English](README.md)
 
+<video src="https://github.com/user-attachments/assets/29de6553-4d02-4779-996a-2966028d2e6d" controls muted></video>
+
 </div>
 
 ---
