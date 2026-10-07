@@ -450,4 +450,4 @@ SIGNOFF_SDC_FILE: dir::constraints/signoff.sdc
 
 **第二個時脈放在那個檔案裡，不在這一份。** `CLOCK_PORT` 和 `CLOCK_PERIOD` 都是單一值，而 c4o-core 在開跑之前會要求這兩個都在。所以雙時脈的設計在這裡指定其中一個，並在自己的 SDC 裡把兩個都 create 出來。那些便利 key 只約束這份檔案裡的那一對。設計真正被簽核的依據是 SDC。
 
-**Macro 是 LibreLane 的事，這份指南不涵蓋。** 一顆硬 macro 是透過 LibreLane 的 `MACROS` 變數進來的。例如 SRAM、PLL 或別人做的 block。那個變數是一個定義的字典，每一項帶自己的 GDS 和 LEF view。macro 還會連帶帶進跨 macro 的電源繞線和 placement blockage。因為是直通的，你可以直接從 `config.yaml` 做這件事，這裡什麼都不用改。這個 repo 能提供的，是一個小到可以一次讀完的設計，那是另一個極端。
+**這個模板不支援硬 macro。** 例如 SRAM、PLL 或別人做的 block。LibreLane 透過它的 `MACROS` 變數接收 macro，但 c4o-core 不讀那個變數。所以 `make lint` 和 `make synth` 會失敗，因為它們找不到 macro 的 module。用 sky130A PDK 裡的 SRAM macro 跑 `make gds` 也會失敗，因為 Magic 讀不懂它 GDS 裡的一些 layer。這個 repo 能提供的，是一個小到可以一次讀完的設計，那是另一個極端。
