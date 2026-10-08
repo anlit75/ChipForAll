@@ -11,7 +11,7 @@ Write Verilog. Prove that it works with tests that can fail. Get a real chip lay
 [![License](https://img.shields.io/github/license/anlit75/ChipForAll)](LICENSE)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/anlit75/ChipForAll)
 
-[**Live results page**](https://anlit75.github.io/ChipForAll/) · [Quick start](#-quick-start) · [Guide](docs/guide.md) · [繁體中文](README.zh-TW.md)
+[**Live results**](https://anlit75.github.io/ChipForAll/) · [Quick start](#-quick-start) · [Guide](docs/guide.md) · [繁體中文](README.zh-TW.md)
 
 ![make all passes, one changed line fails four tests, make gds builds the layout step by step, and CI publishes a results page](https://raw.githubusercontent.com/anlit75/c4o-core/assets/demo/demo.gif)
 
