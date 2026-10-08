@@ -13,6 +13,8 @@
 
 [**線上結果網頁**](https://anlit75.github.io/ChipForAll/) · [快速開始](#-快速開始) · [指南](docs/guide.zh-TW.md) · [English](README.md)
 
+![make all 通過，改一行後四個測試失敗，make gds 一步步做出版圖，CI 發布結果網頁](https://raw.githubusercontent.com/anlit75/c4o-core/assets/demo/demo.gif)
+
 </div>
 
 ---
