@@ -118,12 +118,13 @@ CI 照同樣的規則走。如果把 key 留著卻對不到任何檔案，CI 會
   blinky
 
   die                56.375 x 67.095 um  (3782.48 um^2)
-  utilization        56.6%
-  instances          65 after synthesis, 113 after routing
-  instance classes   32 logic, 27 well taps, 18 timing-repair buffers, 17 inverters, 16 sequential, 3 clock buffers
-  drive strength     X1 0->18, X2 65->65, X16 0->3  (synthesis->routing)
-  setup slack        +5.52 ns  (0 violations)
+  utilization        51.7%
+  instances          65 after synthesis, 116 after routing
+  instance classes   32 logic, 27 well taps, 21 timing-repair buffers, 17 inverters, 16 sequential, 3 clock buffers
+  drive strength     X1 0->17, X2 65->69, X16 0->3  (synthesis->routing)
+  setup slack        +5.96 ns  (0 violations)
   hold slack         +0.11 ns  (0 violations)
+  limit violations   0 max slew, 0 max capacitance, 0 max fanout
   power              0.143 mW  (nom_tt_025C_1v80)
   signoff            clean  (DRC, LVS, antenna, XOR)
   lint warnings      0
@@ -136,7 +137,7 @@ CI 照同樣的規則走。如果把 key 留著卻對不到任何檔案，CI 會
 
 這是那一版的預設行為，不是這個 repo 的保證，所以升版之後要再確認一次。`clean` 寫出結果，並列出它實際看到哪幾項檢查。有檢查失敗的時候，這一行會列出失敗的項目：`2 Magic DRC, 1 LVS`。
 
-**`instances`** 數的是設計裡的 cell，合成之後一次，繞線之後一次。兩者的差就是 place and route 加進去的東西，例如 well tap、clock buffer 和修時序用的 buffer。`instance classes` 把繞線之後的數量分類。`drive strength` 用 Sky130 cell 名稱的 `_N` 後綴，數同一批 instance，從合成到繞線。`X1 0->18` 的意思是合成沒有做出 X1 instance，繞線之後有 18 個。像 well tap 這種只有實體、沒有邏輯功能的 cell 不在那一行裡。
+**`instances`** 數的是設計裡的 cell，合成之後一次，繞線之後一次。兩者的差就是 place and route 加進去的東西，例如 well tap、clock buffer 和修時序用的 buffer。`instance classes` 把繞線之後的數量分類。`drive strength` 用 Sky130 cell 名稱的 `_N` 後綴，數同一批 instance，從合成到繞線。`X1 0->17` 的意思是合成沒有做出 X1 instance，繞線之後有 17 個。像 well tap 這種只有實體、沒有邏輯功能的 cell 不在那一行裡。
 
 **`layout`** 是流程幫你的晶片畫的 PNG。打開來看看。
 

@@ -76,12 +76,13 @@ At the end, it tells you what it built:
   blinky
 
   die                56.375 x 67.095 um  (3782.48 um^2)
-  utilization        56.6%
-  instances          65 after synthesis, 113 after routing
-  instance classes   32 logic, 27 well taps, 18 timing-repair buffers, 17 inverters, 16 sequential, 3 clock buffers
-  drive strength     X1 0->18, X2 65->65, X16 0->3  (synthesis->routing)
-  setup slack        +5.52 ns  (0 violations)
+  utilization        51.7%
+  instances          65 after synthesis, 116 after routing
+  instance classes   32 logic, 27 well taps, 21 timing-repair buffers, 17 inverters, 16 sequential, 3 clock buffers
+  drive strength     X1 0->17, X2 65->69, X16 0->3  (synthesis->routing)
+  setup slack        +5.96 ns  (0 violations)
   hold slack         +0.11 ns  (0 violations)
+  limit violations   0 max slew, 0 max capacitance, 0 max fanout
   power              0.143 mW  (nom_tt_025C_1v80)
   signoff            clean  (DRC, LVS, antenna, XOR)
   lint warnings      0
