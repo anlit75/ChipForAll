@@ -31,12 +31,6 @@
         "ghcr.io/devcontainers/features/docker-in-docker:2": {}
     },
     "customizations": {
-        // A student's first contact with this repo is the README, so open it
-        // when the Codespace is first created. Relative to the repo root. Only
-        // the VS Code web client honours it; the desktop app ignores it.
-        "codespaces": {
-            "openFiles": ["README.md"]
-        },
         "vscode": {
             "settings": {
                 "terminal.integrated.defaultProfile.linux": "bash"
