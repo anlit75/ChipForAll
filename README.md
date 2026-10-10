@@ -13,7 +13,7 @@ Write Verilog. Prove that it works with tests that can fail. Get a real chip lay
 
 [**Live results**](https://anlit75.github.io/ChipForAll/) · [Quick start](#-quick-start) · [Guide](docs/guide.md) · [繁體中文](README.zh-TW.md)
 
-![make all passes, one changed line fails four tests, make gds builds the layout step by step, and CI publishes a results page](https://raw.githubusercontent.com/anlit75/c4o-core/assets/demo/demo.gif)
+![the tests pass, one changed line fails four tests, make gds builds the layout step by step, and CI publishes a results page](https://raw.githubusercontent.com/anlit75/c4o-core/assets/demo/demo.gif)
 
 </div>
 
@@ -53,19 +53,21 @@ In a Codespace the repository is already there. Skip the clone.
 **2. Check that the tests pass** (seconds):
 
 ```bash
-make all
+make sim
 ```
 
-**Now break it on purpose.** A layout tool cannot do this part for you. In `rtl/blinky.v`, change `count[WIDTH-1]` to `count[WIDTH-2]`. The LED now blinks twice as fast. Run `make all` again:
+`make sim` checks the RTL, then runs every test that `config.yaml` lists. A bare `make` only checks the config.
+
+**Now break it on purpose.** A layout tool cannot do this part for you. In `rtl/blinky.v`, change `count[WIDTH-1]` to `count[WIDTH-2]`. The LED now blinks twice as fast. Run `make sim` again:
 
 ```
-  FAIL cocotb  1 passed, 4 failed, seed 1791597629, 8.8 s
+  FAIL cocotb  1 passed, 4 failed, seed 1791638899, 10.0 s
 [ERROR] cocotb tests failed: led_rises_half_a_period_after_reset, led_toggles_with_a_full_period, reset_in_the_middle_restarts_the_count, random_resets_match_the_model
 
 led_rises_half_a_period_after_reset  tb/test_blinky_cocotb.py:64
 AssertionError: led rose before cycle 32768
 assert 1 == 0
-make cocotb SEED=1791597629 TEST=test_blinky_cocotb.led_rises_half_a_period_after_reset
+make cocotb SEED=1791638899 TEST=test_blinky_cocotb.led_rises_half_a_period_after_reset
 ```
 
 The `[ERROR]` line names the failing tests. Below it, each failing test prints its message and a command that runs it again. The block shows the first of the four. `make` exits non-zero, so CI also fails. Undo the change with `git checkout -- rtl/blinky.v`. [Writing tests like this for your design →](docs/guide.md#writing-a-testbench-for-your-own-design)
@@ -110,14 +112,17 @@ Turn it on once: **Settings → Pages → Source: GitHub Actions**. Build the pa
 
 | Command | What it does |
 |---|---|
-| `make all` | Lint, your tests and synthesis: all the steps that take seconds |
-| `make gds` | Full RTL-to-GDSII flow, then the summary above |
-| `make regress` | Your test list over many seeds. [More →](docs/guide.md#many-seeds) |
-| `make coverage` | How much of your RTL the Python tests run |
+| `make` | Checks `config.yaml` and the files it names. It runs no tool |
+| `make rtl` | Compiles, lints and synthesises your RTL: the steps that take seconds |
+| `make sim` | `make rtl`, then every test: Verilog and Python (cocotb). `WAVES=1` also writes a waveform |
+| `make regress` | Your test list over many seeds, then code coverage. `COVERAGE=0` skips the coverage. [More →](docs/guide.md#many-seeds) |
+| `make gds` | Full RTL-to-GDSII flow, then the summary above. It skips the flow when nothing changed, and `FORCE=1` runs it anyway |
 | `make gatesim` | Your tests again, on the gates (after `make gds`) |
-| `make report` | The summary again, with no new run |
+| `make report` | The summary again, with no new run (after `make gds`) |
 | `make site` | The results page, in `build/site/` |
 | `make shell` | A shell inside the toolchain container |
+
+`make gatesim` and `make report` stop with an error when your RTL changed since the last `make gds`. Run `make gds` again.
 
 `make help` lists all the commands. The [full table](docs/guide.md#commands) shows what each command writes.
 

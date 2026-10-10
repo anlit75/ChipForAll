@@ -2,7 +2,7 @@
 cocotb tests for blinky: Python coroutines driving the design.
 
 These tests touch only the ports clk, rst and led. That is what lets the same
-file run on the RTL (`make cocotb`) and on the gates (`make gatesim`): a netlist
+file run on the RTL (`make sim`) and on the gates (`make gatesim`): a netlist
 keeps the ports, and the register and the parameter inside are gone.
 
 Without access to the counter, the only way to see led move is to wait for it.

@@ -32,14 +32,14 @@ VERILOG_FILES:
 # Globs do work on the '//' keys, here and below: they are c4o-core's, and only
 # LibreLane's own keys are held to literal paths.
 #
-# Python testbenches, run by `make cocotb` on the RTL and again by `make
+# Python testbenches, run by `make sim` on the RTL and again by `make
 # gatesim` on the netlist the GDS flow produced. They touch only the ports, so
 # the same files work on both. See tb/test_blinky_cocotb.py.
 "//COCOTB_TESTS":
   - dir::tb/*.py
 
 # The test list for `make regress`: which tests to run, and over how many
-# seeds. `make coverage` merges coverage over the same runs, and CI runs both.
+# seeds. `make regress` then merges coverage over the same runs, and CI runs both.
 # A failed run prints the command that replays it. See tb/regression.yaml.
 "//REGRESSION": dir::tb/regression.yaml
 

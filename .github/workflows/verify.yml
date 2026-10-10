@@ -82,7 +82,7 @@ jobs:
             docker info > /dev/null
             docker version --format '{{.Server.Version}}'
             echo "--- the in-container delegation path ---"
-            make lint
+            make rtl
 
   # Every repository made from this template shares some steps: the image and
   # PDK setup, the fast checks, the flow, the report, the uploads. They are
@@ -237,14 +237,15 @@ jobs:
             -u "$(id -u):$(id -g)" "$image" sim
           echo "  sim accepted always_ff and logic"
 
-      # Lint, the Verilog testbench and the Python (cocotb) testbenches when
-      # config.yaml asks for them, synthesis and the schematic.
+      # The config check, compile, lint and synthesis, the Verilog testbench and
+      # the Python (cocotb) testbenches when config.yaml asks for them, and the
+      # schematic.
       - name: Fast checks
         uses: anlit75/c4o-core/actions/checks@v2
 
       # Template only.
       # README's quick start has the reader change count[WIDTH-1] to
-      # count[WIDTH-2] in rtl/blinky.v. The reader runs `make all` and sees it stop
+      # count[WIDTH-2] in rtl/blinky.v. The reader runs `make sim` and sees it stop
       # on a line that the README quotes word for word.
       #
       # Make that edit here. Check
@@ -272,20 +273,20 @@ jobs:
           cp -a build "$RUNNER_TEMP/build.kept"
           sed -i 's/count\[WIDTH-1\]/count[WIDTH-2]/' rtl/blinky.v
           status=0
-          make all > "$log" 2>&1 || status=$?
+          make sim > "$log" 2>&1 || status=$?
           git checkout -- rtl/blinky.v
           rm -rf build
           cp -a "$RUNNER_TEMP/build.kept" build
           cat "$log"
           if [ "$status" -eq 0 ]; then
-            echo "::error::README says breaking rtl/blinky.v makes make all fail. It passed."
+            echo "::error::README says breaking rtl/blinky.v makes make sim fail. It passed."
             exit 1
           fi
           if ! grep -qF "$expected" "$log"; then
-            echo "::error::README quotes '$expected' for the broken rtl/blinky.v. make all did not print it."
+            echo "::error::README quotes '$expected' for the broken rtl/blinky.v. make sim did not print it."
             exit 1
           fi
-          echo "  make all failed with the line the README quotes"
+          echo "  make sim failed with the line the README quotes"
 
       # `make gds`, after the LibreLane image the setup step started pulling.
       - name: Physical design
