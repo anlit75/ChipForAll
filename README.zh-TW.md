@@ -13,7 +13,7 @@
 
 [**線上結果網頁**](https://anlit75.github.io/ChipForAll/) · [快速開始](#-快速開始) · [指南](docs/guide.zh-TW.md) · [English](README.md)
 
-![make all 通過，改一行後四個測試失敗，make gds 一步步做出版圖，CI 發布結果網頁](https://raw.githubusercontent.com/anlit75/c4o-core/assets/demo/demo.gif)
+![測試通過，改一行後四個測試失敗，make gds 一步步做出版圖，CI 發布結果網頁](https://raw.githubusercontent.com/anlit75/c4o-core/assets/demo/demo.gif)
 
 </div>
 
@@ -53,19 +53,21 @@ git clone https://github.com/<you>/<your-repo>.git && cd <your-repo>
 **2. 確認測試通過**（幾秒鐘）：
 
 ```bash
-make all
+make sim
 ```
 
-**接著故意把它改壞。** 這一步是版圖工具做不到的。把 `rtl/blinky.v` 裡的 `count[WIDTH-1]` 改成 `count[WIDTH-2]`。LED 的閃爍會快一倍。再跑一次 `make all`：
+`make sim` 先檢查 RTL，再跑 `config.yaml` 列出的每個測試。只打 `make` 只會檢查設定。
+
+**接著故意把它改壞。** 這一步是版圖工具做不到的。把 `rtl/blinky.v` 裡的 `count[WIDTH-1]` 改成 `count[WIDTH-2]`。LED 的閃爍會快一倍。再跑一次 `make sim`：
 
 ```
-  FAIL cocotb  1 passed, 4 failed, seed 1791597629, 8.8 s
+  FAIL cocotb  1 passed, 4 failed, seed 1791638899, 10.0 s
 [ERROR] cocotb tests failed: led_rises_half_a_period_after_reset, led_toggles_with_a_full_period, reset_in_the_middle_restarts_the_count, random_resets_match_the_model
 
 led_rises_half_a_period_after_reset  tb/test_blinky_cocotb.py:64
 AssertionError: led rose before cycle 32768
 assert 1 == 0
-make cocotb SEED=1791597629 TEST=test_blinky_cocotb.led_rises_half_a_period_after_reset
+make cocotb SEED=1791638899 TEST=test_blinky_cocotb.led_rises_half_a_period_after_reset
 ```
 
 `[ERROR]` 那行指出哪些測試失敗。它下面，每個失敗的測試會印出自己的訊息，和只重跑它的指令。這個區塊只列出四個中的第一個。`make` 回傳非零，所以 CI 也會失敗。用 `git checkout -- rtl/blinky.v` 還原。[幫你的設計寫這種測試 →](docs/guide.zh-TW.md#幫你自己的設計寫測試平台)
@@ -110,14 +112,17 @@ make gds
 
 | 指令 | 做什麼 |
 |---|---|
-| `make all` | Lint、你的測試、合成：幾秒內跑完的所有步驟 |
-| `make gds` | 完整 RTL 到 GDSII 流程，最後印出上面的摘要 |
-| `make regress` | 你的測試清單，每個測試跑多個 seed。[更多 →](docs/guide.zh-TW.md#多個-seed) |
-| `make coverage` | Python 測試跑過你 RTL 的多少部分 |
+| `make` | 檢查 `config.yaml` 和它列出的檔案。不執行任何工具 |
+| `make rtl` | 編譯、lint 和合成你的 RTL：幾秒內跑完的步驟 |
+| `make sim` | 先做 `make rtl`，再跑每個測試：Verilog 和 Python（cocotb）。加上 `WAVES=1` 也會寫出波形 |
+| `make regress` | 你的測試清單，每個測試跑多個 seed，然後量程式碼覆蓋率。`COVERAGE=0` 會跳過覆蓋率。[更多 →](docs/guide.zh-TW.md#多個-seed) |
+| `make gds` | 完整 RTL 到 GDSII 流程，最後印出上面的摘要。輸入沒變時會跳過流程，`FORCE=1` 強制執行 |
 | `make gatesim` | 在閘級電路上重跑你的測試（`make gds` 之後） |
-| `make report` | 不重跑，再印一次摘要 |
+| `make report` | 不重跑，再印一次摘要（`make gds` 之後） |
 | `make site` | 結果網頁，產在 `build/site/` |
 | `make shell` | 進到工具鏈容器裡的 shell |
+
+上次 `make gds` 之後如果你的 RTL 改了，`make gatesim` 和 `make report` 會報錯並停下來。再跑一次 `make gds`。
 
 `make help` 列出全部指令。[完整表格](docs/guide.zh-TW.md#指令)列出每個指令的產出。
 
