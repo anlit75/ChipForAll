@@ -110,7 +110,7 @@ If the first row is wrong, you get an error immediately, not partway through `ma
 
 `make help` lists them in the terminal.
 
-`make all` and `make gds` print one line for each step. The full output of the tools is in `build/log/`. To see that output as it runs, add `PROGRESS=raw`, for example `make all PROGRESS=raw`. Then nothing goes to `build/log/`.
+`make all` prints one line for each command, and `make gds` one line for each stage of the flow. The full output of the tools is in `build/log/`. To see that output as it runs, add `PROGRESS=raw`, for example `make all PROGRESS=raw`. Then nothing goes to `build/log/`.
 
 ## Reading the result
 
@@ -166,7 +166,7 @@ Timing says whether the design meets the clock, and gives the worst setup and ho
 
 Power gives the corner, the clock frequency and the activity. The activity is the default switching activity of OpenSTA, not the activity of your testbench. It shows where the power goes, not what a real workload draws. Signoff checks come next: one DRC row for Magic and KLayout, LVS, antenna, XOR and the static IR drop. The page says that electromigration, crosstalk and dynamic IR drop are not analysed. Each part appears after you run its command.
 
-How it was built comes last. It shows one real picture of each stage of the flow, and a row for each stage with its time as a bar. Click a row to see its picture and a short explanation. A stage with no picture says why. A stage that failed is red. The section has no History fold.
+How it was built comes last. It shows one real picture of each stage of the flow, and a row for each stage with the seconds that it took. Click a row to see its picture and a short explanation. A stage that failed is marked in red, and a stage with no picture is marked too. The section has no History fold.
 
 The page is designed for sharing, as a portfolio piece. The layout is first, then the numbers, then the tests. Your `"//DESCRIPTION"` is below the title. Buttons let you open the chip in 3D, download the GDS and view the source. The heading gives the build time and the commit that the page shows. The heading gives them because CI does not publish a failing `main`: the page continues to show the last run that passed.
 

@@ -109,7 +109,7 @@ CI 照同樣的規則走。如果把 key 留著卻對不到任何檔案，CI 會
 
 `make help` 會在終端機列出這些指令。
 
-`make all` 和 `make gds` 每個步驟印一行。工具的完整輸出在 `build/log/`。要看工具執行時的原始輸出，加上 `PROGRESS=raw`，例如 `make all PROGRESS=raw`。這時不會有任何東西寫進 `build/log/`。
+`make all` 每個指令印一行，`make gds` 流程的每個階段印一行。工具的完整輸出在 `build/log/`。要看工具執行時的原始輸出，加上 `PROGRESS=raw`，例如 `make all PROGRESS=raw`。這時不會有任何東西寫進 `build/log/`。
 
 ## 看懂執行結果
 
@@ -165,7 +165,7 @@ CI 照同樣的規則走。如果把 key 留著卻對不到任何檔案，CI 會
 
 功耗區塊寫出 corner、時脈頻率和切換活動率。這個活動率是 OpenSTA 預設的切換活動率，不是你的測試平台的活動率。它告訴你功耗花在哪裡，不是真實工作負載的耗電。signoff 檢查接在後面：DRC 一列（Magic 和 KLayout 合計）、LVS、antenna、XOR，以及靜態 IR drop。網頁會寫明 electromigration、crosstalk 和動態 IR drop 沒有分析。每一塊在你跑過對應的指令之後才會出現。
 
-How it was built 放在最後。它為流程的每個階段各放一張真實的圖，和一列列的階段，每列用長條顯示所花的時間。點一列會看到它的圖和簡短說明。沒有圖的階段會寫明原因。失敗的階段是紅色。這一節沒有 History。
+How it was built 放在最後。它為流程的每個階段各放一張真實的圖，每個階段一列，寫出它花的秒數。點一列會看到它的圖和簡短說明。失敗的階段用紅字標出，沒有圖的階段也會標明。這一節沒有 History。
 
 這個網頁是照「拿去分享、放進作品集」來排的。版圖在最前面，接著是數字，再來是測試。標題下方是你的 `"//DESCRIPTION"`。有按鈕可以用 3D 開啟晶片、下載 GDS 和看原始碼。頁首寫著網頁的建置時間和對應的 commit。頁首寫這兩項，是因為 `main` 失敗時 CI 不會發佈：網頁會一直顯示最後一次通過的結果。
 
