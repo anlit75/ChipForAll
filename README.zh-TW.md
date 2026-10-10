@@ -59,10 +59,16 @@ make all
 **接著故意把它改壞。** 這一步是版圖工具做不到的。把 `rtl/blinky.v` 裡的 `count[WIDTH-1]` 改成 `count[WIDTH-2]`。LED 的閃爍會快一倍。再跑一次 `make all`：
 
 ```
+  FAIL cocotb  1 passed, 4 failed, seed 1791597629, 8.8 s
 [ERROR] cocotb tests failed: led_rises_half_a_period_after_reset, led_toggles_with_a_full_period, reset_in_the_middle_restarts_the_count, random_resets_match_the_model
+
+led_rises_half_a_period_after_reset  tb/test_blinky_cocotb.py:64
+AssertionError: led rose before cycle 32768
+assert 1 == 0
+make cocotb SEED=1791597629 TEST=test_blinky_cocotb.led_rises_half_a_period_after_reset
 ```
 
-最後一行指出哪些測試失敗。它上面，每個失敗的測試會印出自己的訊息。`make` 回傳非零，所以 CI 也會失敗。用 `git checkout -- rtl/blinky.v` 還原。[幫你的設計寫這種測試 →](docs/guide.zh-TW.md#幫你自己的設計寫測試平台)
+`[ERROR]` 那行指出哪些測試失敗。它下面，每個失敗的測試會印出自己的訊息，和只重跑它的指令。這個區塊只列出四個中的第一個。`make` 回傳非零，所以 CI 也會失敗。用 `git checkout -- rtl/blinky.v` 還原。[幫你的設計寫這種測試 →](docs/guide.zh-TW.md#幫你自己的設計寫測試平台)
 
 **3. 做出版圖**（幾分鐘。第一次還要下載好幾 GB 的 PDK）：
 
@@ -87,13 +93,16 @@ make gds
   signoff            clean  (DRC, LVS, antenna, XOR)
   lint warnings      0
   layout             runs/blinky_run/final/render/blinky.png
+
+  GDS         build/blinky.gds
+  Stages      build/stages/ (6 renders)
 ```
 
 `signoff clean` 加上正的 slack，代表版圖通過了製造檢查，也滿足時脈。流程到這個 GDS 檔為止：下線製造不在這個 repo 的範圍內。[每一行怎麼讀 →](docs/guide.zh-TW.md#看懂執行結果)
 
 ## 🌐 結果直接上線
 
-`main` 上每次 CI 都會把結果網頁發佈到 `https://<you>.github.io/<your-repo>/`。頁面最前面是你的設計版圖，可以用 3D 開啟，也可以下載 GDS。接著是判定和測試，然後是程式碼覆蓋率、時序、面積與 instance、功耗，最後是 signoff。頁面上會寫建置時間和對應的 commit。每個區塊可以展開 History，看 `main` 上歷次 commit 的圖表。每個區塊最後也列出它背後的檔案，可以下載。
+`main` 上每次 CI 都會把結果網頁發佈到 `https://<you>.github.io/<your-repo>/`。頁面最前面是你的設計版圖，可以用 3D 開啟，也可以下載 GDS。接著是判定和測試，然後是程式碼覆蓋率、時序、面積與 instance、功耗，以及 signoff。最後一節 How it was built 為每個階段各放一張真實的圖，點一列會展開它的說明。頁面上會寫建置時間和對應的 commit。除了最後一節，每個區塊可以展開 History，看 `main` 上歷次 commit 的圖表。每個區塊最後也列出它背後的檔案，可以下載。
 
 只要開一次：**Settings → Pages → Source: GitHub Actions**。本機用 `make site` 產生這個網頁。[更多 →](docs/guide.zh-TW.md#發佈結果網頁)
 
