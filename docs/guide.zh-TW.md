@@ -30,15 +30,25 @@ LibreLane 不做**模擬與驗證**。這個起手式加上去的就是這兩樣
 
 ## 開始之前
 
-**在 Apple Silicon 上，有一部分會走模擬。** c4o-core 的映像檔只建 `amd64`（一台 runner、沒有 `platforms:`）。所以在 `arm64` 機器上，`make rtl`、`make sim` 和 `make gatesim` 是透過模擬跑的。`make gds` 不是。它最重的那一步跑的是 LibreLane 自己的映像檔，而那個映像檔有出 `arm64`，所以那一步是原生的。
-
-被模擬的那幾個指令會慢多少，這裡沒有量過。Codespace 全程都是 `amd64`。
-
 **有一個前置條件不是下載就有的：一點 Verilog。** 不用多。看得懂一個 `always @(posedge clk)` 區塊和一個 `<=` 指定就夠。測試是 Python，所以你也要看得懂 `assert`。在 [HDLBits](https://hdlbits.01xz.net/) 上大約是 *Verilog Language* 那一段，不是整個網站。
 
 **SystemVerilog 也讀得進來。** 從 c4o-core 2.8.3 開始，`logic`、`always_ff` 和可合成的那個子集在每個指令下都能用。這個 repo 之後釘過的每一版都包含這項修改。在 2.8.3 之前，同一個檔案會通過 `make cocotb` 和 `make gds`，卻在 `make sim` 和合成步驟失敗。仍然不行的是把 `interface` 當成模組邊界：yosys 讀得懂宣告，然後在 `hierarchy` 階段失敗。所以 interface 留在測試平台裡，不要放在可合成模組之間。
 
 **你不需要先會 Verilog 才能開始。** `make gds` 直接就能把範例跑完，印出真實的面積、時序和功耗。`make sim` 會讓你看到測試通過。先做這兩件事，因為它們告訴你整套工具在你的機器上是通的。真正需要 Verilog 的是下一步：改 `rtl/blinky.v`、判斷一個「通過」的測試到底證明了什麼，或者自己寫一個測試。先跑範例。學 Verilog。然後回來做那一步。
+
+## 在自己的電腦上跑
+
+你需要 Docker、Make 和 Git。照 README 的做法，用 **Use this template** 做一份副本。然後 clone 下來：
+
+```bash
+git clone https://github.com/<you>/<your-repo>.git && cd <your-repo>
+```
+
+之後 README 裡的每個指令，用法都和在 Codespace 裡一樣。
+
+**在 Apple Silicon 上，有一部分會走模擬。** c4o-core 的映像檔只建 `amd64`（一台 runner、沒有 `platforms:`）。所以在 `arm64` 機器上，`make rtl`、`make sim` 和 `make gatesim` 是透過模擬跑的。`make gds` 不是。它最重的那一步跑的是 LibreLane 自己的映像檔，而那個映像檔有出 `arm64`，所以那一步是原生的。
+
+被模擬的那幾個指令會慢多少，這裡沒有量過。Codespace 全程都是 `amd64`。
 
 ## 換成你自己的設計
 
@@ -396,7 +406,7 @@ make schematic
 兩件要知道的事：
 
 * **容器內以 `root` 執行。** 在 Linux 主機上，`root` 會擁有它寫進 `build/` 的檔案。所以從主機執行 `make clean` 可能需要 `sudo`。改用一般使用者會讓 Codespaces 無法連線。
-* **在 Codespace 裡要注意磁碟。** 內部 daemon 有自己的映像檔儲存區。它會重拉一份 LibreLane 映像檔，不跟主機共用。Sky130 PDK 還要再加好幾 GB。執行 `du -sh pdks/` 可以看它的大小。在最小規格的 Codespace 上，這已經佔掉大半個磁碟。選大一點的規格，或者改從自己的主機跑 `make gds`。
+* **在 Codespace 裡要注意磁碟。** 內部 daemon 有自己的映像檔儲存區。它會重拉一份 LibreLane 映像檔，不跟主機共用。Sky130 PDK 還要再加好幾 GB。執行 `du -sh pdks/` 和 `docker system df` 可以看它們的大小。預設規格的 Codespace 磁碟夠跑 `make gds`。
 
 **一份 PDK 可以給好幾個 checkout 用。** Sky130 裝起來有好幾 GB，而且每次都一模一樣。`PDK_ROOT` 會把兩邊同時指到同一個目錄：安裝，以及讀它的 LibreLane sidecar。
 
