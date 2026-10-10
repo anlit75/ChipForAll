@@ -166,12 +166,12 @@ jobs:
           echo "  the Makefile's stub is the one in $image"
 
       # Template only.
-      # README tells anyone on an Apple Silicon machine that `make gds` runs
+      # docs/guide.md tells anyone on an Apple Silicon machine that `make gds` runs
       # native, because LibreLane publishes arm64. That is a fact about
       # somebody else's registry. If they stop publishing it, or the pinned tag
       # moves, that paragraph is wrong with nothing failing. Ask the registry.
       # It needs no arm64 runner: a manifest index lists its platforms.
-      - name: The arm64 image the README promises is still published
+      - name: The arm64 image the guide promises is still published
         if: env.IS_TEMPLATE == 'true'
         run: |
           image=$(grep -E '^LIBRELANE_IMAGE :=' Makefile | sed 's/.*:= *//')
@@ -191,7 +191,7 @@ jobs:
           echo "$image publishes:"
           echo "${platforms:-  (a single manifest, no platform list)}"
           if ! grep -qx 'linux/arm64' <<<"$platforms"; then
-            echo "::error::README says make gds runs native on arm64 because $image is published for it. It is not."
+            echo "::error::docs/guide.md says make gds runs native on arm64 because $image is published for it. It is not."
             exit 1
           fi
 

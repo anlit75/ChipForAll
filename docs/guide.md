@@ -30,15 +30,25 @@ The shape of the flow is the same, and the vocabulary transfers. But the tools o
 
 ## Before you start
 
-**On Apple Silicon, part of this runs emulated.** The c4o-core image is built for `amd64` only (one runner, no `platforms:`). So `make rtl`, `make sim` and `make gatesim` run through emulation on an `arm64` machine. `make gds` does not. Its heavy step runs LibreLane's own image, which is also published for `arm64`, so that step runs native.
-
-This guide has no measurement of how much slower the emulated commands are. A Codespace is `amd64` throughout.
-
 **One prerequisite is not a download: some Verilog.** You do not need much. It is enough to read an `always @(posedge clk)` block and a `<=` assignment. The tests are Python, so you also read an `assert`. On [HDLBits](https://hdlbits.01xz.net/), that is the *Verilog Language* section, not the full site.
 
 **SystemVerilog is read too.** `logic`, `always_ff` and the synthesisable subset work in every command since c4o-core 2.8.3. Every version that this repository has pinned since then includes this support. Before 2.8.3, the same file passed `make cocotb` and `make gds` but failed `make sim` and the synthesis step. An `interface` as a module boundary still does not work: yosys parses the declaration and then fails at `hierarchy`. Keep interfaces in the testbench, not between synthesisable modules.
 
 You do not need Verilog to start. `make gds` runs the example unchanged and prints real area, timing and power. `make sim` shows you tests that pass. Do these first, because they tell you that the toolchain works on your machine. You need Verilog for the next step: to change `rtl/blinky.v`, to judge whether a passed test proves something, or to write your own test. Run the example first. Learn Verilog. Then come back for that step.
+
+## Running it on your own machine
+
+You need Docker, Make and Git. Make your copy with **Use this template**, as in the README. Then clone it:
+
+```bash
+git clone https://github.com/<you>/<your-repo>.git && cd <your-repo>
+```
+
+Every command in the README then works the same way as in a Codespace.
+
+**On Apple Silicon, part of this runs emulated.** The c4o-core image is built for `amd64` only (one runner, no `platforms:`). So `make rtl`, `make sim` and `make gatesim` run through emulation on an `arm64` machine. `make gds` does not. Its heavy step runs LibreLane's own image, which is also published for `arm64`, so that step runs native.
+
+This guide has no measurement of how much slower the emulated commands are. A Codespace is `amd64` throughout.
 
 ## Making it your design
 
@@ -396,7 +406,7 @@ The repository includes a [Dev Container](https://containers.dev/). Open it in G
 Two things to know:
 
 *   **It runs as `root`.** On a Linux host, `root` then owns the files that it writes into `build/`. So `make clean` from your host can need `sudo`. Running as a normal user breaks Codespaces.
-*   **Monitor the disk in a Codespace.** The inner daemon has its own image store. It pulls the LibreLane image again and does not share it with the host. The Sky130 PDK adds several GB more. Run `du -sh pdks/` to see its size. On the smallest Codespace machine, that is most of the disk. Select a larger machine, or run `make gds` from your own host.
+*   **Monitor the disk in a Codespace.** The inner daemon has its own image store. It pulls the LibreLane image again and does not share it with the host. The Sky130 PDK adds several GB more. Run `du -sh pdks/` and `docker system df` to see the sizes. The default Codespace machine has enough disk for `make gds`.
 
 **One PDK can serve several checkouts.** The Sky130 install is several GB and is always the same. `PDK_ROOT` points the install, and the LibreLane sidecar that reads it, at one directory.
 
