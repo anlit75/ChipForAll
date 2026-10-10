@@ -66,8 +66,7 @@ CI follows the same rules. If you keep a key but it matches no files, CI fails. 
 If the first row is wrong, you get an error immediately, not partway through `make gds`:
 
 ```console
-[ERROR] DESIGN_NAME is 'my_cpu', but no module by that name is declared in
-        VERILOG_FILES. Declared there: blinky.
+[ERROR] DESIGN_NAME is 'my_cpu', but no module by that name is declared in VERILOG_FILES. Declared there: blinky.
 ```
 
 **Where things live.**
@@ -111,6 +110,8 @@ If the first row is wrong, you get an error immediately, not partway through `ma
 
 `make help` lists them in the terminal.
 
+`make all` and `make gds` print one line for each step. The full output of the tools is in `build/log/`. To see that output as it runs, add `PROGRESS=raw`, for example `make all PROGRESS=raw`. Then nothing goes to `build/log/`.
+
 ## Reading the result
 
 `make gds` ends with a summary of what the flow measured, so you do not need to search for it:
@@ -130,6 +131,9 @@ If the first row is wrong, you get an error immediately, not partway through `ma
   signoff            clean  (DRC, LVS, antenna, XOR)
   lint warnings      0
   layout             runs/blinky_run/final/render/blinky.png
+
+  GDS         build/blinky.gds
+  Stages      build/stages/ (6 renders)
 ```
 
 Those are the numbers of the example design, from one PDK version. Your numbers will be different, but the lines to read are the same.
@@ -141,6 +145,8 @@ That is the default of that version, not a guarantee from this repository, so ch
 **`instances`** counts the cells of the design, once after synthesis and once after routing. The difference is what place and route added, such as well taps, clock buffers and timing-repair buffers. `instance classes` splits the count after routing. `drive strength` counts the same instances by the `_N` suffix of the Sky130 cell name, from synthesis to routing. `X1 0->17` means that synthesis made no X1 instances and the flow has 17 after routing. Physical-only cells, such as well taps, are not in that line.
 
 **`layout`** is the PNG that the flow drew of your chip. Open it.
+
+**`Stages`** names the folder with one picture of each stage of the flow. The results page shows them.
 
 `XOR` in that line is not a process-rule check. Two tools write the same layout as GDS, and the check compares the two results, which must agree. It finds a stream-out bug in one of the two writers. It is not a cross-check of the design by tools from two vendors, because both tools read the same database. Do not read a clean XOR as a second opinion on the layout.
 
@@ -154,11 +160,13 @@ The difference between a summary and a signoff report is practical. A flow in wh
 
 ## Publishing the results page
 
-`make site` builds one page, `build/site/index.html`. The page starts with the layout image and the verdicts. It lists every cocotb test with its verdict and seed. After `make coverage`, the page shows a Coverage section. After `make gds`, the page also shows four sections in this order: timing, area and instances, power, and signoff checks.
+`make site` builds one page, `build/site/index.html`. The page starts with the layout image and the verdicts. It lists every cocotb test with its verdict and seed. After `make coverage`, the page shows a Coverage section. After `make gds`, the page also shows five sections in this order: timing, area and instances, power, signoff checks, and How it was built.
 
 Timing says whether the design meets the clock, and gives the worst setup and hold slack. It then lists the constraints that the run used. Each one says whether `config.yaml` set it or the flow used its default. Area and Instances counts the instances after synthesis and after routing, by class and by drive strength. It also names the standard cell library and says that it has a single threshold voltage.
 
-Power gives the corner, the clock frequency and the activity. The activity is the default switching activity of OpenSTA, not the activity of your testbench. It shows where the power goes, not what a real workload draws. Signoff checks come last: one DRC row for Magic and KLayout, LVS, antenna, XOR and the static IR drop. The page says that electromigration, crosstalk and dynamic IR drop are not analysed. Each part appears after you run its command.
+Power gives the corner, the clock frequency and the activity. The activity is the default switching activity of OpenSTA, not the activity of your testbench. It shows where the power goes, not what a real workload draws. Signoff checks come next: one DRC row for Magic and KLayout, LVS, antenna, XOR and the static IR drop. The page says that electromigration, crosstalk and dynamic IR drop are not analysed. Each part appears after you run its command.
+
+How it was built comes last. It shows one real picture of each stage of the flow, and a row for each stage with its time as a bar. Click a row to see its picture and a short explanation. A stage with no picture says why. A stage that failed is red. The section has no History fold.
 
 The page is designed for sharing, as a portfolio piece. The layout is first, then the numbers, then the tests. Your `"//DESCRIPTION"` is below the title. Buttons let you open the chip in 3D, download the GDS and view the source. The heading gives the build time and the commit that the page shows. The heading gives them because CI does not publish a failing `main`: the page continues to show the last run that passed.
 
@@ -401,7 +409,7 @@ A repository that you make from this template has no git history in common with 
 
 | Part | How a fix reaches you |
 |---|---|
-| The tools | The `Makefile` and `.devcontainer/devcontainer.json` name the image `ghcr.io/anlit75/c4o-core:2.23`. A fix to 2.23 arrives the next time you pull the image. When 2.24 is released, change the two lines to get its fixes. CI fails if the two lines are different. |
+| The tools | The `Makefile` and `.devcontainer/devcontainer.json` name the image `ghcr.io/anlit75/c4o-core:2.25`. A fix to 2.25 arrives the next time you pull the image. When 2.26 is released, change the two lines to get its fixes. CI fails if the two lines are different. |
 | The make commands | The `Makefile` includes its rules from the image. A fix to a command such as `make gds` arrives with the image. See [what your own targets can use](https://github.com/anlit75/c4o-core/blob/main/docs/makefile.md). |
 | The CI steps | `.github/workflows/verify.yml` calls actions from c4o-core at `@v2`. A fix to an action arrives on the next run. See [what each action does](https://github.com/anlit75/c4o-core/blob/main/docs/actions.md). |
 

@@ -59,10 +59,16 @@ make all
 **Now break it on purpose.** A layout tool cannot do this part for you. In `rtl/blinky.v`, change `count[WIDTH-1]` to `count[WIDTH-2]`. The LED now blinks twice as fast. Run `make all` again:
 
 ```
+  FAIL cocotb  1 passed, 4 failed, seed 1791597629, 8.8 s
 [ERROR] cocotb tests failed: led_rises_half_a_period_after_reset, led_toggles_with_a_full_period, reset_in_the_middle_restarts_the_count, random_resets_match_the_model
+
+led_rises_half_a_period_after_reset  tb/test_blinky_cocotb.py:64
+AssertionError: led rose before cycle 32768
+assert 1 == 0
+make cocotb SEED=1791597629 TEST=test_blinky_cocotb.led_rises_half_a_period_after_reset
 ```
 
-The last line names the failing tests. Above it, each failing test prints its message. `make` exits non-zero, so CI also fails. Undo the change with `git checkout -- rtl/blinky.v`. [Writing tests like this for your design →](docs/guide.md#writing-a-testbench-for-your-own-design)
+The `[ERROR]` line names the failing tests. Below it, each failing test prints its message and a command that runs it again. The block shows the first of the four. `make` exits non-zero, so CI also fails. Undo the change with `git checkout -- rtl/blinky.v`. [Writing tests like this for your design →](docs/guide.md#writing-a-testbench-for-your-own-design)
 
 **3. Build the layout** (a few minutes, plus a multi-GB PDK download on a first run):
 
@@ -87,13 +93,16 @@ At the end, it tells you what it built:
   signoff            clean  (DRC, LVS, antenna, XOR)
   lint warnings      0
   layout             runs/blinky_run/final/render/blinky.png
+
+  GDS         build/blinky.gds
+  Stages      build/stages/ (6 renders)
 ```
 
 `signoff clean` and positive slack tell you that the layout passed the manufacturing checks and meets the clock. The flow stops at this GDS file: fabrication is not part of this repository. [How to read each line →](docs/guide.md#reading-the-result)
 
 ## 🌐 Your results, online
 
-Each CI run on `main` publishes a results page to `https://<you>.github.io/<your-repo>/`. The page shows the layout of your design first, and you can open it in 3D or download the GDS. Next are the verdicts and the tests, then code coverage, timing, area and instances, power, and signoff last. The page gives the time of the build and the commit. Each section can open a History fold with charts of the earlier commits on `main`. Each section also ends with the files behind it, to download.
+Each CI run on `main` publishes a results page to `https://<you>.github.io/<your-repo>/`. The page shows the layout of your design first, and you can open it in 3D or download the GDS. Next are the verdicts and the tests, then code coverage, timing, area and instances, power, and signoff. The last section, How it was built, shows one real picture of each stage, and a click on a row opens its explanation. The page gives the time of the build and the commit. Each section except the last can open a History fold with charts of the earlier commits on `main`. Each section also ends with the files behind it, to download.
 
 Turn it on once: **Settings → Pages → Source: GitHub Actions**. Build the page locally with `make site`. [More →](docs/guide.md#publishing-the-results-page)
 

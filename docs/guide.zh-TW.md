@@ -65,8 +65,7 @@ CI 照同樣的規則走。如果把 key 留著卻對不到任何檔案，CI 會
 第一列弄錯的話，你會立刻收到錯誤，不用等到 `make gds` 跑到一半才發現：
 
 ```console
-[ERROR] DESIGN_NAME is 'my_cpu', but no module by that name is declared in
-        VERILOG_FILES. Declared there: blinky.
+[ERROR] DESIGN_NAME is 'my_cpu', but no module by that name is declared in VERILOG_FILES. Declared there: blinky.
 ```
 
 **檔案放在哪裡。**
@@ -110,6 +109,8 @@ CI 照同樣的規則走。如果把 key 留著卻對不到任何檔案，CI 會
 
 `make help` 會在終端機列出這些指令。
 
+`make all` 和 `make gds` 每個步驟印一行。工具的完整輸出在 `build/log/`。要看工具執行時的原始輸出，加上 `PROGRESS=raw`，例如 `make all PROGRESS=raw`。這時不會有任何東西寫進 `build/log/`。
+
 ## 看懂執行結果
 
 `make gds` 結束時會印出這次流程量到的數字摘要，不必自己去翻檔案：
@@ -129,6 +130,9 @@ CI 照同樣的規則走。如果把 key 留著卻對不到任何檔案，CI 會
   signoff            clean  (DRC, LVS, antenna, XOR)
   lint warnings      0
   layout             runs/blinky_run/final/render/blinky.png
+
+  GDS         build/blinky.gds
+  Stages      build/stages/ (6 renders)
 ```
 
 那是範例設計的數字，出自某一版 PDK。你的數字會不一樣。要學的是該讀哪幾行。
@@ -140,6 +144,8 @@ CI 照同樣的規則走。如果把 key 留著卻對不到任何檔案，CI 會
 **`instances`** 數的是設計裡的 cell，合成之後一次，繞線之後一次。兩者的差就是 place and route 加進去的東西，例如 well tap、clock buffer 和修時序用的 buffer。`instance classes` 把繞線之後的數量分類。`drive strength` 用 Sky130 cell 名稱的 `_N` 後綴，數同一批 instance，從合成到繞線。`X1 0->17` 的意思是合成沒有做出 X1 instance，繞線之後有 17 個。像 well tap 這種只有實體、沒有邏輯功能的 cell 不在那一行裡。
 
 **`layout`** 是流程幫你的晶片畫的 PNG。打開來看看。
+
+**`Stages`** 是放著流程每個階段各一張圖的資料夾。結果網頁會顯示這些圖。
 
 那一行裡的 `XOR` 不是製程規則檢查。兩套工具把同一份版圖各自寫成 GDS，這項檢查比對兩份結果，一致才算過。它抓的是其中一個寫出器的 stream-out bug。它不是兩家廠商的工具對設計做交叉檢查，因為兩邊讀的是同一個資料庫。所以不要把 XOR 乾淨當成對版圖本身的第二意見。
 
@@ -153,11 +159,13 @@ CI 照同樣的規則走。如果把 key 留著卻對不到任何檔案，CI 會
 
 ## 發佈結果網頁
 
-`make site` 產生一個網頁 `build/site/index.html`。網頁最前面是版圖和判定。網頁列出每個 cocotb 測試的判定和 seed。跑過 `make coverage` 之後，網頁會列出覆蓋率區塊。跑過 `make gds` 之後，網頁還會依序列出四個區塊：時序、面積與 instance、功耗，以及 signoff 檢查。
+`make site` 產生一個網頁 `build/site/index.html`。網頁最前面是版圖和判定。網頁列出每個 cocotb 測試的判定和 seed。跑過 `make coverage` 之後，網頁會列出覆蓋率區塊。跑過 `make gds` 之後，網頁還會依序列出五個區塊：時序、面積與 instance、功耗、signoff 檢查，以及 How it was built。
 
 時序區塊說明設計有沒有滿足時脈，並給出最差的 setup 和 hold slack。接著列出這次執行用到的限制條件。每一項都註明是 `config.yaml` 設的，還是流程用了預設值。面積與 instance 區塊數出合成之後和繞線之後的 instance，依類別和 drive strength 分開。它也寫出標準元件庫的名稱，並說明這個元件庫只有單一臨界電壓。
 
-功耗區塊寫出 corner、時脈頻率和切換活動率。這個活動率是 OpenSTA 預設的切換活動率，不是你的測試平台的活動率。它告訴你功耗花在哪裡，不是真實工作負載的耗電。signoff 檢查放在最後：DRC 一列（Magic 和 KLayout 合計）、LVS、antenna、XOR，以及靜態 IR drop。網頁會寫明 electromigration、crosstalk 和動態 IR drop 沒有分析。每一塊在你跑過對應的指令之後才會出現。
+功耗區塊寫出 corner、時脈頻率和切換活動率。這個活動率是 OpenSTA 預設的切換活動率，不是你的測試平台的活動率。它告訴你功耗花在哪裡，不是真實工作負載的耗電。signoff 檢查接在後面：DRC 一列（Magic 和 KLayout 合計）、LVS、antenna、XOR，以及靜態 IR drop。網頁會寫明 electromigration、crosstalk 和動態 IR drop 沒有分析。每一塊在你跑過對應的指令之後才會出現。
+
+How it was built 放在最後。它為流程的每個階段各放一張真實的圖，和一列列的階段，每列用長條顯示所花的時間。點一列會看到它的圖和簡短說明。沒有圖的階段會寫明原因。失敗的階段是紅色。這一節沒有 History。
 
 這個網頁是照「拿去分享、放進作品集」來排的。版圖在最前面，接著是數字，再來是測試。標題下方是你的 `"//DESCRIPTION"`。有按鈕可以用 3D 開啟晶片、下載 GDS 和看原始碼。頁首寫著網頁的建置時間和對應的 commit。頁首寫這兩項，是因為 `main` 失敗時 CI 不會發佈：網頁會一直顯示最後一次通過的結果。
 
@@ -399,7 +407,7 @@ make gds PDK_ROOT=/opt/sky130
 
 | 部分 | 修正怎麼到你手上 |
 |---|---|
-| 工具 | `Makefile` 和 `.devcontainer/devcontainer.json` 都寫著映像檔 `ghcr.io/anlit75/c4o-core:2.23`。2.23 的修正會在下一次拉映像檔時到。2.24 發佈之後，要改這兩行才拿得到它的修正。這兩行不一樣的話 CI 會失敗。 |
+| 工具 | `Makefile` 和 `.devcontainer/devcontainer.json` 都寫著映像檔 `ghcr.io/anlit75/c4o-core:2.25`。2.25 的修正會在下一次拉映像檔時到。2.26 發佈之後，要改這兩行才拿得到它的修正。這兩行不一樣的話 CI 會失敗。 |
 | make 指令 | `Makefile` 從映像檔引入它的規則。像 `make gds` 這樣的指令有修正時，修正會隨映像檔到。見[你自己的 target 可以用什麼](https://github.com/anlit75/c4o-core/blob/main/docs/makefile.md)。 |
 | CI 的步驟 | `.github/workflows/verify.yml` 呼叫 c4o-core 的 action，版本是 `@v2`。action 的修正會在下一次執行時到。見[每個 action 做什麼](https://github.com/anlit75/c4o-core/blob/main/docs/actions.md)。 |
 
