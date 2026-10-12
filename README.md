@@ -19,11 +19,18 @@ A template with tests that can fail, a full RTL-to-GDSII flow and a results page
 
 ## Quick Start
 
-You need a GitHub account. Everything else runs in a Codespace.
+You need a GitHub account. Everything else runs in a Codespace. Personal accounts include a [free monthly quota](https://docs.github.com/en/billing/concepts/product-billing/github-codespaces#free-quota).
 
 **1. Make your copy.** Press [**Use this template → Create a new repository**](https://github.com/anlit75/ChipForAll/generate). Give it a name and press **Create repository**.
 
-**2. Open a Codespace on your copy.** In your new repository, press **Code → Codespaces → Create codespace on main**. The first start takes a few minutes. Wait until a terminal opens.
+**2. Open a Codespace on your copy.** In your new repository, press **Code → Codespaces → Create codespace on main**. The first start takes a few minutes. If VS Code asks if you trust the authors of the files, press **Trust Folder & Continue**. Wait until a terminal opens.
+
+<details>
+<summary>First time on GitHub? See every click.</summary>
+
+![make a copy named my-chip, open a Codespace on it, trust the folder, then run make sim and see 5 of 5 tests pass](https://raw.githubusercontent.com/anlit75/c4o-core/assets/demo/tutorial.gif)
+
+</details>
 
 **3. Check that the tests pass** (seconds). In the terminal, type:
 
