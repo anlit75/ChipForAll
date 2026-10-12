@@ -19,11 +19,18 @@
 
 ## 快速開始
 
-你需要一個 GitHub 帳號。其他的都在 Codespace 裡跑。
+你需要一個 GitHub 帳號。其他的都在 Codespace 裡跑。個人帳號每月有[免費額度](https://docs.github.com/en/billing/concepts/product-billing/github-codespaces#free-quota)。
 
 **1. 做一份自己的副本。** 按 [**Use this template → Create a new repository**](https://github.com/anlit75/ChipForAll/generate)。取個名字，再按 **Create repository**。
 
-**2. 在你的副本開一個 Codespace。** 在你的新 repo 按 **Code → Codespaces → Create codespace on main**。第一次啟動要幾分鐘。等到終端機出現。
+**2. 在你的副本開一個 Codespace。** 在你的新 repo 按 **Code → Codespaces → Create codespace on main**。第一次啟動要幾分鐘。如果 VS Code 問你是否信任這些檔案的作者，按 **Trust Folder & Continue**。等到終端機出現。
+
+<details>
+<summary>第一次用 GitHub？看每一步怎麼點。</summary>
+
+![建立名為 my-chip 的副本，在上面開 Codespace，信任資料夾，再跑 make sim，5 個測試全部通過](https://raw.githubusercontent.com/anlit75/c4o-core/assets/demo/tutorial.gif)
+
+</details>
 
 **3. 確認測試通過**（幾秒鐘）。在終端機輸入：
 
