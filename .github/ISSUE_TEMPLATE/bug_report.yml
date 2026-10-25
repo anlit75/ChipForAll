@@ -25,12 +25,12 @@ body:
     validations:
       required: true
 
-  - type: input
-    id: version
+  - type: textarea
+    id: info
     attributes:
-      label: c4o-core version
-      description: Every make command prints this line near the start. Paste it.
-      placeholder: "[INFO] Loading config from /workspace/config.yaml (c4o-core 2.x.y)"
+      label: Output of make info
+      description: Run make info in your repository and paste what it prints.
+      render: text
     validations:
       required: true
 

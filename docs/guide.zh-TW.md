@@ -113,6 +113,7 @@ CI 照同樣的規則走。如果把 key 留著卻對不到任何檔案，CI 會
 | `make gatesim` | 對合成後的 netlist 重跑 cocotb 測試平台。設了 `"//GATE_TESTS"` 時，改跑那份 Verilog 測試平台。要先執行 `make gds`。自那之後 RTL 改了的話，它會報錯並停下來。 | `build/cocotb-gl-results.xml`，設了 `"//GATE_TESTS"` 時是 `終端機` |
 | `make report` | 顯示上次 `make gds` 的面積、時序、功耗與 signoff。自那之後 RTL 改了的話，它會報錯並停下來。 | `終端機` |
 | `make site` | 把 `report`、版圖和 cocotb 結果放進同一個網頁。 | `build/site/index.html` |
+| `make info` | 印出 c4o-core 的版本、兩個映像檔、在哪裡執行，以及每個工具的版本。回報 bug 時貼上它。 | `終端機` |
 | `make shell` | 進入 c4o-core 容器的互動式 shell。 | 無 |
 | `make clean` | 清除 `build/`。保留 `runs/`，因為 `report` 和 `gatesim` 要讀它。 | 無 |
 | `make distclean` | 清除 `build/`、`runs/` 和 `.c4o/`。 | 無 |
@@ -424,7 +425,7 @@ make gds PDK_ROOT=/opt/sky130
 
 | 部分 | 修正怎麼到你手上 |
 |---|---|
-| 工具 | `Makefile` 和 `.devcontainer/devcontainer.json` 都寫著映像檔 `ghcr.io/anlit75/c4o-core:2.27`。2.27 的修正會在下一次拉映像檔時到。2.28 發佈之後，要改這兩行才拿得到它的修正。這兩行不一樣的話 CI 會失敗。 |
+| 工具 | `Makefile` 和 `.devcontainer/devcontainer.json` 都寫著映像檔 `ghcr.io/anlit75/c4o-core:2.28`。2.28 的修正會在下一次拉映像檔時到。2.29 發佈之後，要改這兩行才拿得到它的修正。這兩行不一樣的話 CI 會失敗。 |
 | make 指令 | `Makefile` 從映像檔引入它的規則。像 `make gds` 這樣的指令有修正時，修正會隨映像檔到。見[你自己的 target 可以用什麼](https://github.com/anlit75/c4o-core/blob/main/docs/makefile.md)。 |
 | CI 的步驟 | `.github/workflows/verify.yml` 呼叫 c4o-core 的 action，版本是 `@v2`。action 的修正會在下一次執行時到。見[每個 action 做什麼](https://github.com/anlit75/c4o-core/blob/main/docs/actions.md)。 |
 
