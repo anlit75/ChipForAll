@@ -113,6 +113,7 @@ If the first row is wrong, you get an error immediately, not partway through `ma
 | `make gatesim` | Runs the cocotb testbenches again on the synthesised netlist. With `"//GATE_TESTS"` set, it runs that Verilog testbench instead. Run `make gds` first. It stops with an error when your RTL changed since then. | `build/cocotb-gl-results.xml`, or `Terminal` with `"//GATE_TESTS"` |
 | `make report` | Prints area, timing, power and signoff from the last `make gds`. It stops with an error when your RTL changed since then. | `Terminal` |
 | `make site` | Puts `report`, the layout and the cocotb results on one page. | `build/site/index.html` |
+| `make info` | Prints the c4o-core version, the two images, where it runs and the version of each tool. Paste it into a bug report. | `Terminal` |
 | `make shell` | Opens a bash shell inside the c4o-core container. | None |
 | `make clean` | Deletes `build/`. Keeps `runs/`, because `report` and `gatesim` read it. | None |
 | `make distclean` | Deletes `build/`, `runs/` and `.c4o/`. | None |
@@ -424,7 +425,7 @@ A repository that you make from this template has no git history in common with 
 
 | Part | How a fix reaches you |
 |---|---|
-| The tools | The `Makefile` and `.devcontainer/devcontainer.json` name the image `ghcr.io/anlit75/c4o-core:2.27`. A fix to 2.27 arrives the next time you pull the image. When 2.28 is released, change the two lines to get its fixes. CI fails if the two lines are different. |
+| The tools | The `Makefile` and `.devcontainer/devcontainer.json` name the image `ghcr.io/anlit75/c4o-core:2.28`. A fix to 2.28 arrives the next time you pull the image. When 2.29 is released, change the two lines to get its fixes. CI fails if the two lines are different. |
 | The make commands | The `Makefile` includes its rules from the image. A fix to a command such as `make gds` arrives with the image. See [what your own targets can use](https://github.com/anlit75/c4o-core/blob/main/docs/makefile.md). |
 | The CI steps | `.github/workflows/verify.yml` calls actions from c4o-core at `@v2`. A fix to an action arrives on the next run. See [what each action does](https://github.com/anlit75/c4o-core/blob/main/docs/actions.md). |
 

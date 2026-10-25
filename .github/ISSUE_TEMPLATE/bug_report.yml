@@ -1,0 +1,56 @@
+name: Bug report
+description: A make command, the results page or a CI step does something wrong.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This form is for bugs in ChipForAll and in the c4o-core image that it runs.
+        If your repository came from the ChipForAll template, report those bugs at https://github.com/anlit75/ChipForAll/issues.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+
+  - type: input
+    id: command
+    attributes:
+      label: Command
+      description: The make command that failed.
+      placeholder: make gds
+    validations:
+      required: true
+
+  - type: textarea
+    id: info
+    attributes:
+      label: Output of make info
+      description: Run make info in your repository and paste what it prints.
+      render: text
+    validations:
+      required: true
+
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where it ran
+      options:
+        - GitHub Actions
+        - Codespace
+        - Dev Container on my machine
+        - Docker on my machine
+    validations:
+      required: true
+
+  - type: textarea
+    id: log
+    attributes:
+      label: Log or Actions run
+      description: Paste the lines around the error, or the link to the failed Actions run.
+      render: text
+    validations:
+      required: true
