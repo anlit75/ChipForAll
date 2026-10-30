@@ -52,7 +52,7 @@ async def reset_holds_led_low(dut):
     await ClockCycles(dut.clk, 2)
     for cycle in range(10):
         await settle()
-        assert dut.led.value == 0, f"led was {dut.led.value} in cycle {cycle} of reset"
+        assert dut.led.value == 0, f"led was {dut.led.value} in cycle {cycle} of reset, expected 0"
         await RisingEdge(dut.clk)
 
 
@@ -61,35 +61,44 @@ async def led_rises_half_a_period_after_reset(dut):
     await start(dut)
     # The first edge after release is edge 1. led must be low after edge
     # HALF-1 and high after edge HALF, not a cycle either side.
-    assert await led_after(dut, HALF - 1) == 0, f"led rose before cycle {HALF}"
-    assert await led_after(dut, 1) == 1, f"led did not rise at cycle {HALF}"
+    led = await led_after(dut, HALF - 1)
+    assert led == 0, f"led was {led} after {HALF - 1} cycles, expected 0: it should rise at cycle {HALF}"
+    led = await led_after(dut, 1)
+    assert led == 1, f"led was {led} after {HALF} cycles, expected 1: it should rise at cycle {HALF}"
 
 
 @cocotb.test()
 async def led_toggles_with_a_full_period(dut):
     await start(dut)
-    assert await led_after(dut, HALF - 1) == 0, f"led rose before cycle {HALF}"
-    assert await led_after(dut, 1) == 1, f"led did not rise at cycle {HALF}"
-    assert await led_after(dut, HALF - 1) == 1, f"led fell before cycle {PERIOD}"
-    assert await led_after(dut, 1) == 0, f"led did not fall at cycle {PERIOD}"
+    led = await led_after(dut, HALF - 1)
+    assert led == 0, f"led was {led} after {HALF - 1} cycles, expected 0: it should rise at cycle {HALF}"
+    led = await led_after(dut, 1)
+    assert led == 1, f"led was {led} after {HALF} cycles, expected 1: it should rise at cycle {HALF}"
+    led = await led_after(dut, HALF - 1)
+    assert led == 1, f"led was {led} after {PERIOD - 1} cycles, expected 1: it should fall at cycle {PERIOD}"
+    led = await led_after(dut, 1)
+    assert led == 0, f"led was {led} after {PERIOD} cycles, expected 0: it should fall at cycle {PERIOD}"
 
 
 @cocotb.test()
 async def reset_in_the_middle_restarts_the_count(dut):
     await start(dut)
-    assert await led_after(dut, HALF + 5) == 1, "led should be high before the reset"
+    led = await led_after(dut, HALF + 5)
+    assert led == 1, f"led was {led} after {HALF + 5} cycles, expected 1: it should be high before the reset"
 
     # Reset is asynchronous: led must fall without waiting for a clock edge.
     # The edge is 10 ns away, the check comes well before it.
     dut.rst.value = 1
     await settle()
-    assert dut.led.value == 0, "led stayed high after rst, before any clock edge"
+    assert dut.led.value == 0, f"led was {dut.led.value} right after rst went high, expected 0: reset should not wait for a clock edge"
 
     await ClockCycles(dut.clk, 2)
     await settle()
-    assert dut.led.value == 0, "led was not low while rst was held"
+    assert dut.led.value == 0, f"led was {dut.led.value} after 2 clock edges with rst held, expected 0"
     dut.rst.value = 0
 
     # The count starts again from zero, so the rise is HALF cycles away.
-    assert await led_after(dut, HALF - 1) == 0, f"led rose before cycle {HALF} after reset"
-    assert await led_after(dut, 1) == 1, f"led did not rise at cycle {HALF} after reset"
+    led = await led_after(dut, HALF - 1)
+    assert led == 0, f"led was {led} after {HALF - 1} cycles from reset, expected 0: it should rise at cycle {HALF}"
+    led = await led_after(dut, 1)
+    assert led == 1, f"led was {led} after {HALF} cycles from reset, expected 1: it should rise at cycle {HALF}"
