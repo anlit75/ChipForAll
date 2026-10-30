@@ -43,23 +43,22 @@ make sim
 **4. 故意把它改壞。** 把 `rtl/blinky.v` 裡的 `count[WIDTH-1]` 改成 `count[WIDTH-2]`。LED 的閃爍會快一倍。這仍是合法的 Verilog，所以 RTL 檢查會通過。只有測試看得出行為不對。再跑一次 `make sim`：
 
 ```
-c4o sim · blinky · c4o-core 2.28.1
-  ✓ rtl     verilator, no warnings · yosys 0.33, 54 cells · 1.3 s
+c4o sim · blinky · c4o-core 2.29.0
+  ✓ rtl     verilator, no warnings · yosys 0.33, 54 cells · 1.8 s
   ✓ check   tests configured · 0.3 s
   – verilog skipped: TEST_FILES is not set
-  ✗ cocotb  1 passed, 4 failed · seed 1793337393 · 13.1 s
+  ✗ cocotb  4 of 5 tests failed · seed 1793347690 · 15.3 s
 [ERROR] cocotb tests failed: led_rises_half_a_period_after_reset, led_toggles_with_a_full_period, reset_in_the_middle_restarts_the_count, random_resets_match_the_model
 
 led_rises_half_a_period_after_reset  tb/test_blinky_cocotb.py:65
-AssertionError: led was 1 after 32767 cycles, expected 0: it should rise at cycle 32768
-assert 1 == 0
+led was 1 after 32767 cycles, expected 0: it should rise at cycle 32768
 rerun this test:
-make cocotb SEED=1793337393 TEST=test_blinky_cocotb.led_rises_half_a_period_after_reset
+make cocotb SEED=1793347690 TEST=test_blinky_cocotb.led_rises_half_a_period_after_reset
 ```
 
 `rtl` 那行通過，`cocotb` 那行失敗。cocotb 是 Python 函式庫，`tb/` 裡的測試就是用它寫的，所以這一行就是你的測試。
 
-`[ERROR]` 那行指出哪些測試失敗。它下面，每個失敗的測試會印出自己的訊息，接著是 `rerun this test:` 和只重跑它的指令。這個區塊只列出四個中的第一個。最後幾行寫出完整的記錄 `build/log/cocotb.log`。`make` 回傳非零，所以 CI 也會失敗。用 `git checkout -- rtl/blinky.v` 還原。[幫你的設計寫這種測試 →](docs/guide.zh-TW.md#幫你自己的設計寫測試平台)
+`[ERROR]` 那行指出哪些測試失敗。它下面，每個失敗的測試會印出自己的訊息，接著是 `rerun this test:` 和只重跑它的指令。這個區塊只列出四個中的第一個。最後幾行寫出完整的記錄 `build/log/cocotb.log`、幾個測試失敗，和下一步該做什麼。`make` 回傳非零，所以 CI 也會失敗。用 `git checkout -- rtl/blinky.v` 還原。[幫你的設計寫這種測試 →](docs/guide.zh-TW.md#幫你自己的設計寫測試平台)
 
 **5. 做出版圖**（幾分鐘。第一次還要下載好幾 GB 的 PDK）：
 
@@ -70,12 +69,13 @@ make gds
 最後它會告訴你做出了什麼：
 
 ```
-  blinky
+  blinky: signoff clean, timing met, no lint warnings
 
   die                56.375 x 67.095 um  (3782.48 um^2)
   utilization        51.7%
   instances          65 after synthesis, 116 after routing
-  instance classes   32 logic, 27 well taps, 21 timing-repair buffers, 17 inverters, 16 sequential, 3 clock buffers
+  instance classes   32 logic, 27 well taps, 21 timing-repair buffers,
+                     17 inverters, 16 sequential, 3 clock buffers
   drive strength     X1 0->17, X2 65->69, X16 0->3  (synthesis->routing)
   setup slack        +5.96 ns  (0 violations)
   hold slack         +0.11 ns  (0 violations)
@@ -89,7 +89,7 @@ make gds
   Stages      build/stages/ (6 renders)
 ```
 
-`signoff clean` 加上正的 slack，代表版圖通過了製造檢查，也滿足時脈。流程到這個 GDS 檔為止：下線製造不在這個 repo 的範圍內。[每一行怎麼讀 →](docs/guide.zh-TW.md#看懂執行結果)
+第一行總結了下面各列。`signoff clean` 加上正的 slack，代表版圖通過了製造檢查，也滿足時脈。流程到這個 GDS 檔為止：下線製造不在這個 repo 的範圍內。[每一行怎麼讀 →](docs/guide.zh-TW.md#看懂執行結果)
 
 想在自己的電腦跑？[用 Docker 跑 →](docs/guide.zh-TW.md#在自己的電腦上跑)
 
