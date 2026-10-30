@@ -129,12 +129,13 @@ If the first row is wrong, you get an error immediately, not partway through `ma
 `make gds` ends with a summary of what the flow measured, so you do not need to search for it:
 
 ```
-  blinky
+  blinky: signoff clean, timing met, no lint warnings
 
   die                56.375 x 67.095 um  (3782.48 um^2)
   utilization        51.7%
   instances          65 after synthesis, 116 after routing
-  instance classes   32 logic, 27 well taps, 21 timing-repair buffers, 17 inverters, 16 sequential, 3 clock buffers
+  instance classes   32 logic, 27 well taps, 21 timing-repair buffers,
+                     17 inverters, 16 sequential, 3 clock buffers
   drive strength     X1 0->17, X2 65->69, X16 0->3  (synthesis->routing)
   setup slack        +5.96 ns  (0 violations)
   hold slack         +0.11 ns  (0 violations)
@@ -149,6 +150,8 @@ If the first row is wrong, you get an error immediately, not partway through `ma
 ```
 
 Those are the numbers of the example design, from one PDK version. Your numbers will be different, but the lines to read are the same.
+
+The first line sums up the checks: `signoff clean, timing met, no lint warnings` when they all pass, and otherwise only what failed, such as `signoff failed (DRC, LVS)`.
 
 **`signoff`** tells you something that no other line does: your layout passes the manufacturability checks. The `Makefile` pins a LibreLane version (`LIBRELANE_IMAGE`). By default, that version stops with an error on each of these checks (`ERROR_ON_MAGIC_DRC` and the related variables are all `True`). `config.yaml` overrides none of them. So a run that got to this line has already passed the checks.
 

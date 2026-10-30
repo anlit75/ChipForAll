@@ -43,23 +43,22 @@ make sim
 **4. Break it on purpose.** In `rtl/blinky.v`, change `count[WIDTH-1]` to `count[WIDTH-2]`. The LED now blinks twice as fast. This is still valid Verilog, so the RTL checks pass. Only a test can see the wrong behaviour. Run `make sim` again:
 
 ```
-c4o sim · blinky · c4o-core 2.28.1
-  ✓ rtl     verilator, no warnings · yosys 0.33, 54 cells · 1.3 s
+c4o sim · blinky · c4o-core 2.29.0
+  ✓ rtl     verilator, no warnings · yosys 0.33, 54 cells · 1.8 s
   ✓ check   tests configured · 0.3 s
   – verilog skipped: TEST_FILES is not set
-  ✗ cocotb  1 passed, 4 failed · seed 1793337393 · 13.1 s
+  ✗ cocotb  4 of 5 tests failed · seed 1793347690 · 15.3 s
 [ERROR] cocotb tests failed: led_rises_half_a_period_after_reset, led_toggles_with_a_full_period, reset_in_the_middle_restarts_the_count, random_resets_match_the_model
 
 led_rises_half_a_period_after_reset  tb/test_blinky_cocotb.py:65
-AssertionError: led was 1 after 32767 cycles, expected 0: it should rise at cycle 32768
-assert 1 == 0
+led was 1 after 32767 cycles, expected 0: it should rise at cycle 32768
 rerun this test:
-make cocotb SEED=1793337393 TEST=test_blinky_cocotb.led_rises_half_a_period_after_reset
+make cocotb SEED=1793347690 TEST=test_blinky_cocotb.led_rises_half_a_period_after_reset
 ```
 
 The `rtl` row passed and the `cocotb` row failed. cocotb is the Python library the tests in `tb/` are written with, so its row is your tests.
 
-The `[ERROR]` line names the failing tests. Below it, each failing test prints its message, then `rerun this test:` and the command that runs only that test again. The block shows the first of the four. The last lines name the full log, `build/log/cocotb.log`. `make` exits non-zero, so CI also fails. Undo the change with `git checkout -- rtl/blinky.v`. [Writing tests like this for your design →](docs/guide.md#writing-a-testbench-for-your-own-design)
+The `[ERROR]` line names the failing tests. Below it, each failing test prints its message, then `rerun this test:` and the command that runs only that test again. The block shows the first of the four. The last lines name the full log, `build/log/cocotb.log`, say how many tests failed, and what to do next. `make` exits non-zero, so CI also fails. Undo the change with `git checkout -- rtl/blinky.v`. [Writing tests like this for your design →](docs/guide.md#writing-a-testbench-for-your-own-design)
 
 **5. Build the layout** (a few minutes, plus a multi-GB PDK download on a first run):
 
@@ -70,12 +69,13 @@ make gds
 At the end, it tells you what it built:
 
 ```
-  blinky
+  blinky: signoff clean, timing met, no lint warnings
 
   die                56.375 x 67.095 um  (3782.48 um^2)
   utilization        51.7%
   instances          65 after synthesis, 116 after routing
-  instance classes   32 logic, 27 well taps, 21 timing-repair buffers, 17 inverters, 16 sequential, 3 clock buffers
+  instance classes   32 logic, 27 well taps, 21 timing-repair buffers,
+                     17 inverters, 16 sequential, 3 clock buffers
   drive strength     X1 0->17, X2 65->69, X16 0->3  (synthesis->routing)
   setup slack        +5.96 ns  (0 violations)
   hold slack         +0.11 ns  (0 violations)
@@ -89,7 +89,7 @@ At the end, it tells you what it built:
   Stages      build/stages/ (6 renders)
 ```
 
-`signoff clean` and positive slack tell you that the layout passed the manufacturing checks and meets the clock. The flow stops at this GDS file: fabrication is not part of this repository. [How to read each line →](docs/guide.md#reading-the-result)
+The first line sums up the rows under it. `signoff clean` and positive slack tell you that the layout passed the manufacturing checks and meets the clock. The flow stops at this GDS file: fabrication is not part of this repository. [How to read each line →](docs/guide.md#reading-the-result)
 
 Prefer your own machine? [Run it with Docker →](docs/guide.md#running-it-on-your-own-machine)
 

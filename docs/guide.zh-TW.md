@@ -129,12 +129,13 @@ CI 照同樣的規則走。如果把 key 留著卻對不到任何檔案，CI 會
 `make gds` 結束時會印出這次流程量到的數字摘要，不必自己去翻檔案：
 
 ```
-  blinky
+  blinky: signoff clean, timing met, no lint warnings
 
   die                56.375 x 67.095 um  (3782.48 um^2)
   utilization        51.7%
   instances          65 after synthesis, 116 after routing
-  instance classes   32 logic, 27 well taps, 21 timing-repair buffers, 17 inverters, 16 sequential, 3 clock buffers
+  instance classes   32 logic, 27 well taps, 21 timing-repair buffers,
+                     17 inverters, 16 sequential, 3 clock buffers
   drive strength     X1 0->17, X2 65->69, X16 0->3  (synthesis->routing)
   setup slack        +5.96 ns  (0 violations)
   hold slack         +0.11 ns  (0 violations)
@@ -149,6 +150,8 @@ CI 照同樣的規則走。如果把 key 留著卻對不到任何檔案，CI 會
 ```
 
 那是範例設計的數字，出自某一版 PDK。你的數字會不一樣。要學的是該讀哪幾行。
+
+第一行總結各項檢查：全部通過時是 `signoff clean, timing met, no lint warnings`，否則只列出沒過的，例如 `signoff failed (DRC, LVS)`。
 
 **`signoff`** 說的是其他列都沒說的事：你的版圖通過了可製造性檢查。`Makefile` 釘了一個 LibreLane 版本（`LIBRELANE_IMAGE`）。那個版本預設會在每一項檢查失敗時中止流程（`ERROR_ON_MAGIC_DRC` 那一族預設都是 `True`）。`config.yaml` 沒有覆寫任何一個。所以能跑到這一行，就代表那些檢查都過了。
 
