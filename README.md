@@ -43,22 +43,23 @@ make sim
 **4. Break it on purpose.** In `rtl/blinky.v`, change `count[WIDTH-1]` to `count[WIDTH-2]`. The LED now blinks twice as fast. This is still valid Verilog, so the RTL checks pass. Only a test can see the wrong behaviour. Run `make sim` again:
 
 ```
-c4o sim, blinky, c4o-core 2.28.0
-  ok   rtl     verilator, no warnings, yosys 0.33, 54 cells, 2.5 s
-  ok   check   tests configured, 0.3 s
-  skip verilog skipped: TEST_FILES is not set
-  FAIL cocotb  1 passed, 4 failed, seed 1793295059, 15.5 s
+c4o sim · blinky · c4o-core 2.28.1
+  ✓ rtl     verilator, no warnings · yosys 0.33, 54 cells · 1.3 s
+  ✓ check   tests configured · 0.3 s
+  – verilog skipped: TEST_FILES is not set
+  ✗ cocotb  1 passed, 4 failed · seed 1793337393 · 13.1 s
 [ERROR] cocotb tests failed: led_rises_half_a_period_after_reset, led_toggles_with_a_full_period, reset_in_the_middle_restarts_the_count, random_resets_match_the_model
 
-led_rises_half_a_period_after_reset  tb/test_blinky_cocotb.py:64
-AssertionError: led rose before cycle 32768
+led_rises_half_a_period_after_reset  tb/test_blinky_cocotb.py:65
+AssertionError: led was 1 after 32767 cycles, expected 0: it should rise at cycle 32768
 assert 1 == 0
-make cocotb SEED=1793295059 TEST=test_blinky_cocotb.led_rises_half_a_period_after_reset
+rerun this test:
+make cocotb SEED=1793337393 TEST=test_blinky_cocotb.led_rises_half_a_period_after_reset
 ```
 
 The `rtl` row passed and the `cocotb` row failed. cocotb is the Python library the tests in `tb/` are written with, so its row is your tests.
 
-The `[ERROR]` line names the failing tests. Below it, each failing test prints its message and a command that runs it again. The block shows the first of the four. `make` exits non-zero, so CI also fails. Undo the change with `git checkout -- rtl/blinky.v`. [Writing tests like this for your design →](docs/guide.md#writing-a-testbench-for-your-own-design)
+The `[ERROR]` line names the failing tests. Below it, each failing test prints its message, then `rerun this test:` and the command that runs only that test again. The block shows the first of the four. The last lines name the full log, `build/log/cocotb.log`. `make` exits non-zero, so CI also fails. Undo the change with `git checkout -- rtl/blinky.v`. [Writing tests like this for your design →](docs/guide.md#writing-a-testbench-for-your-own-design)
 
 **5. Build the layout** (a few minutes, plus a multi-GB PDK download on a first run):
 
