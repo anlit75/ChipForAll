@@ -107,7 +107,7 @@ CI 照同樣的規則走。如果把 key 留著卻對不到任何檔案，CI 會
 | `make regress` | 執行 `tb/regression.yaml` 的測試，每個測試跑它的 seed 數。每一次都通過時，再量同一份清單的程式碼覆蓋率。`COVERAGE=0` 會跳過覆蓋率。見[多個 seed](#多個-seed)。 | `build/regress/`、`build/coverage/` |
 | `make cocotb` | 只在 RTL 上執行 Python (cocotb) 測試平台。用它重現某一個 seed 或某一個測試。 | `build/cocotb-results.xml` |
 | `make coverage` | 用 Verilator 把 Python 測試再跑一次，數出測試跑過的 RTL。它不決定通過或失敗。見[程式碼覆蓋率](#程式碼覆蓋率)。 | `build/coverage/` |
-| `make pdk` | 安裝 Sky130 PDK。`make gds` 會自己執行它。單獨跑可以把那好幾 GB 的下載提前做完。 | `pdks/` |
+| `make pdk` | 安裝 Sky130 PDK。`make gds` 會自己執行它。單獨跑可以把約 170 MB 的下載提前做完。 | `pdks/` |
 | `make schematic` | 把電路畫成到處都開得了的 SVG。 | `build/schematic.svg` |
 | `make gds` | 用 LibreLane 產生實體版圖。要幾分鐘，第一次還要加上 PDK 下載。自上次完整執行之後沒有任何變動時，它會跳過 LibreLane：見下方。 | `build/<DESIGN_NAME>.gds` |
 | `make gatesim` | 對合成後的 netlist 重跑 cocotb 測試平台。設了 `"//GATE_TESTS"` 時，改跑那份 Verilog 測試平台。要先執行 `make gds`。自那之後 RTL 改了的話，它會報錯並停下來。 | `build/cocotb-gl-results.xml`，設了 `"//GATE_TESTS"` 時是 `終端機` |
@@ -424,15 +424,23 @@ make schematic
 兩件要知道的事：
 
 * **容器內以 `root` 執行。** 在 Linux 主機上，`root` 會擁有它寫進 `build/` 的檔案。所以從主機執行 `make clean` 可能需要 `sudo`。改用一般使用者會讓 Codespaces 無法連線。
-* **在 Codespace 裡要注意磁碟。** 內部 daemon 有自己的映像檔儲存區。它會重拉一份 LibreLane 映像檔，不跟主機共用。Sky130 PDK 還要再加好幾 GB。執行 `du -sh pdks/` 和 `docker system df` 可以看它們的大小。預設規格的 Codespace 磁碟夠跑 `make gds`。
+* **在 Codespace 裡要注意磁碟。** 內部 daemon 有自己的映像檔儲存區。它會重拉一份 LibreLane 映像檔，不跟主機共用。Sky130 PDK 還要再加約 1 GB。執行 `du -sh pdks/` 和 `docker system df` 可以看它們的大小。預設規格的 Codespace 磁碟夠跑 `make gds`。
 
-**一份 PDK 可以給好幾個 checkout 用。** Sky130 裝起來有好幾 GB，而且每次都一模一樣。`PDK_ROOT` 會把兩邊同時指到同一個目錄：安裝，以及讀它的 LibreLane sidecar。
+**一份 PDK 可以給好幾個 checkout 用。** Sky130 裝起來約 1 GB，而且每次都一模一樣。`PDK_ROOT` 會把兩邊同時指到同一個目錄：安裝，以及讀它的 LibreLane sidecar。
 
 ```bash
 make gds PDK_ROOT=/opt/sky130
 ```
 
 不設它的話，每個 clone 都會在自己的 `pdks/` 底下留一份。設了它，共用的機器，或是放了不只一個設計的機器，那份安裝就只存一次。這需要 c4o-core 2.8.2 或更新的版本，`Makefile` 釘的版本已經符合。`make gatesim` 也掛載同一個目錄。
+
+**`make pdk` 只安裝一個標準元件庫**：`sky130_fd_sc_hd`，也就是這個範本用的那個。Sky130 還有其他元件庫，例如高電壓的 `sky130_fd_sc_hvl`。要把它裝在 `pdks/` 裡、和原本的並存，在 `make shell` 裡執行：
+
+```bash
+ciel enable --pdk sky130 --pdk-root /workspace/pdks -l sky130_fd_sc_hvl bdc9412b3e468c102d01b7cf6337be06ec6e9c9a
+```
+
+`-l` 可以寫好幾次，`-l all` 會安裝全部的元件庫。最後那個參數是 c4o-core 2.30 釘住的 PDK 版本，要寫一樣的。之後再跑 `make pdk`，你加的元件庫會留著。這個範本的流程仍然只用 `sky130_fd_sc_hd`：見[設定參考](#設定參考)的 `STD_CELL_LIBRARY`。
 
 習慣用自己的編輯器？`make shell` 可以從任何終端機進入同一個映像檔。
 
@@ -442,7 +450,7 @@ make gds PDK_ROOT=/opt/sky130
 
 | 部分 | 修正怎麼到你手上 |
 |---|---|
-| 工具 | `Makefile` 和 `.devcontainer/devcontainer.json` 都寫著映像檔 `ghcr.io/anlit75/c4o-core:2.29`。2.29 的修正會在下一次拉映像檔時到。2.30 發佈之後，要改這兩行才拿得到它的修正。這兩行不一樣的話 CI 會失敗。 |
+| 工具 | `Makefile` 和 `.devcontainer/devcontainer.json` 都寫著映像檔 `ghcr.io/anlit75/c4o-core:2.30`。2.30 的修正會在下一次拉映像檔時到。2.31 發佈之後，要改這兩行才拿得到它的修正。這兩行不一樣的話 CI 會失敗。 |
 | make 指令 | `Makefile` 從映像檔引入它的規則。像 `make gds` 這樣的指令有修正時，修正會隨映像檔到。見[你自己的 target 可以用什麼](https://github.com/anlit75/c4o-core/blob/main/docs/makefile.md)。 |
 | CI 的步驟 | `.github/workflows/verify.yml` 呼叫 c4o-core 的 action，版本是 `@v2`。action 的修正會在下一次執行時到。見[每個 action 做什麼](https://github.com/anlit75/c4o-core/blob/main/docs/actions.md)。 |
 

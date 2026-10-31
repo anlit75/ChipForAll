@@ -107,7 +107,7 @@ If the first row is wrong, you get an error immediately, not partway through `ma
 | `make regress` | Runs the tests of `tb/regression.yaml`, each over its seeds. When every run passed, it measures code coverage of the same list. `COVERAGE=0` skips that. See [Many seeds](#many-seeds). | `build/regress/`, `build/coverage/` |
 | `make cocotb` | Runs the Python (cocotb) testbenches alone, on the RTL. Use it to replay one seed or one test. | `build/cocotb-results.xml` |
 | `make coverage` | Runs the Python tests again on Verilator and counts the RTL that they run. It does not decide pass or fail. See [Code coverage](#code-coverage). | `build/coverage/` |
-| `make pdk` | Installs the Sky130 PDK. `make gds` runs it for you. Run it alone to do the multi-GB download before you need it. | `pdks/` |
+| `make pdk` | Installs the Sky130 PDK. `make gds` runs it for you. Run it alone to do the download of about 170 MB before you need it. | `pdks/` |
 | `make schematic` | Draws the circuit as an SVG that you can open anywhere. | `build/schematic.svg` |
 | `make gds` | Builds the physical layout with LibreLane. It takes a few minutes, plus the PDK download on a first run. It skips LibreLane when nothing changed since the last full run: see below. | `build/<DESIGN_NAME>.gds` |
 | `make gatesim` | Runs the cocotb testbenches again on the synthesised netlist. With `"//GATE_TESTS"` set, it runs that Verilog testbench instead. Run `make gds` first. It stops with an error when your RTL changed since then. | `build/cocotb-gl-results.xml`, or `Terminal` with `"//GATE_TESTS"` |
@@ -424,15 +424,23 @@ The repository includes a [Dev Container](https://containers.dev/). Open it in G
 Two things to know:
 
 *   **It runs as `root`.** On a Linux host, `root` then owns the files that it writes into `build/`. So `make clean` from your host can need `sudo`. Running as a normal user breaks Codespaces.
-*   **Monitor the disk in a Codespace.** The inner daemon has its own image store. It pulls the LibreLane image again and does not share it with the host. The Sky130 PDK adds several GB more. Run `du -sh pdks/` and `docker system df` to see the sizes. The default Codespace machine has enough disk for `make gds`.
+*   **Monitor the disk in a Codespace.** The inner daemon has its own image store. It pulls the LibreLane image again and does not share it with the host. The Sky130 PDK adds about 1 GB more. Run `du -sh pdks/` and `docker system df` to see the sizes. The default Codespace machine has enough disk for `make gds`.
 
-**One PDK can serve several checkouts.** The Sky130 install is several GB and is always the same. `PDK_ROOT` points the install, and the LibreLane sidecar that reads it, at one directory.
+**One PDK can serve several checkouts.** The Sky130 install is about 1 GB and is always the same. `PDK_ROOT` points the install, and the LibreLane sidecar that reads it, at one directory.
 
 ```bash
 make gds PDK_ROOT=/opt/sky130
 ```
 
 Without it, every clone keeps its own copy under `pdks/`. With it, a shared machine, or a machine with more than one design, stores that install only once. This needs c4o-core 2.8.2 or newer, and the version that the `Makefile` pins is new enough. `make gatesim` mounts the same directory.
+
+**`make pdk` installs one library of standard cells**, `sky130_fd_sc_hd`, the one this template uses. Sky130 has others, such as `sky130_fd_sc_hvl` for high voltage. To install one next to it in `pdks/`, run this in `make shell`:
+
+```bash
+ciel enable --pdk sky130 --pdk-root /workspace/pdks -l sky130_fd_sc_hvl bdc9412b3e468c102d01b7cf6337be06ec6e9c9a
+```
+
+`-l` can be given more than once, and `-l all` installs every library. The last argument is the PDK version that c4o-core 2.30 pins. Keep it the same. A later `make pdk` keeps the library you added. The flow of this template still uses `sky130_fd_sc_hd` only: see `STD_CELL_LIBRARY` in the [configuration reference](#configuration-reference).
 
 Prefer to stay in your own editor? `make shell` opens the same image from any terminal.
 
@@ -442,7 +450,7 @@ A repository that you make from this template has no git history in common with 
 
 | Part | How a fix reaches you |
 |---|---|
-| The tools | The `Makefile` and `.devcontainer/devcontainer.json` name the image `ghcr.io/anlit75/c4o-core:2.29`. A fix to 2.29 arrives the next time you pull the image. When 2.30 is released, change the two lines to get its fixes. CI fails if the two lines are different. |
+| The tools | The `Makefile` and `.devcontainer/devcontainer.json` name the image `ghcr.io/anlit75/c4o-core:2.30`. A fix to 2.30 arrives the next time you pull the image. When 2.31 is released, change the two lines to get its fixes. CI fails if the two lines are different. |
 | The make commands | The `Makefile` includes its rules from the image. A fix to a command such as `make gds` arrives with the image. See [what your own targets can use](https://github.com/anlit75/c4o-core/blob/main/docs/makefile.md). |
 | The CI steps | `.github/workflows/verify.yml` calls actions from c4o-core at `@v2`. A fix to an action arrives on the next run. See [what each action does](https://github.com/anlit75/c4o-core/blob/main/docs/actions.md). |
 
