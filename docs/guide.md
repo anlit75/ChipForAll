@@ -452,7 +452,7 @@ Put targets of your own at the end of the `Makefile`, below the `include` line.
 
 Put steps of your own between the actions in `verify.yml`. They run in the same job, so they can read `runs/` and `build/`.
 
-Some steps in `verify.yml` have the comment `Template only`. They check sentences in this template's README and guide. They run in the template repository and are skipped in yours. You can delete them.
+`.github/workflows/template.yml` checks sentences in this template's README and guide. It runs in the template repository and is skipped in yours. You can delete it.
 
 ## Configuration reference
 
