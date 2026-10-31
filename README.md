@@ -26,7 +26,7 @@ You need a GitHub account. Everything else runs in a Codespace. Personal account
 | `make sim` | about 7 s |
 | `make gds`, the flow for blinky | about 2 min |
 | `make gds`, first run only: the LibreLane image | about 1.5 GB |
-| `make gds`, first run only: the PDK | about 2.4 GB |
+| `make gds`, first run only: the PDK | about 170 MB, about 1 GB on disk |
 
 **1. Make your copy.** Press [**Use this template → Create a new repository**](https://github.com/anlit75/ChipForAll/generate). Give it a name and press **Create repository**.
 
@@ -50,7 +50,7 @@ make sim
 **4. Break it on purpose.** In `rtl/blinky.v`, change `count[WIDTH-1]` to `count[WIDTH-2]`. The LED now blinks twice as fast. This is still valid Verilog, so the RTL checks pass. Only a test can see the wrong behaviour. Run `make sim` again:
 
 ```
-c4o sim · blinky · c4o-core 2.29.0
+c4o sim · blinky · c4o-core 2.30.0
   ✓ rtl     verilator, no warnings · yosys 0.33, 54 cells · 0.5 s
   ✓ check   tests configured · 0.3 s
   – verilog skipped: TEST_FILES is not set

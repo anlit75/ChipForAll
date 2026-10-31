@@ -1,51 +1,32 @@
 # ChipForAll design configuration
 #
-# This is a LibreLane configuration file. The same file drives simulation and
-# linting through c4o-core and the physical design flow through LibreLane, so
-# the variable names are LibreLane's.
-#
-# 'dir::' marks a path as relative to this directory.
+# A LibreLane configuration file. The same file drives simulation and linting
+# through c4o-core and the physical design flow through LibreLane, so the
+# variable names are LibreLane's. Keys starting with '//' are c4o-core's:
+# LibreLane ignores them. 'dir::' marks a path as relative to this directory.
 
 # ============ what you normally change ============
 
 DESIGN_NAME: blinky
 
-# One line per source file. A glob does not work here. LibreLane validates
-# each entry as a literal path and never expands '**'. So `dir::rtl/**/*.v`
-# lints, simulates and synthesises fine. c4o-core does expand it. Then
-# `make gds` stops with "'/workspace/rtl/**/*.v' does not exist". Measured in
-# CI, not guessed.
-#
-# More than one file is one entry each, and order does not matter. The top
-# module is DESIGN_NAME, not the first line:
-#
-#   VERILOG_FILES:
-#     - dir::rtl/my_cpu.v
-#     - dir::rtl/alu.v
+# One line per source file, in any order. A glob does not work here: LibreLane
+# checks each entry as a literal path, so `make gds` stops on `rtl/**/*.v`
+# although lint and simulation accept it. The top module is DESIGN_NAME.
 VERILOG_FILES:
   - dir::rtl/blinky.v
 
-# Simulation only. LibreLane has no testbench variable. Simulation sits
-# outside an RTL-to-GDSII flow. LibreLane ignores any key that starts with
-# '//'. That is what keeps this file valid for both tools.
+# Simulation only. Globs do work on the '//' keys.
 #
-# Globs do work on the '//' keys, here and below: they are c4o-core's, and only
-# LibreLane's own keys are held to literal paths.
-#
-# Python testbenches, run by `make sim` on the RTL and again by `make
-# gatesim` on the netlist the GDS flow produced. They touch only the ports, so
-# the same files work on both. See tb/test_blinky_cocotb.py.
+# Python testbenches, run by `make sim` on the RTL and again by `make gatesim`
+# on the netlist. They touch only the ports, so the same files work on both.
 "//COCOTB_TESTS":
   - dir::tb/*.py
 
-# The test list for `make regress`: which tests to run, and over how many
-# seeds. `make regress` then merges coverage over the same runs, and CI runs both.
-# A failed run prints the command that replays it. See tb/regression.yaml.
+# The test list for `make regress`: which tests, over how many seeds.
 "//REGRESSION": dir::tb/regression.yaml
 
 # One line under the title of the results page (`make site`) and in its link
-# preview when the page is shared. Say what your design is. This one describes
-# the example, so replace it along with rtl/blinky.v.
+# preview. Replace it along with rtl/blinky.v.
 "//DESCRIPTION": "A clock divider that blinks an LED: the ChipForAll example, from RTL to GDS."
 
 CLOCK_PORT: clk
@@ -56,44 +37,21 @@ CLOCK_PERIOD: 10.0
 PDK: sky130A
 STD_CELL_LIBRARY: sky130_fd_sc_hd
 
-# The die sizes itself around your design. FP_SIZING: relative floorplans from
-# FP_CORE_UTIL (how full the core should be, as a percentage) instead of a
-# fixed rectangle. Swap in a bigger design and it grows. The old absolute
-# 100x100 refused it instead.
-#
-# There is deliberately no DIE_AREA here. Relative sizing never reads it. But
-# one of the two GDS streamers still draws prBoundary from it. So a leftover
-# value fails signoff with a 1-count XOR difference against a boundary the flow
-# never used.
-#
-# Measured, not guessed. A run with FP_SIZING: relative and
-# DIE_AREA: [0,0,100,100] reported "1 XOR differences" with every mask layer
-# clean. The difference was that 100x100 square minus the 69.485x80.205 die.
-#
-# To go back to a fixed die, set FP_SIZING: absolute. Add DIE_AREA.
+# The die sizes itself around the design: FP_CORE_UTIL is how full the core
+# should be, in percent. There is deliberately no DIE_AREA. Relative sizing
+# never reads it, but a leftover value fails signoff with a 1-count XOR
+# difference. For a fixed die, set FP_SIZING: absolute and add DIE_AREA.
 FP_CORE_UTIL: 40
 FP_SIZING: relative
 
-# The blackbox stubs LibreLane generates for the PDK cells carry no timescale.
-# So TIMESCALEMOD fires once per cell: hundreds of warnings, none of them from our
-# RTL. UNDRIVEN and UNUSEDSIGNAL are in the default list for the same reason.
-# They have to be repeated here, because this overrides rather than appends.
+# Keep this key. LibreLane's blackbox stubs have no timescale, so TIMESCALEMOD
+# fires once per cell. Why, and when to remove it:
+# https://github.com/anlit75/c4o-core/blob/main/README.md#the-librelane-workarounds
 LINTER_DISABLE_WARNINGS_BLACKBOX: [UNDRIVEN, UNUSEDSIGNAL, TIMESCALEMOD]
 
-# The physical flow may not use the weakest buffers. When OpenROAD buffers a
-# port or splits a net with too many loads, it takes the weakest buffer it
-# finds and does not resize it. In sky130_fd_sc_hd that is a delay cell
-# (clkdlybuf4s25_1 or dlygate4sd*), because the PDK gives those the same
-# footprint as buf_1, or buf_1 itself. The repair step checks the slew against
-# the wire load it estimates after placement. After routing the wire load is
-# about twice that, so in the ss corners the slew goes past the 0.75 ns limit.
-# Without these cells the weakest buffer is buf_2.
-#
-# Measured, not guessed, with LibreLane 3.0.14. The c4o-pyuvm design went from
-# 297 max slew violations to 9. blinky went from 11 to 0. Setup and hold still
-# pass. Hold repair then uses plain buffers, so it adds more of them.
-# Remove this key when OpenROAD closes issue 10622:
-# https://github.com/The-OpenROAD-Project/OpenROAD/issues/10622
+# Keep this key. It stops OpenROAD from picking the weakest buffers, which
+# cuts max slew violations. Measurements and when to remove it:
+# https://github.com/anlit75/c4o-core/blob/main/README.md#the-librelane-workarounds
 EXTRA_EXCLUDED_CELLS:
   - sky130_fd_sc_hd__clkdlybuf4s*
   - sky130_fd_sc_hd__dlygate4sd*
