@@ -452,7 +452,7 @@ make gds PDK_ROOT=/opt/sky130
 
 你自己的步驟放在 `verify.yml` 裡的 action 之間。它們在同一個 job 裡執行，所以讀得到 `runs/` 和 `build/`。
 
-`verify.yml` 裡有些步驟帶著 `Template only` 的註解。它們檢查的是這個模板的 README 和指南裡的句子。它們只在模板 repo 執行，在你的 repo 會被跳過。你可以把它們刪掉。
+`.github/workflows/template.yml` 檢查的是這個模板的 README 和指南裡的句子。它只在模板 repo 執行，在你的 repo 會被跳過。你可以把它刪掉。
 
 ## 設定參考
 
