@@ -175,6 +175,20 @@ CI 照同樣的規則走。如果把 key 留著卻對不到任何檔案，CI 會
 
 `make report` 和 `make gatesim` 讀的是 `runs/` 裡的執行結果。上次執行之後，你的 RTL 或 `config.yaml` 改了的話，它們會報錯並停下來，要你執行 `make gds`。`make site` 不會停下來。它會標明版圖比 RTL 舊，那個標記寫出 `make gds`。
 
+## 出問題的時候
+
+| 你看到的 | 該做什麼 |
+|---|---|
+| `✗ cocotb` 和 `[ERROR] cocotb tests failed:` | 每個失敗的測試都印出一行 `rerun this test:` 和它的指令。執行它。加上 `WAVES=1` 會寫出波形：見[測試失敗的時候](#測試失敗的時候去看波形)。然後改 `rtl/` 或 `tb/`，再跑一次 `make sim`。 |
+| `✗ rtl` | 打開輸出裡指出的 `build/log/` 記錄檔。Verilator 把 latch 和被多重驅動的訊號當成錯誤。Verilator 的其他警告不會讓 `make rtl` 失敗。 |
+| `make gds` 說它需要一個能用的 Docker daemon | 在你的電腦上，啟動 Docker Desktop，再檢查 `docker info`。在 Dev Container 裡，重新建置它。 |
+| PDK 或 LibreLane 映像檔的下載中斷了 | 再跑一次 `make gds`。它會再做一次 PDK 那一步，而且 LibreLane 映像檔不在你的電腦上時會再拉一次。`make pdk` 只做 PDK 那一步。 |
+| `make gds` 停在某一步 | 輸出最後有 `resume from this step:`、一行 `make gds LIBRELANE_ARGS="--from ..."` 指令，和那一步記錄檔的路徑。讀那個記錄檔。修好之後，執行印出的指令。Ctrl-C 也會印出同一行。這時 `build/<DESIGN_NAME>.gds` 是上一次通過的那次執行的檔案。 |
+| 第一行是 `signoff failed (DRC, LVS)` | 流程跑到了最後，而且 `make gds` 回傳非零。那一行列出失敗的檢查。讀 `FAIL gds` 那行上面的錯誤和 `build/log/librelane.log`。這次執行的 GDS 在 `runs/` 裡。 |
+| `setup slack` 或 `hold slack` 有違規 | 流程不會因為負的 slack 而停下來。見 [slack 為負值的時候](#slack-為負值的時候)。 |
+| `make gatesim` 或 `make report` 報錯並停下來 | 上次 `make gds` 之後，你的 RTL 或 `config.yaml` 改了。再跑一次 `make gds`。 |
+| 這裡都沒有符合的 | [開一個 issue](https://github.com/anlit75/ChipForAll/issues/new/choose)，並貼上 `make info` 的輸出。 |
+
 ## 發佈結果網頁
 
 `make site` 產生一個網頁 `build/site/index.html`。網頁最前面是版圖和判定。網頁列出每個 cocotb 測試的判定和 seed。跑過 `make regress` 之後，網頁會列出 Regression 區塊和覆蓋率區塊。單獨跑 `make coverage` 只會多出覆蓋率區塊。跑過 `make gds` 之後，網頁還會依序列出五個區塊：時序、面積與 instance、功耗、signoff 檢查，以及 How it was built。

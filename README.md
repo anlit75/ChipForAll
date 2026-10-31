@@ -2,13 +2,17 @@
 
 # ChipForAll
 
-**Write Verilog. Prove that it works. Get a real chip layout.**
+**Write Verilog. Prove it Works. Get a Chip Layout.**
 
 A template with tests that can fail, a full RTL-to-GDSII flow and a results page on every commit. It runs in your browser in a GitHub Codespace. You install no EDA tools.
 
-[**Use this template**](https://github.com/anlit75/ChipForAll/generate) · [See a results page](https://anlit75.github.io/ChipForAll/) · [Guide](docs/guide.md) · [繁體中文](README.zh-TW.md)
+[Guide](docs/guide.md) · [繁體中文](README.zh-TW.md)
 
 ![the tests pass, one changed line fails four tests, make gds builds the layout step by step, and CI publishes a results page](https://raw.githubusercontent.com/anlit75/c4o-core/assets/demo/demo.gif)
+
+[![the results page of this template: the chip layout, the verdicts and the tests](https://raw.githubusercontent.com/anlit75/c4o-core/assets/demo/result.png)](https://anlit75.github.io/ChipForAll/)
+
+[**Use this template**](https://github.com/anlit75/ChipForAll/generate) · [**See a real result**](https://anlit75.github.io/ChipForAll/)
 
 [![CI Status](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml/badge.svg)](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml)
 [![release Version](https://img.shields.io/github/v/release/anlit75/ChipForAll?label=version)](https://github.com/anlit75/ChipForAll/releases)
@@ -17,9 +21,16 @@ A template with tests that can fail, a full RTL-to-GDSII flow and a results page
 
 </div>
 
-## Quick Start
+## Quick start
 
 You need a GitHub account. Everything else runs in a Codespace. Personal accounts include a [free monthly quota](https://docs.github.com/en/billing/concepts/product-billing/github-codespaces#free-quota).
+
+| Step | Time or size |
+|---|---|
+| `make sim` | about 30 s |
+| `make gds`, the flow for blinky | about 2 min |
+| `make gds`, first run only: the LibreLane image | about 1.5 GB |
+| `make gds`, first run only: the PDK | about 2.4 GB |
 
 **1. Make your copy.** Press [**Use this template → Create a new repository**](https://github.com/anlit75/ChipForAll/generate). Give it a name and press **Create repository**.
 
@@ -58,9 +69,11 @@ make cocotb SEED=1793347690 TEST=test_blinky_cocotb.led_rises_half_a_period_afte
 
 The `rtl` row passed and the `cocotb` row failed. cocotb is the Python library the tests in `tb/` are written with, so its row is your tests.
 
+`c4o` is the name of the toolchain image, c4o-core, that `make` runs.
+
 The `[ERROR]` line names the failing tests. Below it, each failing test prints its message, then `rerun this test:` and the command that runs only that test again. The block shows the first of the four. The last lines name the full log, `build/log/cocotb.log`, say how many tests failed, and what to do next. `make` exits non-zero, so CI also fails. Undo the change with `git checkout -- rtl/blinky.v`. [Writing tests like this for your design →](docs/guide.md#writing-a-testbench-for-your-own-design)
 
-**5. Build the layout** (a few minutes, plus a multi-GB PDK download on a first run):
+**5. Build the layout** (about 2 minutes, plus the first-run downloads):
 
 ```bash
 make gds
@@ -71,29 +84,20 @@ At the end, it tells you what it built:
 ```
   blinky: signoff clean, timing met, no lint warnings
 
-  die                56.375 x 67.095 um  (3782.48 um^2)
-  utilization        51.7%
-  instances          65 after synthesis, 116 after routing
-  instance classes   32 logic, 27 well taps, 21 timing-repair buffers,
-                     17 inverters, 16 sequential, 3 clock buffers
-  drive strength     X1 0->17, X2 65->69, X16 0->3  (synthesis->routing)
   setup slack        +5.96 ns  (0 violations)
   hold slack         +0.11 ns  (0 violations)
-  limit violations   0 max slew, 0 max capacitance, 0 max fanout
-  power              0.143 mW  (nom_tt_025C_1v80)
   signoff            clean  (DRC, LVS, antenna, XOR)
-  lint warnings      0
   layout             runs/blinky_run/final/render/blinky.png
 
   GDS         build/blinky.gds
   Stages      build/stages/ (6 renders)
 ```
 
-The first line sums up the rows under it. `signoff clean` and positive slack tell you that the layout passed the manufacturing checks and meets the clock. The flow stops at this GDS file: fabrication is not part of this repository. [How to read each line →](docs/guide.md#reading-the-result)
+This is the short form. The first line sums up the rows under it. `signoff clean` and positive slack tell you that the layout passed the manufacturing checks and meets the clock. The flow stops at this GDS file: fabrication is not part of this repository. [The full output and how to read each line →](docs/guide.md#reading-the-result)
 
 Prefer your own machine? [Run it with Docker →](docs/guide.md#running-it-on-your-own-machine)
 
-## Your Online Results
+## Your online results
 
 Each CI run on `main` publishes a results page to `https://<you>.github.io/<your-repo>/`. [Here is the page of this template.](https://anlit75.github.io/ChipForAll/)
 
@@ -101,7 +105,7 @@ The page shows your layout first. You can open it in 3D or download the GDS. Nex
 
 Turn it on once: **Settings → Pages → Source: GitHub Actions**. Build the page locally with `make site`. [More →](docs/guide.md#publishing-the-results-page)
 
-## Make It Yours
+## Make it yours
 
 Delete the blinky files. Put your Verilog in `rtl/` and your tests in `tb/`. List them in `config.yaml`. Set `DESIGN_NAME` to your top module. The `Makefile` and CI read all other data from `config.yaml`. [The three things that must agree →](docs/guide.md#making-it-your-design)
 
@@ -120,12 +124,18 @@ You need [some Verilog](docs/guide.md#before-you-start) to change the design. Wh
 | `make report` | The summary again, with no new run (after `make gds`) |
 | `make site` | The results page, in `build/site/` |
 | `make shell` | A shell inside the toolchain container |
+| `make info` | Prints the versions of c4o-core, the images and each tool. Paste it into a bug report |
+| `make clean` | Deletes `build/`. It keeps `runs/`, which `make report` and `make gatesim` read |
 
 `make gatesim` and `make report` stop with an error when your RTL changed since the last `make gds`. Run `make gds` again.
 
 `make help` lists all the commands. The [full table](docs/guide.md#commands) shows what each command writes.
 
-## What You Get
+Something failed? [When something goes wrong](docs/guide.md#when-something-goes-wrong) lists what to do.
+
+## What you get
+
+It is for students and self-learners who want a first chip to show, and for anyone learning verification. For a full UVM-style environment, see [c4o-pyuvm](https://github.com/anlit75/c4o-pyuvm), built from this template.
 
 An open-source flow can already make a layout: [LibreLane](https://github.com/librelane/librelane) does it. To know whether that layout is *correct* is a different problem, and it is not solved. ChipForAll adds the missing part: the tests, the checks and the CI around the flow.
 
@@ -133,17 +143,11 @@ An open-source flow can already make a layout: [LibreLane](https://github.com/li
 - **Gate-level simulation.** Your tests run again on the netlist that synthesis made. Latch bugs and reset bugs hide there.
 - **Signoff you can read.** A short summary shows area, timing, power and DRC/LVS. You do not need to read a JSON file with hundreds of keys.
 - **No EDA tools to install.** One Docker image contains them all. The commands are the same in Docker, a Dev Container and a Codespace.
-- **Yours to publish.** Sky130 is Apache 2.0 and has no NDA. Put the GDS in your portfolio.
+- **Yours to publish.** Sky130 is Apache 2.0 and has no NDA. Put the GDS in your portfolio. Engineers under a foundry NDA get a second set of results that they can publish.
 
 The tools are the open-source equivalents of the commercial tools. Icarus replaces VCS, Yosys replaces Design Compiler, and OpenSTA replaces PrimeTime. The flow and the vocabulary transfer. The tool names do not. [Full mapping →](docs/guide.md#what-this-is-and-what-it-is-not)
 
-## Who It Is For
-
-- **Students and self-learners** who want a first chip to show, with tests that prove it works.
-- **Engineers under a foundry NDA** who want a second set of results that they can publish.
-- **Anyone learning verification.** For a full UVM-style environment, see [c4o-pyuvm](https://github.com/anlit75/c4o-pyuvm), built from this template.
-
-## Learn More
+## Learn more
 
 - [Guide](docs/guide.md): running on your own machine, writing testbenches, the debug waveform, gate-level simulation, negative slack, configuration reference
 - [c4o-core](https://github.com/anlit75/c4o-core): the toolchain engine behind every command
@@ -152,6 +156,8 @@ The tools are the open-source equivalents of the commercial tools. Icarus replac
 ---
 
 <div align="center">
+
+Maintained by Ting-An Cheng ([@anlit75](https://github.com/anlit75)). Early project, issues welcome.
 
 [MIT License](LICENSE) · Powered by [c4o-core](https://github.com/anlit75/c4o-core)
 

@@ -175,6 +175,20 @@ The difference between a summary and a signoff report is practical. A flow in wh
 
 `make report` and `make gatesim` read the run in `runs/`. When your RTL or `config.yaml` changed since that run, they stop with an error that tells you to run `make gds`. `make site` does not stop. It marks the layout as older than your RTL, and the mark names `make gds`.
 
+## When something goes wrong
+
+| What you see | What to do |
+|---|---|
+| `✗ cocotb` and `[ERROR] cocotb tests failed:` | Each failed test prints a `rerun this test:` line with its command. Run it. Add `WAVES=1` to write a waveform: see [When a test fails](#when-a-test-fails-look-at-the-waveform). Then change `rtl/` or `tb/` and run `make sim` again. |
+| `✗ rtl` | Open the log that the output names in `build/log/`. Verilator treats a latch and a multiply driven signal as errors. Other Verilator warnings do not fail `make rtl`. |
+| `make gds` says it needs a working Docker daemon | On your machine, start Docker Desktop and check `docker info`. In the Dev Container, rebuild it. |
+| The download of the PDK or the LibreLane image stopped | Run `make gds` again. It runs the PDK step again, and pulls the LibreLane image again if it is not on your machine. `make pdk` does only the PDK step. |
+| `make gds` stops at a step | The output ends with `resume from this step:` and a `make gds LIBRELANE_ARGS="--from ..."` command, and with the path of the step log. Read that log. After a fix, run the printed command. Ctrl-C prints the same command. `build/<DESIGN_NAME>.gds` is then the file of the last run that passed. |
+| `signoff failed (DRC, LVS)` on the first line | The flow ran to the end and `make gds` exits non-zero. The line names the checks that failed. Read the errors above the `FAIL gds` line and `build/log/librelane.log`. The GDS of this run is in `runs/`. |
+| `setup slack` or `hold slack` with violations | The flow does not stop for negative slack. See [When slack is negative](#when-slack-is-negative). |
+| `make gatesim` or `make report` stops with an error | Your RTL or `config.yaml` changed since the last `make gds`. Run `make gds` again. |
+| Nothing here fits | [Open an issue](https://github.com/anlit75/ChipForAll/issues/new/choose) and paste the output of `make info`. |
+
 ## Publishing the results page
 
 `make site` builds one page, `build/site/index.html`. The page starts with the layout image and the verdicts. It lists every cocotb test with its verdict and seed. After `make regress`, the page shows a Regression section and a Coverage section. `make coverage` alone adds only the Coverage section. After `make gds`, the page also shows five sections in this order: timing, area and instances, power, signoff checks, and How it was built.
