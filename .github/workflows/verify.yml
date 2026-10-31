@@ -62,7 +62,7 @@ jobs:
   # One is a Docker daemon that answers (the guard's exact condition). The
   # other is the in-container delegation path that the Makefile takes when it
   # finds the entrypoint script locally. It does not run `make gds` itself.
-  # That wants a multi-GB PDK and a long run. It also cannot speak for
+  # That wants a PDK download and a long run. It also cannot speak for
   # Codespaces, whose remote server is a different thing again.
   devcontainer:
     needs: changes

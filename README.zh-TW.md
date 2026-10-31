@@ -26,7 +26,7 @@
 | `make sim` | 約 7 秒 |
 | `make gds`，blinky 的流程 | 約 2 分鐘 |
 | `make gds`，只有第一次：LibreLane 映像檔 | 約 1.5 GB |
-| `make gds`，只有第一次：PDK | 約 2.4 GB |
+| `make gds`，只有第一次：PDK | 約 170 MB，磁碟上約 1 GB |
 
 **1. 做一份自己的副本。** 按 [**Use this template → Create a new repository**](https://github.com/anlit75/ChipForAll/generate)。取個名字，再按 **Create repository**。
 
@@ -50,7 +50,7 @@ make sim
 **4. 故意把它改壞。** 把 `rtl/blinky.v` 裡的 `count[WIDTH-1]` 改成 `count[WIDTH-2]`。LED 的閃爍會快一倍。這仍是合法的 Verilog，所以 RTL 檢查會通過。只有測試看得出行為不對。再跑一次 `make sim`：
 
 ```
-c4o sim · blinky · c4o-core 2.29.0
+c4o sim · blinky · c4o-core 2.30.0
   ✓ rtl     verilator, no warnings · yosys 0.33, 54 cells · 0.5 s
   ✓ check   tests configured · 0.3 s
   – verilog skipped: TEST_FILES is not set
