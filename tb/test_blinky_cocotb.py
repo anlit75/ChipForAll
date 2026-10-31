@@ -11,7 +11,6 @@ cycles, and each of those cycles costs simulator time.
 """
 
 import cocotb
-from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles, RisingEdge, Timer
 
 # Must match WIDTH in rtl/blinky.v. A netlist has no parameter to read, so the
@@ -25,13 +24,26 @@ PERIOD = 1 << WIDTH      # cycles of one full blink
 SETTLE_NS = 3
 
 
+async def fast_clock(sig):
+    """
+    The same 10 ns square wave as cocotb's Clock, with half the simulator
+    callbacks: a write with setimmediatevalue needs no read-write phase.
+    """
+    half = Timer(5, units="ns")
+    while True:
+        sig.setimmediatevalue(1)
+        await half
+        sig.setimmediatevalue(0)
+        await half
+
+
 async def settle():
     await Timer(SETTLE_NS, units="ns")
 
 
 async def start(dut):
     """Clock running, reset applied for two edges, then released."""
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    cocotb.start_soon(fast_clock(dut.clk))
     dut.rst.value = 1
     await ClockCycles(dut.clk, 2)
     await settle()
@@ -40,14 +52,18 @@ async def start(dut):
 
 async def led_after(dut, edges):
     """Wait until `edges` rising edges have passed, then return led."""
-    await ClockCycles(dut.clk, edges)
+    # The first edge is awaited, the others are one Timer of 10 ns each: the
+    # same moment as ClockCycles, without a wake-up of Python on every edge.
+    await RisingEdge(dut.clk)
+    if edges > 1:
+        await Timer((edges - 1) * 10, units="ns")
     await settle()
     return int(dut.led.value)
 
 
 @cocotb.test()
 async def reset_holds_led_low(dut):
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    cocotb.start_soon(fast_clock(dut.clk))
     dut.rst.value = 1
     await ClockCycles(dut.clk, 2)
     for cycle in range(10):

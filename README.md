@@ -23,7 +23,7 @@ You need a GitHub account. Everything else runs in a Codespace. Personal account
 
 | Step | Time or size |
 |---|---|
-| `make sim` | about 30 s |
+| `make sim` | about 7 s |
 | `make gds`, the flow for blinky | about 2 min |
 | `make gds`, first run only: the LibreLane image | about 1.5 GB |
 | `make gds`, first run only: the PDK | about 2.4 GB |
@@ -51,16 +51,16 @@ make sim
 
 ```
 c4o sim · blinky · c4o-core 2.29.0
-  ✓ rtl     verilator, no warnings · yosys 0.33, 54 cells · 1.8 s
+  ✓ rtl     verilator, no warnings · yosys 0.33, 54 cells · 0.5 s
   ✓ check   tests configured · 0.3 s
   – verilog skipped: TEST_FILES is not set
-  ✗ cocotb  4 of 5 tests failed · seed 1793347690 · 15.3 s
+  ✗ cocotb  4 of 5 tests failed · seed 1793447982 · 3.3 s
 [ERROR] cocotb tests failed: led_rises_half_a_period_after_reset, led_toggles_with_a_full_period, reset_in_the_middle_restarts_the_count, random_resets_match_the_model
 
-led_rises_half_a_period_after_reset  tb/test_blinky_cocotb.py:65
+led_rises_half_a_period_after_reset  tb/test_blinky_cocotb.py:81
 led was 1 after 32767 cycles, expected 0: it should rise at cycle 32768
 rerun this test:
-make cocotb SEED=1793347690 TEST=test_blinky_cocotb.led_rises_half_a_period_after_reset
+make cocotb SEED=1793447982 TEST=test_blinky_cocotb.led_rises_half_a_period_after_reset
 ```
 
 The `rtl` row passed and the `cocotb` row failed. cocotb is the Python library the tests in `tb/` are written with, so its row is your tests.
