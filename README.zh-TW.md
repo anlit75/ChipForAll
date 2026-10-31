@@ -6,13 +6,11 @@
 
 一個模板，有真的會失敗的測試、完整的 RTL 到 GDSII 流程，每個 commit 還有一個結果網頁。它在瀏覽器裡的 GitHub Codespace 執行。一個 EDA 工具都不用裝。
 
-[指南](docs/guide.zh-TW.md) · [English](README.md)
+[**Use this template**](https://github.com/anlit75/ChipForAll/generate) · [**看一個真實結果**](https://anlit75.github.io/ChipForAll/) · [指南](docs/guide.zh-TW.md) · [English](README.md)
 
 ![測試通過，改一行後四個測試失敗，make gds 一步步做出版圖，CI 發布結果網頁](https://raw.githubusercontent.com/anlit75/c4o-core/assets/demo/demo.gif)
 
 [![這個模板的結果網頁：版圖、各項判定和測試](https://raw.githubusercontent.com/anlit75/c4o-core/assets/demo/result.png)](https://anlit75.github.io/ChipForAll/)
-
-[**Use this template**](https://github.com/anlit75/ChipForAll/generate) · [**看一個真實結果**](https://anlit75.github.io/ChipForAll/)
 
 [![CI Status](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml/badge.svg)](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml)
 [![release Version](https://img.shields.io/github/v/release/anlit75/ChipForAll?label=version)](https://github.com/anlit75/ChipForAll/releases)
