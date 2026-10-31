@@ -10,8 +10,6 @@
 
 ![測試通過，改一行後四個測試失敗，make gds 一步步做出版圖，CI 發布結果網頁](https://raw.githubusercontent.com/anlit75/c4o-core/assets/demo/demo.gif)
 
-[![這個模板的結果網頁：版圖、各項判定和測試](https://raw.githubusercontent.com/anlit75/c4o-core/assets/demo/result.png)](https://anlit75.github.io/ChipForAll/)
-
 [![CI Status](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml/badge.svg)](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml)
 [![release Version](https://img.shields.io/github/v/release/anlit75/ChipForAll?label=version)](https://github.com/anlit75/ChipForAll/releases)
 [![License](https://img.shields.io/github/license/anlit75/ChipForAll)](LICENSE)

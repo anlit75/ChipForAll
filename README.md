@@ -10,8 +10,6 @@ A template with tests that can fail, a full RTL-to-GDSII flow and a results page
 
 ![the tests pass, one changed line fails four tests, make gds builds the layout step by step, and CI publishes a results page](https://raw.githubusercontent.com/anlit75/c4o-core/assets/demo/demo.gif)
 
-[![the results page of this template: the chip layout, the verdicts and the tests](https://raw.githubusercontent.com/anlit75/c4o-core/assets/demo/result.png)](https://anlit75.github.io/ChipForAll/)
-
 [![CI Status](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml/badge.svg)](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml)
 [![release Version](https://img.shields.io/github/v/release/anlit75/ChipForAll?label=version)](https://github.com/anlit75/ChipForAll/releases)
 [![License](https://img.shields.io/github/license/anlit75/ChipForAll)](LICENSE)
