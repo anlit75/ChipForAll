@@ -69,7 +69,7 @@ Four more things cause problems in a first design:
 *   **Start every RTL file with `` `timescale 1ns/1ps ``.** Without it, `make sim` and `make cocotb` fail with `Unable to accurately represent 10(ns)`.
 *   **Rewrite `"//DESCRIPTION"`** in `config.yaml`. If you do not, your results page says that the design is a clock divider that blinks an LED.
 
-**A repository needs tests of at least one kind.** `make sim` runs the Python tests when `"//COCOTB_TESTS"` is set. It runs the Verilog testbenches when `"//TEST_FILES"` is set. It prints a skip line for a kind whose key is not set. With neither key set, `make` and `make sim` fail.
+**A repository needs tests of at least one kind.** `make sim` runs the Python tests when `"//COCOTB_TESTS"` is set. It runs the Verilog testbenches when `"//TEST_FILES"` is set. It prints nothing for a kind whose key is not set. With neither key set, `make` and `make sim` fail.
 
 CI follows the same rules. If you keep a key but it matches no files, CI fails. That is correct: you asked for tests that are not there.
 
@@ -118,9 +118,7 @@ If the first row is wrong, you get an error immediately, not partway through `ma
 | `make clean` | Deletes `build/`. Keeps `runs/`, because `report` and `gatesim` read it. | None |
 | `make distclean` | Deletes `build/`, `runs/` and `.c4o/`. | None |
 
-`make help` lists them in the terminal. Older names still work, and `make help` does not list them: `make all` runs `make sim`, and `make lint` and `make synth` run `make rtl`.
-
-`make sim` prints one line for each of `rtl`, `check`, `sim` and `cocotb`, and `make gds` one line for each stage of the flow. The full output of the tools is in `build/log/`. To see that output as it runs, add `PROGRESS=raw`, for example `make sim PROGRESS=raw`. Then nothing goes to `build/log/`. The other commands print what their tools print.
+`make sim` prints one line for each of `rtl`, `check`, `verilog` and `cocotb`. A kind of test that `config.yaml` does not list gets no line. `make gds` prints one line for each stage of the flow. The full output of the tools is in `build/log/`. To see that output as it runs, add `PROGRESS=raw`, for example `make sim PROGRESS=raw`. Then nothing goes to `build/log/`. The other commands print what their tools print.
 
 `make gds` skips LibreLane when the RTL, `config.yaml` and the files that it points at are the same as in the last full run. It prints the report instead. `make gds FORCE=1` runs the flow anyway. A change to the RTL or the config runs it, and so does a new LibreLane image or c4o-core release. An edit to a testbench does not, because a testbench is not part of the layout.
 
@@ -170,8 +168,6 @@ That is the default of that version, not a guarantee from this repository, so ch
 **Those lines are a summary, not a signoff report.** They come from a `metrics.json` with hundreds of keys, so what they omit is important. They do not show the clock uncertainty and the derating that the flow applied, or the skew of the clock tree. They do not show which of the nine corners (`ss`/`tt`/`ff` against `min`/`nom`/`max` interconnect) gave that slack. All of these are LibreLane defaults, because `config.yaml` sets none of them. All of them are under `runs/`, with one directory for each step.
 
 The difference between a summary and a signoff report is practical. A flow in which you set the OCV derates yourself would not accept a `+0.11 ns` hold slack as a pass. For that level of confidence, read the per-corner reports, not these lines.
-
-`make report` prints the summary again. It does not run the flow again.
 
 `make report` and `make gatesim` read the run in `runs/`. When your RTL or `config.yaml` changed since that run, they stop with an error that tells you to run `make gds`. `make site` does not stop. It marks the layout as older than your RTL, and the mark names `make gds`.
 
@@ -440,7 +436,7 @@ Without it, every clone keeps its own copy under `pdks/`. With it, a shared mach
 ciel enable --pdk sky130 --pdk-root /workspace/pdks -l sky130_fd_sc_hvl bdc9412b3e468c102d01b7cf6337be06ec6e9c9a
 ```
 
-`-l` can be given more than once, and `-l all` installs every library. The last argument is the PDK version that c4o-core 2.30 pins. Keep it the same. A later `make pdk` keeps the library you added. The flow of this template still uses `sky130_fd_sc_hd` only: see `STD_CELL_LIBRARY` in the [configuration reference](#configuration-reference).
+`-l` can be given more than once, and `-l all` installs every library. The last argument is the PDK version that c4o-core 2.31 pins. Keep it the same. A later `make pdk` keeps the library you added. The flow of this template still uses `sky130_fd_sc_hd` only: see `STD_CELL_LIBRARY` in the [configuration reference](#configuration-reference).
 
 Prefer to stay in your own editor? `make shell` opens the same image from any terminal.
 
@@ -450,7 +446,7 @@ A repository that you make from this template has no git history in common with 
 
 | Part | How a fix reaches you |
 |---|---|
-| The tools | The `Makefile` and `.devcontainer/devcontainer.json` name the image `ghcr.io/anlit75/c4o-core:2.30`. A fix to 2.30 arrives the next time you pull the image. When 2.31 is released, change the two lines to get its fixes. CI fails if the two lines are different. |
+| The tools | The `Makefile` and `.devcontainer/devcontainer.json` name the image `ghcr.io/anlit75/c4o-core:2.31`. A fix to 2.31 arrives the next time you pull the image. When 2.32 is released, change the two lines to get its fixes. CI fails if the two lines are different. |
 | The make commands | The `Makefile` includes its rules from the image. A fix to a command such as `make gds` arrives with the image. See [what your own targets can use](https://github.com/anlit75/c4o-core/blob/main/docs/makefile.md). |
 | The CI steps | `.github/workflows/verify.yml` calls actions from c4o-core at `@v2`. A fix to an action arrives on the next run. See [what each action does](https://github.com/anlit75/c4o-core/blob/main/docs/actions.md). |
 

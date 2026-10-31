@@ -69,7 +69,7 @@ git clone https://github.com/<you>/<your-repo>.git && cd <your-repo>
 *   **每個 RTL 檔第一行寫 `` `timescale 1ns/1ps ``。** 少了它，`make sim` 和 `make cocotb` 會失敗，訊息是 `Unable to accurately represent 10(ns)`。
 *   **改寫 `config.yaml` 的 `"//DESCRIPTION"`。** 不改的話，你的結果網頁會說這個設計是一個讓 LED 閃爍的時脈除頻器。
 
-**一個 repo 至少要有一種測試。** 設了 `"//COCOTB_TESTS"`，`make sim` 就跑 Python 測試。設了 `"//TEST_FILES"`，就跑 Verilog 測試平台。沒設 key 的那一種，它會印一行跳過的訊息。兩個 key 都沒設，`make` 和 `make sim` 都會失敗。
+**一個 repo 至少要有一種測試。** 設了 `"//COCOTB_TESTS"`，`make sim` 就跑 Python 測試。設了 `"//TEST_FILES"`，就跑 Verilog 測試平台。沒設 key 的那一種，它什麼都不印。兩個 key 都沒設，`make` 和 `make sim` 都會失敗。
 
 CI 照同樣的規則走。如果把 key 留著卻對不到任何檔案，CI 會失敗。這是對的：你要求了不存在的測試。
 
@@ -118,9 +118,7 @@ CI 照同樣的規則走。如果把 key 留著卻對不到任何檔案，CI 會
 | `make clean` | 清除 `build/`。保留 `runs/`，因為 `report` 和 `gatesim` 要讀它。 | 無 |
 | `make distclean` | 清除 `build/`、`runs/` 和 `.c4o/`。 | 無 |
 
-`make help` 會在終端機列出這些指令。舊的名稱仍然能用，只是 `make help` 不列出它們：`make all` 執行 `make sim`，`make lint` 和 `make synth` 執行 `make rtl`。
-
-`make sim` 為 `rtl`、`check`、`sim`、`cocotb` 各印一行，`make gds` 流程的每個階段印一行。工具的完整輸出在 `build/log/`。要看工具執行時的原始輸出，加上 `PROGRESS=raw`，例如 `make sim PROGRESS=raw`。這時不會有任何東西寫進 `build/log/`。其他指令印出它們的工具印的內容。
+`make sim` 為 `rtl`、`check`、`verilog`、`cocotb` 各印一行。`config.yaml` 沒列出的那一種測試沒有那一行。`make gds` 為流程的每個階段印一行。工具的完整輸出在 `build/log/`。要看工具執行時的原始輸出，加上 `PROGRESS=raw`，例如 `make sim PROGRESS=raw`。這時不會有任何東西寫進 `build/log/`。其他指令印出它們的工具印的內容。
 
 `make gds` 在 RTL、`config.yaml` 和它指向的檔案都和上次完整執行相同時，會跳過 LibreLane。它改印報告。`make gds FORCE=1` 照樣執行流程。RTL 或設定改了就會執行，LibreLane 映像檔或 c4o-core 發行版換了也會。測試平台的修改不會，因為測試平台不屬於版圖。
 
@@ -170,8 +168,6 @@ CI 照同樣的規則走。如果把 key 留著卻對不到任何檔案，CI 會
 **這幾行是摘要，不是簽核報告。** 它們從有好幾百個 key 的 `metrics.json` 裡挑出來，所以它們沒寫的東西很重要。它們沒寫 clock uncertainty 和 derate 設多少，也沒寫 clock tree 的 skew 是多少。它們沒寫九個 corner（`ss`/`tt`/`ff` 各配 `min`/`nom`/`max` 連線）裡是哪一個給出這個 slack。這些全是 LibreLane 的預設值，因為 `config.yaml` 一個都沒設。這些全都在 `runs/` 底下，一個 step 一個目錄。
 
 差別是實務上的。在自己填 OCV derate 的簽核流程裡，`+0.11 ns` 的 hold slack 不會被當成「過了」。要有那種等級的信心，就去讀 per-corner 報告，不要只讀這幾行。
-
-`make report` 會再印一次摘要，不會重跑任何東西。
 
 `make report` 和 `make gatesim` 讀的是 `runs/` 裡的執行結果。上次執行之後，你的 RTL 或 `config.yaml` 改了的話，它們會報錯並停下來，要你執行 `make gds`。`make site` 不會停下來。它會標明版圖比 RTL 舊，那個標記寫出 `make gds`。
 
@@ -440,7 +436,7 @@ make gds PDK_ROOT=/opt/sky130
 ciel enable --pdk sky130 --pdk-root /workspace/pdks -l sky130_fd_sc_hvl bdc9412b3e468c102d01b7cf6337be06ec6e9c9a
 ```
 
-`-l` 可以寫好幾次，`-l all` 會安裝全部的元件庫。最後那個參數是 c4o-core 2.30 釘住的 PDK 版本，要寫一樣的。之後再跑 `make pdk`，你加的元件庫會留著。這個範本的流程仍然只用 `sky130_fd_sc_hd`：見[設定參考](#設定參考)的 `STD_CELL_LIBRARY`。
+`-l` 可以寫好幾次，`-l all` 會安裝全部的元件庫。最後那個參數是 c4o-core 2.31 釘住的 PDK 版本，要寫一樣的。之後再跑 `make pdk`，你加的元件庫會留著。這個範本的流程仍然只用 `sky130_fd_sc_hd`：見[設定參考](#設定參考)的 `STD_CELL_LIBRARY`。
 
 習慣用自己的編輯器？`make shell` 可以從任何終端機進入同一個映像檔。
 
@@ -450,7 +446,7 @@ ciel enable --pdk sky130 --pdk-root /workspace/pdks -l sky130_fd_sc_hvl bdc9412b
 
 | 部分 | 修正怎麼到你手上 |
 |---|---|
-| 工具 | `Makefile` 和 `.devcontainer/devcontainer.json` 都寫著映像檔 `ghcr.io/anlit75/c4o-core:2.30`。2.30 的修正會在下一次拉映像檔時到。2.31 發佈之後，要改這兩行才拿得到它的修正。這兩行不一樣的話 CI 會失敗。 |
+| 工具 | `Makefile` 和 `.devcontainer/devcontainer.json` 都寫著映像檔 `ghcr.io/anlit75/c4o-core:2.31`。2.31 的修正會在下一次拉映像檔時到。2.32 發佈之後，要改這兩行才拿得到它的修正。這兩行不一樣的話 CI 會失敗。 |
 | make 指令 | `Makefile` 從映像檔引入它的規則。像 `make gds` 這樣的指令有修正時，修正會隨映像檔到。見[你自己的 target 可以用什麼](https://github.com/anlit75/c4o-core/blob/main/docs/makefile.md)。 |
 | CI 的步驟 | `.github/workflows/verify.yml` 呼叫 c4o-core 的 action，版本是 `@v2`。action 的修正會在下一次執行時到。見[每個 action 做什麼](https://github.com/anlit75/c4o-core/blob/main/docs/actions.md)。 |
 
