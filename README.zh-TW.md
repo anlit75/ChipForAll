@@ -13,7 +13,6 @@
 [![CI Status](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml/badge.svg)](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml)
 [![release Version](https://img.shields.io/github/v/release/anlit75/ChipForAll?label=version)](https://github.com/anlit75/ChipForAll/releases)
 [![License](https://img.shields.io/github/license/anlit75/ChipForAll)](LICENSE)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/anlit75/ChipForAll)
 
 </div>
 
@@ -50,24 +49,26 @@ make sim
 **4. 故意把它改壞。** 把 `rtl/blinky.v` 裡的 `count[WIDTH-1]` 改成 `count[WIDTH-2]`。LED 的閃爍會快一倍。這仍是合法的 Verilog，所以 RTL 檢查會通過。只有測試看得出行為不對。再跑一次 `make sim`：
 
 ```
-c4o sim · blinky · c4o-core 2.30.0
+c4o sim · blinky · c4o-core 2.31.0
   ✓ rtl     verilator, no warnings · yosys 0.33, 54 cells · 0.5 s
   ✓ check   tests configured · 0.3 s
-  – verilog skipped: TEST_FILES is not set
-  ✗ cocotb  4 of 5 tests failed · seed 1793447982 · 3.3 s
-[ERROR] cocotb tests failed: led_rises_half_a_period_after_reset, led_toggles_with_a_full_period, reset_in_the_middle_restarts_the_count, random_resets_match_the_model
-
+  ✗ cocotb  4 of 5 tests failed · seed 1793457764 · 2.8 s
+[ERROR] cocotb tests failed:
+  led_rises_half_a_period_after_reset
+  led_toggles_with_a_full_period
+  reset_in_the_middle_restarts_the_count
+  random_resets_match_the_model
 led_rises_half_a_period_after_reset  tb/test_blinky_cocotb.py:81
 led was 1 after 32767 cycles, expected 0: it should rise at cycle 32768
 rerun this test:
-make cocotb SEED=1793447982 TEST=test_blinky_cocotb.led_rises_half_a_period_after_reset
+make cocotb SEED=1793457764 TEST=test_blinky_cocotb.led_rises_half_a_period_after_reset
 ```
 
 `rtl` 那行通過，`cocotb` 那行失敗。cocotb 是 Python 函式庫，`tb/` 裡的測試就是用它寫的，所以這一行就是你的測試。
 
 `c4o` 是工具鏈映像檔 c4o-core 的名字，`make` 就是用它來執行。
 
-`[ERROR]` 那行指出哪些測試失敗。它下面，每個失敗的測試會印出自己的訊息，接著是 `rerun this test:` 和只重跑它的指令。這個區塊只列出四個中的第一個。最後幾行寫出完整的記錄 `build/log/cocotb.log`、幾個測試失敗，和下一步該做什麼。`make` 回傳非零，所以 CI 也會失敗。用 `git checkout -- rtl/blinky.v` 還原。[幫你的設計寫這種測試 →](docs/guide.zh-TW.md#幫你自己的設計寫測試平台)
+`[ERROR]` 那行後面，每個失敗的測試各佔一行。再往下，每個失敗的測試會印出自己的訊息，接著是 `rerun this test:` 和只重跑它的指令。這個區塊只列出四個中的第一個。最後幾行寫出完整的記錄 `build/log/cocotb.log`、幾個測試失敗，和下一步該做什麼。`make` 回傳非零，所以 CI 也會失敗。用 `git checkout -- rtl/blinky.v` 還原。[幫你的設計寫這種測試 →](docs/guide.zh-TW.md#幫你自己的設計寫測試平台)
 
 **5. 做出版圖**（約 2 分鐘，加上第一次的下載）：
 

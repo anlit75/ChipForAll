@@ -13,7 +13,6 @@ A template with tests that can fail, a full RTL-to-GDSII flow and a results page
 [![CI Status](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml/badge.svg)](https://github.com/anlit75/ChipForAll/actions/workflows/verify.yml)
 [![release Version](https://img.shields.io/github/v/release/anlit75/ChipForAll?label=version)](https://github.com/anlit75/ChipForAll/releases)
 [![License](https://img.shields.io/github/license/anlit75/ChipForAll)](LICENSE)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/anlit75/ChipForAll)
 
 </div>
 
@@ -50,24 +49,26 @@ make sim
 **4. Break it on purpose.** In `rtl/blinky.v`, change `count[WIDTH-1]` to `count[WIDTH-2]`. The LED now blinks twice as fast. This is still valid Verilog, so the RTL checks pass. Only a test can see the wrong behaviour. Run `make sim` again:
 
 ```
-c4o sim · blinky · c4o-core 2.30.0
+c4o sim · blinky · c4o-core 2.31.0
   ✓ rtl     verilator, no warnings · yosys 0.33, 54 cells · 0.5 s
   ✓ check   tests configured · 0.3 s
-  – verilog skipped: TEST_FILES is not set
-  ✗ cocotb  4 of 5 tests failed · seed 1793447982 · 3.3 s
-[ERROR] cocotb tests failed: led_rises_half_a_period_after_reset, led_toggles_with_a_full_period, reset_in_the_middle_restarts_the_count, random_resets_match_the_model
-
+  ✗ cocotb  4 of 5 tests failed · seed 1793457764 · 2.8 s
+[ERROR] cocotb tests failed:
+  led_rises_half_a_period_after_reset
+  led_toggles_with_a_full_period
+  reset_in_the_middle_restarts_the_count
+  random_resets_match_the_model
 led_rises_half_a_period_after_reset  tb/test_blinky_cocotb.py:81
 led was 1 after 32767 cycles, expected 0: it should rise at cycle 32768
 rerun this test:
-make cocotb SEED=1793447982 TEST=test_blinky_cocotb.led_rises_half_a_period_after_reset
+make cocotb SEED=1793457764 TEST=test_blinky_cocotb.led_rises_half_a_period_after_reset
 ```
 
 The `rtl` row passed and the `cocotb` row failed. cocotb is the Python library the tests in `tb/` are written with, so its row is your tests.
 
 `c4o` is the name of the toolchain image, c4o-core, that `make` runs.
 
-The `[ERROR]` line names the failing tests. Below it, each failing test prints its message, then `rerun this test:` and the command that runs only that test again. The block shows the first of the four. The last lines name the full log, `build/log/cocotb.log`, say how many tests failed, and what to do next. `make` exits non-zero, so CI also fails. Undo the change with `git checkout -- rtl/blinky.v`. [Writing tests like this for your design →](docs/guide.md#writing-a-testbench-for-your-own-design)
+The `[ERROR]` line is followed by the failing tests, one per line. After them, each failing test prints its message, then `rerun this test:` and the command that runs only that test again. The block shows the first of the four. The last lines name the full log, `build/log/cocotb.log`, say how many tests failed, and what to do next. `make` exits non-zero, so CI also fails. Undo the change with `git checkout -- rtl/blinky.v`. [Writing tests like this for your design →](docs/guide.md#writing-a-testbench-for-your-own-design)
 
 **5. Build the layout** (about 2 minutes, plus the first-run downloads):
 
