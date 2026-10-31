@@ -2,11 +2,11 @@
 
 # ChipForAll
 
-**寫 Verilog。證明它是對的。拿到一份真正的晶片版圖。**
+**Write Verilog. Prove it Works. Get a Chip Layout.**
 
 一個模板，有真的會失敗的測試、完整的 RTL 到 GDSII 流程，每個 commit 還有一個結果網頁。它在瀏覽器裡的 GitHub Codespace 執行。一個 EDA 工具都不用裝。
 
-[**Use this template**](https://github.com/anlit75/ChipForAll/generate) · [看一個結果網頁](https://anlit75.github.io/ChipForAll/) · [指南](docs/guide.zh-TW.md) · [English](README.md)
+[**Use this template**](https://github.com/anlit75/ChipForAll/generate) · [**看一個真實結果**](https://anlit75.github.io/ChipForAll/) · [指南](docs/guide.zh-TW.md) · [English](README.md)
 
 ![測試通過，改一行後四個測試失敗，make gds 一步步做出版圖，CI 發布結果網頁](https://raw.githubusercontent.com/anlit75/c4o-core/assets/demo/demo.gif)
 
@@ -20,6 +20,13 @@
 ## 快速開始
 
 你需要一個 GitHub 帳號。其他的都在 Codespace 裡跑。個人帳號每月有[免費額度](https://docs.github.com/en/billing/concepts/product-billing/github-codespaces#free-quota)。
+
+| 步驟 | 時間或大小 |
+|---|---|
+| `make sim` | 約 30 秒 |
+| `make gds`，blinky 的流程 | 約 2 分鐘 |
+| `make gds`，只有第一次：LibreLane 映像檔 | 約 1.5 GB |
+| `make gds`，只有第一次：PDK | 約 2.4 GB |
 
 **1. 做一份自己的副本。** 按 [**Use this template → Create a new repository**](https://github.com/anlit75/ChipForAll/generate)。取個名字，再按 **Create repository**。
 
@@ -58,9 +65,11 @@ make cocotb SEED=1793347690 TEST=test_blinky_cocotb.led_rises_half_a_period_afte
 
 `rtl` 那行通過，`cocotb` 那行失敗。cocotb 是 Python 函式庫，`tb/` 裡的測試就是用它寫的，所以這一行就是你的測試。
 
+`c4o` 是工具鏈映像檔 c4o-core 的名字，`make` 就是用它來執行。
+
 `[ERROR]` 那行指出哪些測試失敗。它下面，每個失敗的測試會印出自己的訊息，接著是 `rerun this test:` 和只重跑它的指令。這個區塊只列出四個中的第一個。最後幾行寫出完整的記錄 `build/log/cocotb.log`、幾個測試失敗，和下一步該做什麼。`make` 回傳非零，所以 CI 也會失敗。用 `git checkout -- rtl/blinky.v` 還原。[幫你的設計寫這種測試 →](docs/guide.zh-TW.md#幫你自己的設計寫測試平台)
 
-**5. 做出版圖**（幾分鐘。第一次還要下載好幾 GB 的 PDK）：
+**5. 做出版圖**（約 2 分鐘，加上第一次的下載）：
 
 ```bash
 make gds
@@ -71,25 +80,16 @@ make gds
 ```
   blinky: signoff clean, timing met, no lint warnings
 
-  die                56.375 x 67.095 um  (3782.48 um^2)
-  utilization        51.7%
-  instances          65 after synthesis, 116 after routing
-  instance classes   32 logic, 27 well taps, 21 timing-repair buffers,
-                     17 inverters, 16 sequential, 3 clock buffers
-  drive strength     X1 0->17, X2 65->69, X16 0->3  (synthesis->routing)
   setup slack        +5.96 ns  (0 violations)
   hold slack         +0.11 ns  (0 violations)
-  limit violations   0 max slew, 0 max capacitance, 0 max fanout
-  power              0.143 mW  (nom_tt_025C_1v80)
   signoff            clean  (DRC, LVS, antenna, XOR)
-  lint warnings      0
   layout             runs/blinky_run/final/render/blinky.png
 
   GDS         build/blinky.gds
   Stages      build/stages/ (6 renders)
 ```
 
-第一行總結了下面各列。`signoff clean` 加上正的 slack，代表版圖通過了製造檢查，也滿足時脈。流程到這個 GDS 檔為止：下線製造不在這個 repo 的範圍內。[每一行怎麼讀 →](docs/guide.zh-TW.md#看懂執行結果)
+這是精簡版。第一行總結了下面各列。`signoff clean` 加上正的 slack，代表版圖通過了製造檢查，也滿足時脈。流程到這個 GDS 檔為止：下線製造不在這個 repo 的範圍內。[完整輸出和每一行怎麼讀 →](docs/guide.zh-TW.md#看懂執行結果)
 
 想在自己的電腦跑？[用 Docker 跑 →](docs/guide.zh-TW.md#在自己的電腦上跑)
 
@@ -120,12 +120,18 @@ make gds
 | `make report` | 不重跑，再印一次摘要（`make gds` 之後） |
 | `make site` | 結果網頁，產在 `build/site/` |
 | `make shell` | 進到工具鏈容器裡的 shell |
+| `make info` | 印出 c4o-core、映像檔和各工具的版本。貼進 bug 回報 |
+| `make clean` | 刪除 `build/`。保留 `runs/`，因為 `make report` 和 `make gatesim` 會讀它 |
 
 上次 `make gds` 之後如果你的 RTL 改了，`make gatesim` 和 `make report` 會報錯並停下來。再跑一次 `make gds`。
 
 `make help` 列出全部指令。[完整表格](docs/guide.zh-TW.md#指令)列出每個指令的產出。
 
+有東西失敗了？[出問題的時候](docs/guide.zh-TW.md#出問題的時候)列出該怎麼做。
+
 ## 你會得到什麼
+
+它適合想要第一顆拿得出手的晶片的學生與自學者，也適合正在學驗證的人。完整的 UVM 風格環境請看 [c4o-pyuvm](https://github.com/anlit75/c4o-pyuvm)，它就是從這個模板建出來的。
 
 用開源流程產出一份版圖，[LibreLane](https://github.com/librelane/librelane) 已經做得到。但它不會告訴你那份版圖**對不對**，這個問題還沒解決。ChipForAll 補上缺的那一塊：流程周圍的測試、檢查和 CI。
 
@@ -133,15 +139,9 @@ make gds
 - **閘級模擬。** 在合成產出的 netlist 上重跑你的測試。latch 和 reset 的 bug 就藏在那裡。
 - **看得懂的 signoff。** 一份簡短的摘要列出面積、時序、功耗和 DRC/LVS。不用去讀有好幾百個 key 的 JSON。
 - **不用裝任何 EDA 工具。** 全部都在一個 Docker 映像檔裡。Docker、Dev Container 和 Codespace 的指令都一樣。
-- **成果可以公開。** Sky130 是 Apache 2.0，沒有 NDA。GDS 可以直接放進作品集。
+- **成果可以公開。** Sky130 是 Apache 2.0，沒有 NDA。GDS 可以直接放進作品集。簽了 foundry NDA 的工程師可以多一份能公開的成果。
 
 這裡用的是商用工具的開源對應。Icarus 對 VCS，Yosys 對 Design Compiler，OpenSTA 對 PrimeTime。流程和詞彙轉得過去。工具名稱轉不過去。[完整對照 →](docs/guide.zh-TW.md#這個專案是什麼不是什麼)
-
-## 適合誰
-
-- **學生與自學者**：想要第一顆拿得出手的晶片，而且有測試證明它是對的。
-- **簽了 foundry NDA 的工程師**：想要一份可以公開的第二份成果。
-- **正在學驗證的人**：完整的 UVM 風格環境請看 [c4o-pyuvm](https://github.com/anlit75/c4o-pyuvm)，它就是從這個模板建出來的。
 
 ## 延伸閱讀
 
@@ -152,6 +152,8 @@ make gds
 ---
 
 <div align="center">
+
+由 Ting-An Cheng（[@anlit75](https://github.com/anlit75)）維護。早期專案，歡迎開 issue。
 
 [MIT License](LICENSE) · Powered by [c4o-core](https://github.com/anlit75/c4o-core)
 
