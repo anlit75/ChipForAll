@@ -2,7 +2,7 @@
 
 # ChipForAll
 
-**Write Verilog. Prove it Works. Get a Chip Layout.**
+**Write Verilog. Prove It Works. Get a Chip Layout.**
 
 一個模板，有真的會失敗的測試、完整的 RTL 到 GDSII 流程，每個 commit 還有一個結果網頁。它在瀏覽器裡的 GitHub Codespace 執行。一個 EDA 工具都不用裝。
 
