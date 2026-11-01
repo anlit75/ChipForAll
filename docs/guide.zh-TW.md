@@ -436,7 +436,7 @@ make gds PDK_ROOT=/opt/sky130
 ciel enable --pdk sky130 --pdk-root /workspace/pdks -l sky130_fd_sc_hvl bdc9412b3e468c102d01b7cf6337be06ec6e9c9a
 ```
 
-`-l` 可以寫好幾次，`-l all` 會安裝全部的元件庫。最後那個參數是 c4o-core 2.31 釘住的 PDK 版本，要寫一樣的。之後再跑 `make pdk`，你加的元件庫會留著。這個範本的流程仍然只用 `sky130_fd_sc_hd`：見[設定參考](#設定參考)的 `STD_CELL_LIBRARY`。
+`-l` 可以寫好幾次，`-l all` 會安裝全部的元件庫。最後那個參數是 c4o-core 2.32 釘住的 PDK 版本，要寫一樣的。之後再跑 `make pdk`，你加的元件庫會留著。這個範本的流程仍然只用 `sky130_fd_sc_hd`：見[設定參考](#設定參考)的 `STD_CELL_LIBRARY`。
 
 習慣用自己的編輯器？`make shell` 可以從任何終端機進入同一個映像檔。
 
@@ -446,7 +446,7 @@ ciel enable --pdk sky130 --pdk-root /workspace/pdks -l sky130_fd_sc_hvl bdc9412b
 
 | 部分 | 修正怎麼到你手上 |
 |---|---|
-| 工具 | `Makefile` 和 `.devcontainer/devcontainer.json` 都寫著映像檔 `ghcr.io/anlit75/c4o-core:2.31`。2.31 的修正會在下一次拉映像檔時到。2.32 發佈之後，要改這兩行才拿得到它的修正。這兩行不一樣的話 CI 會失敗。 |
+| 工具 | `Makefile` 和 `.devcontainer/devcontainer.json` 都寫著映像檔 `ghcr.io/anlit75/c4o-core:2.32`。2.32 的修正會在下一次拉映像檔時到。2.33 發佈之後，要改這兩行才拿得到它的修正。這兩行不一樣的話 CI 會失敗。 |
 | make 指令 | `Makefile` 從映像檔引入它的規則。像 `make gds` 這樣的指令有修正時，修正會隨映像檔到。見[你自己的 target 可以用什麼](https://github.com/anlit75/c4o-core/blob/main/docs/makefile.md)。 |
 | CI 的步驟 | `.github/workflows/verify.yml` 呼叫 c4o-core 的 action，版本是 `@v2`。action 的修正會在下一次執行時到。見[每個 action 做什麼](https://github.com/anlit75/c4o-core/blob/main/docs/actions.md)。 |
 

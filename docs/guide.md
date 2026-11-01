@@ -436,7 +436,7 @@ Without it, every clone keeps its own copy under `pdks/`. With it, a shared mach
 ciel enable --pdk sky130 --pdk-root /workspace/pdks -l sky130_fd_sc_hvl bdc9412b3e468c102d01b7cf6337be06ec6e9c9a
 ```
 
-`-l` can be given more than once, and `-l all` installs every library. The last argument is the PDK version that c4o-core 2.31 pins. Keep it the same. A later `make pdk` keeps the library you added. The flow of this template still uses `sky130_fd_sc_hd` only: see `STD_CELL_LIBRARY` in the [configuration reference](#configuration-reference).
+`-l` can be given more than once, and `-l all` installs every library. The last argument is the PDK version that c4o-core 2.32 pins. Keep it the same. A later `make pdk` keeps the library you added. The flow of this template still uses `sky130_fd_sc_hd` only: see `STD_CELL_LIBRARY` in the [configuration reference](#configuration-reference).
 
 Prefer to stay in your own editor? `make shell` opens the same image from any terminal.
 
@@ -446,7 +446,7 @@ A repository that you make from this template has no git history in common with 
 
 | Part | How a fix reaches you |
 |---|---|
-| The tools | The `Makefile` and `.devcontainer/devcontainer.json` name the image `ghcr.io/anlit75/c4o-core:2.31`. A fix to 2.31 arrives the next time you pull the image. When 2.32 is released, change the two lines to get its fixes. CI fails if the two lines are different. |
+| The tools | The `Makefile` and `.devcontainer/devcontainer.json` name the image `ghcr.io/anlit75/c4o-core:2.32`. A fix to 2.32 arrives the next time you pull the image. When 2.33 is released, change the two lines to get its fixes. CI fails if the two lines are different. |
 | The make commands | The `Makefile` includes its rules from the image. A fix to a command such as `make gds` arrives with the image. See [what your own targets can use](https://github.com/anlit75/c4o-core/blob/main/docs/makefile.md). |
 | The CI steps | `.github/workflows/verify.yml` calls actions from c4o-core at `@v2`. A fix to an action arrives on the next run. See [what each action does](https://github.com/anlit75/c4o-core/blob/main/docs/actions.md). |
 
