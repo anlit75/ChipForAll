@@ -2,7 +2,7 @@
 
 # ChipForAll
 
-**Write Verilog. Prove it Works. Get a Chip Layout.**
+**Write Verilog. Prove It Works. Get a Chip Layout.**
 
 A template with tests that can fail, a full RTL-to-GDSII flow and a results page on every commit. It runs in your browser in a GitHub Codespace. You install no EDA tools.
 
@@ -16,7 +16,7 @@ A template with tests that can fail, a full RTL-to-GDSII flow and a results page
 
 </div>
 
-## Quick start
+## Quick Start
 
 You need a GitHub account. Everything else runs in a Codespace. Personal accounts include a [free monthly quota](https://docs.github.com/en/billing/concepts/product-billing/github-codespaces#free-quota).
 
@@ -94,7 +94,7 @@ This is the short form. The first line sums up the rows under it. `signoff clean
 
 Prefer your own machine? [Run it with Docker →](docs/guide.md#running-it-on-your-own-machine)
 
-## Your online results
+## Your Online Results
 
 Each CI run on `main` publishes a results page to `https://<you>.github.io/<your-repo>/`. [Here is the page of this template.](https://anlit75.github.io/ChipForAll/)
 
@@ -102,7 +102,7 @@ The page shows your layout first. You can open it in 3D or download the GDS. Nex
 
 Turn it on once: **Settings → Pages → Source: GitHub Actions**. Build the page locally with `make site`. [More →](docs/guide.md#publishing-the-results-page)
 
-## Make it yours
+## Make It Yours
 
 Delete the blinky files. Put your Verilog in `rtl/` and your tests in `tb/`. List them in `config.yaml`. Set `DESIGN_NAME` to your top module. The `Makefile` and CI read all other data from `config.yaml`. [The three things that must agree →](docs/guide.md#making-it-your-design)
 
@@ -130,7 +130,7 @@ You need [some Verilog](docs/guide.md#before-you-start) to change the design. Wh
 
 Something failed? [When something goes wrong](docs/guide.md#when-something-goes-wrong) lists what to do.
 
-## What you get
+## What You Get
 
 It is for students and self-learners who want a first chip to show, and for anyone learning verification. For a full UVM-style environment, see [c4o-pyuvm](https://github.com/anlit75/c4o-pyuvm), built from this template.
 
@@ -144,7 +144,7 @@ An open-source flow can already make a layout: [LibreLane](https://github.com/li
 
 The tools are the open-source equivalents of the commercial tools. Icarus replaces VCS, Yosys replaces Design Compiler, and OpenSTA replaces PrimeTime. The flow and the vocabulary transfer. The tool names do not. [Full mapping →](docs/guide.md#what-this-is-and-what-it-is-not)
 
-## Learn more
+## Learn More
 
 - [Guide](docs/guide.md): running on your own machine, writing testbenches, the debug waveform, gate-level simulation, negative slack, configuration reference
 - [c4o-core](https://github.com/anlit75/c4o-core): the toolchain engine behind every command
